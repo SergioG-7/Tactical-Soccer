@@ -9,8 +9,8 @@
 **Tactical Soccer** es un prototipo de juego de fútbol táctico con vista cenital donde el jugador dibuja las trayectorias de los futbolistas en tiempo real. Este proyecto demuestra conocimientos avanzados en la creación de mecánicas tácticas, inteligencia artificial (IA) y diseño de interfaces multiplataforma.
 
 ### 🎮 Jugar la Demo
-* Jugar en el navegador (WebGL) - https://play.unity.com/en/games/b793d534-f3d9-468e-9aed-ea9677db157e/webgl(#)
-* Ver gameplay en YouTube - https://youtu.be/Cr6xnOfUBCc(#)
+* Jugar en el navegador (WebGL) - https://sergiog-7.itch.io/tactical-soccer
+* Ver gameplay en YouTube - https://youtu.be/Cr6xnOfUBCc
 
 ### 🛠️ Tecnologías y Herramientas
 * **Motor:** Unity (C#)
@@ -29,8 +29,8 @@
 **Tactical Soccer** is a top-down tactical soccer game prototype where players draw the trajectories of their footballers in real-time. This project showcases advanced skills in gameplay mechanics, artificial intelligence (AI), and cross-platform UI architecture.
 
 ### 🎮 Play the Demo
-* [Play in Browser (WebGL) - https://play.unity.com/en/games/b793d534-f3d9-468e-9aed-ea9677db157e/webgl](#)
-* [Watch gameplay on YouTube - https://youtu.be/Cr6xnOfUBCc](#)
+* Play in Browser (WebGL) - https://sergiog-7.itch.io/tactical-soccer
+* Watch gameplay on YouTube - https://youtu.be/Cr6xnOfUBCc
 
 ### 🛠️ Technologies & Tools
 * **Engine:** Unity (C#)
@@ -49,8 +49,8 @@
 **Tactical Soccer（タクティカル・サッカー）**は、プレイヤーがリアルタイムで選手の移動経路を描く、トップダウン型の戦術サッカーゲームのプロトタイプです。このプロジェクトは、ゲームプレイメカニクス、人工知能（AI）、およびクロスプラットフォームUIアーキテクチャの高度な実装スキルを示しています。
 
 ### 🎮 デモをプレイする
-* [ブラウザでプレイ (WebGL) - https://play.unity.com/en/games/b793d534-f3d9-468e-9aed-ea9677db157e/webgl](#)
-* [YouTubeでゲームプレイを見る - https://youtu.be/Cr6xnOfUBCc](#)
+* ブラウザでプレイ (WebGL) - https://sergiog-7.itch.io/tactical-soccer
+* YouTubeでゲームプレイを見る - https://youtu.be/Cr6xnOfUBCc
 
 ### 🛠️ 使用技術とツール
 * **エンジン:** Unity (C#)
