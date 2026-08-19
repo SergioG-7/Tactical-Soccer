@@ -9,7 +9,7 @@
 **Tactical Soccer** es un prototipo de juego de fútbol táctico con vista cenital donde el jugador dibuja las trayectorias de los futbolistas en tiempo real. Este proyecto demuestra conocimientos avanzados en la creación de mecánicas tácticas, inteligencia artificial (IA) y diseño de interfaces multiplataforma.
 
 ### 🎮 Jugar la Demo
-* Jugar en el navegador (WebGL) - https://sergiog-7.itch.io/tactical-soccer
+* Jugar en el navegador (WebGL) - https://sergiog-7.itch.io/tactical-soccer (contraseña = level5)
 * Ver gameplay en YouTube - https://youtu.be/Cr6xnOfUBCc
 
 ### 🛠️ Tecnologías y Herramientas
@@ -29,7 +29,7 @@
 **Tactical Soccer** is a top-down tactical soccer game prototype where players draw the trajectories of their footballers in real-time. This project showcases advanced skills in gameplay mechanics, artificial intelligence (AI), and cross-platform UI architecture.
 
 ### 🎮 Play the Demo
-* Play in Browser (WebGL) - https://sergiog-7.itch.io/tactical-soccer
+* Play in Browser (WebGL) - https://sergiog-7.itch.io/tactical-soccer (password: level5)
 * Watch gameplay on YouTube - https://youtu.be/Cr6xnOfUBCc
 
 ### 🛠️ Technologies & Tools
@@ -49,7 +49,7 @@
 **Tactical Soccer（タクティカル・サッカー）**は、プレイヤーがリアルタイムで選手の移動経路を描く、トップダウン型の戦術サッカーゲームのプロトタイプです。このプロジェクトは、ゲームプレイメカニクス、人工知能（AI）、およびクロスプラットフォームUIアーキテクチャの高度な実装スキルを示しています。
 
 ### 🎮 デモをプレイする
-* ブラウザでプレイ (WebGL) - https://sergiog-7.itch.io/tactical-soccer
+* ブラウザでプレイ (WebGL) - https://sergiog-7.itch.io/tactical-soccer (パスワード：level5)
 * YouTubeでゲームプレイを見る - https://youtu.be/Cr6xnOfUBCc
 
 ### 🛠️ 使用技術とツール
