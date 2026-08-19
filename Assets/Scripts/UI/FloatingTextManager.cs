@@ -1,4 +1,5 @@
 using UnityEngine;
+using TacticalSoccer.Core;
 
 namespace TacticalSoccer.UI
 {
@@ -173,17 +174,7 @@ namespace TacticalSoccer.UI
                 return font;
             }
 
-            // Arial.ttf stopped being a built-in in Unity 2022 and now throws;
-            // LegacyRuntime.ttf replaced it and ships with the player.
-            try
-            {
-                font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            }
-            catch (System.ArgumentException)
-            {
-                font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            }
-
+            font = LocalizationManager.BuiltInFont;
             return font;
         }
     }

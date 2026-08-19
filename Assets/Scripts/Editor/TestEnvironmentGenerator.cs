@@ -3666,35 +3666,23 @@ namespace TacticalSoccer.Editor
         /// </summary>
         private static Font GetMonospaceFont()
         {
-            #if UNITY_WEBGL
-            // WebGL no tiene permisos para buscar fuentes en el sistema.
-            // Usamos la fuente normal de la UI como fallback.
+#if UNITY_WEBGL
             Debug.LogWarning("[Generador] WebGL no soporta fuentes del SO. Usando fuente UI para texto monoespaciado.");
             return GetUIFont();
-            #else
+#else
             string[] candidates = { "Consolas", "Courier New", "Lucida Console", "DejaVu Sans Mono" };
-            string[] installed = Font.GetOSInstalledFontNames();
+            Font font = FontResolver.TryResolveOSFont(candidates, 40);
 
-            foreach (string candidate in candidates)
+            if (font != null)
             {
-                if (System.Array.IndexOf(installed, candidate) < 0)
-                {
-                    continue;
-                }
-
-                Font font = Font.CreateDynamicFontFromOSFont(candidate, 40);
-
-                if (font != null)
-                {
-                    return font;
-                }
+                return font;
             }
 
             Debug.LogWarning("[Generador] Sin fuente monoespaciada: la tabla de estadísticas " +
                              "no quedará alineada en columnas.");
 
             return GetUIFont();
-        #endif
+#endif
         }
 
         /// <summary>
@@ -3713,40 +3701,28 @@ namespace TacticalSoccer.Editor
         /// </summary>
         private static Font GetPlayerTagFont()
         {
-            #if UNITY_WEBGL
-            // WebGL no tiene permisos para leer las fuentes instaladas en el SO del usuario.
-            // Saltamos la búsqueda y devolvemos directamente la fuente de UI.
+#if UNITY_WEBGL
             Debug.LogWarning("[Generador] WebGL no soporta fuentes del SO. Usando fuente UI de fallback.");
             return GetUIFont();
-            #else
+#else
             string[] candidates =
             {
                 "Yu Gothic UI", "Yu Gothic", "MS Gothic", "Meiryo",
                 "Microsoft YaHei", "SimSun", "Segoe UI"
             };
 
-            string[] installed = Font.GetOSInstalledFontNames();
+            Font font = FontResolver.TryResolveOSFont(candidates, PlayerLabelRoleFontSize);
 
-            foreach (string candidate in candidates)
+            if (font != null)
             {
-                if (System.Array.IndexOf(installed, candidate) < 0)
-                {
-                    continue;
-                }
-
-                Font font = Font.CreateDynamicFontFromOSFont(candidate, PlayerLabelRoleFontSize);
-
-                if (font != null)
-                {
-                    return font;
-                }
+                return font;
             }
 
             Debug.LogWarning("[Generador] No se encontró ninguna fuente del sistema con kanji: " +
                              "las etiquetas de jugador saldrán sin el símbolo elemental.");
 
             return GetUIFont();
-        #endif
+#endif
         }
 
         /// <summary>
@@ -3937,9 +3913,9 @@ namespace TacticalSoccer.Editor
             int thickness = Mathf.Max(2, width / 128);
             int margin = Mathf.RoundToInt(width * 0.05f);
 
-            DrawRectOutline(pixels, width, height, margin, margin, width - margin, height - margin, thickness, lineColor);
-            FillRect(pixels, width, height, margin, (height - thickness) / 2, width - margin, (height + thickness) / 2, lineColor);
-            DrawCircleOutline(pixels, width, height, width / 2, height / 2, width / 8, thickness, lineColor);
+            TextureDrawing.DrawRectOutline(pixels, width, height, margin, margin, width - margin, height - margin, thickness, lineColor);
+            TextureDrawing.FillRect(pixels, width, height, margin, (height - thickness) / 2, width - margin, (height + thickness) / 2, lineColor);
+            TextureDrawing.DrawCircleOutline(pixels, width, height, width / 2, height / 2, width / 8, thickness, lineColor);
 
             DrawPenaltyAreas(pixels, width, height, thickness, lineColor);
 
@@ -3949,7 +3925,7 @@ namespace TacticalSoccer.Editor
             // this small does not warrant one.
             int spotRadius = Mathf.Max(2, width / 110);
 
-            DrawCircleOutline(pixels, width, height, width / 2, height / 2,
+            TextureDrawing.DrawCircleOutline(pixels, width, height, width / 2, height / 2,
                 spotRadius, spotRadius, lineColor);
 
             Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, true)
@@ -3999,10 +3975,10 @@ namespace TacticalSoccer.Editor
             float front = edge - Core.PitchBounds.PenaltyAreaDepth;
 
             // Red defends north (+Z), Blue defends south (-Z). One box each.
-            DrawRectOutline(pixels, width, height,
+            TextureDrawing.DrawRectOutline(pixels, width, height,
                 left, toPixelY(front), right, toPixelY(edge), thickness, lineColor);
 
-            DrawRectOutline(pixels, width, height,
+            TextureDrawing.DrawRectOutline(pixels, width, height,
                 left, toPixelY(-edge), right, toPixelY(-front), thickness, lineColor);
         }
 
@@ -4056,64 +4032,9 @@ namespace TacticalSoccer.Editor
             };
         }
 
-        private static void FillRect(Color32[] pixels, int texWidth, int texHeight,
-            int x0, int y0, int x1, int y1, Color32 color)
-        {
-            x0 = Mathf.Clamp(x0, 0, texWidth);
-            x1 = Mathf.Clamp(x1, 0, texWidth);
-            y0 = Mathf.Clamp(y0, 0, texHeight);
-            y1 = Mathf.Clamp(y1, 0, texHeight);
-
-            for (int y = y0; y < y1; y++)
-            {
-                int rowStart = y * texWidth;
-                for (int x = x0; x < x1; x++)
-                {
-                    pixels[rowStart + x] = color;
-                }
-            }
-        }
-
-        private static void DrawRectOutline(Color32[] pixels, int texWidth, int texHeight,
-            int x0, int y0, int x1, int y1, int thickness, Color32 color)
-        {
-            FillRect(pixels, texWidth, texHeight, x0, y0, x1, y0 + thickness, color);
-            FillRect(pixels, texWidth, texHeight, x0, y1 - thickness, x1, y1, color);
-            FillRect(pixels, texWidth, texHeight, x0, y0, x0 + thickness, y1, color);
-            FillRect(pixels, texWidth, texHeight, x1 - thickness, y0, x1, y1, color);
-        }
-
-        private static void DrawCircleOutline(Color32[] pixels, int texWidth, int texHeight,
-            int centerX, int centerY, int radius, int thickness, Color32 color)
-        {
-            float halfThickness = thickness * 0.5f;
-            float innerRadius = radius - halfThickness;
-            float outerRadius = radius + halfThickness;
-            float innerSqr = innerRadius * innerRadius;
-            float outerSqr = outerRadius * outerRadius;
-
-            int minX = Mathf.Max(0, centerX - radius - thickness);
-            int maxX = Mathf.Min(texWidth, centerX + radius + thickness);
-            int minY = Mathf.Max(0, centerY - radius - thickness);
-            int maxY = Mathf.Min(texHeight, centerY + radius + thickness);
-
-            for (int y = minY; y < maxY; y++)
-            {
-                int dy = y - centerY;
-                int rowStart = y * texWidth;
-
-                for (int x = minX; x < maxX; x++)
-                {
-                    int dx = x - centerX;
-                    float distanceSqr = (dx * dx) + (dy * dy);
-
-                    if (distanceSqr >= innerSqr && distanceSqr <= outerSqr)
-                    {
-                        pixels[rowStart + x] = color;
-                    }
-                }
-            }
-        }
+        // FillRect / DrawRectOutline / DrawCircleOutline moved to
+        // TextureDrawing.cs — generic pixel-buffer primitives with no
+        // knowledge of the pitch.
 
         // ---------------------------------------------------------------------
         // Asset helpers

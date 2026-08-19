@@ -425,44 +425,23 @@ namespace TacticalSoccer.UI
 
         private void CreateCaptainSlot(TeamMember member, Vector2 anchoredPosition)
         {
-            GameObject slotObject = new GameObject($"Captain {member.jerseyNumber}", typeof(RectTransform));
-            slotObject.transform.SetParent(captainArea, false);
-
-            RectTransform rect = (RectTransform)slotObject.transform;
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = captainSlotSize;
-
-            Image background = slotObject.AddComponent<Image>();
-            background.color = unselectedColor;
-
-            Button button = slotObject.AddComponent<Button>();
-            button.targetGraphic = background;
-
             // Captured into a local first: the loop variable would otherwise be
             // shared by every listener and all seven would pick the last player.
             TeamMember captured = member;
-            button.onClick.AddListener(() => SelectCaptain(captured));
 
-            GameObject labelObject = new GameObject("Label", typeof(RectTransform));
-            labelObject.transform.SetParent(slotObject.transform, false);
-
-            RectTransform labelRect = (RectTransform)labelObject.transform;
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
-
-            Text label = labelObject.AddComponent<Text>();
-            label.font = ResolveFont();
-            label.fontSize = captainSlotFontSize;
-            label.fontStyle = FontStyle.Bold;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.color = Color.black;
-            label.text = Core.LocalizationManager.Format("formation.captainSlot",
+            string labelText = Core.LocalizationManager.Format("formation.captainSlot",
                 member.jerseyNumber, PlayerRoles.Abbreviate(member.role), DescribePassive(member.role));
+
+            GameObject slotObject = UiSlotFactory.CreateSlot(
+                captainArea,
+                $"Captain {member.jerseyNumber}",
+                anchoredPosition,
+                captainSlotSize,
+                unselectedColor,
+                labelText,
+                ResolveFont(),
+                captainSlotFontSize,
+                () => SelectCaptain(captured));
 
             captainSlots.Add(slotObject);
         }
@@ -583,9 +562,7 @@ namespace TacticalSoccer.UI
                 return captainHeading.font;
             }
 
-            // Arial.ttf stopped being a built-in font in Unity 2022 and now
-            // throws; LegacyRuntime.ttf replaced it.
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return LocalizationManager.BuiltInFont;
         }
     }
 }

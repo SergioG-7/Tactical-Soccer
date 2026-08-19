@@ -100,6 +100,34 @@ namespace TacticalSoccer.Core
             {
                 positioning.SetFormationSlot(MatchManager.ResolveFormationSlot(member));
             }
+
+            RefreshTeamMateCaches(member.team);
+        }
+
+        /// <summary>
+        /// Rebuilds every player's cached team-mate list for a side after a
+        /// role change flips who is (and isn't) the goalkeeper.
+        ///
+        /// isGoalkeeper only changed on the two players who swapped, but
+        /// TacticalPositioning.CacheTeamMates filters ITS OWN list by that flag
+        /// at the moment it runs — so it is every OTHER player on the side
+        /// whose cache is now wrong, not the two who swapped. Cheap enough to
+        /// run unconditionally: one role edit, once, over one XI.
+        /// </summary>
+        private static void RefreshTeamMateCaches(TeamId team)
+        {
+            foreach (TeamMember other in Object.FindObjectsByType<TeamMember>())
+            {
+                if (other.team != team)
+                {
+                    continue;
+                }
+
+                if (other.TryGetComponent(out AI.TacticalPositioning positioning))
+                {
+                    positioning.CacheTeamMates();
+                }
+            }
         }
 
         /// <summary>The player currently wearing the gloves for a side, or null if nobody is.</summary>

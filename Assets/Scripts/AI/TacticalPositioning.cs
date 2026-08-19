@@ -268,7 +268,22 @@ namespace TacticalSoccer.AI
             return Vector3.Distance(a, b);
         }
 
-        private void CacheTeamMates()
+        /// <summary>
+        /// Rebuilds the cached team-mate list from the roster as it stands
+        /// right now.
+        ///
+        /// Public beyond Start(): the list is filtered by isGoalkeeper at the
+        /// moment it is built, and a goalkeeper swap (SquadRoles.Write) changes
+        /// that flag on two players well after every other player's Start() has
+        /// already run. Without a way to rebuild, every OTHER player's chase
+        /// check would keep comparing distances against whichever XI was on the
+        /// pitch when the scene first loaded — still counting the newly-made
+        /// keeper as a chase rival, and never counting the newly-demoted one at
+        /// all. SquadRoles.Write calls this for every member of the affected
+        /// team, not just the two who swapped, since it is everyone ELSE's
+        /// cache that goes stale.
+        /// </summary>
+        public void CacheTeamMates()
         {
             teamMates.Clear();
 

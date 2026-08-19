@@ -487,27 +487,13 @@ namespace TacticalSoccer.Core
                 return null;
             }
 
-#if !UNITY_WEBGL
-            string[] installed = Font.GetOSInstalledFontNames();
+            Font osFont = FontResolver.TryResolveOSFont(file.fontFamilies, DynamicFontSize);
 
-            foreach (string family in file.fontFamilies)
+            if (osFont != null)
             {
-                if (string.IsNullOrEmpty(family) || Array.IndexOf(installed, family) < 0)
-                {
-                    continue;
-                }
-
-                Font osFont = Font.CreateDynamicFontFromOSFont(family, DynamicFontSize);
-
-                if (osFont == null)
-                {
-                    continue;
-                }
-
                 fonts[code] = osFont;
                 return osFont;
             }
-#endif
 
             Font embedded = ResolveEmbeddedFont(file);
 
@@ -606,8 +592,13 @@ namespace TacticalSoccer.Core
         /// The name changed in recent Unity versions, hence the fallback; the
         /// scene generator resolves it exactly the same way, which is what makes
         /// "back to the default" mean the same thing on both sides.
+        ///
+        /// Public because several UI controllers need the same fallback for
+        /// their own locally-built Text/TextMesh objects (a duplicated private
+        /// copy of this used to live in each of them) — this is the one place
+        /// it is resolved and cached.
         /// </summary>
-        private static Font BuiltInFont
+        public static Font BuiltInFont
         {
             get
             {

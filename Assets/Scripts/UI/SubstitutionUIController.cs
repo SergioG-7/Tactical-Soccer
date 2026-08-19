@@ -497,43 +497,20 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            GameObject slotObject = new GameObject($"Slot {member.jerseyNumber}", typeof(RectTransform));
-            slotObject.transform.SetParent(parent, false);
-
-            RectTransform rect = (RectTransform)slotObject.transform;
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = slotSize;
-
-            Image background = slotObject.AddComponent<Image>();
-            background.color = ResolveSlotColor(member);
-
-            Button button = slotObject.AddComponent<Button>();
-            button.targetGraphic = background;
-
             // Captured into a local first: the loop variable would otherwise be
             // shared by every listener and all ten would select the last player.
             TeamMember captured = member;
-            button.onClick.AddListener(() => HandleSlotClicked(captured));
 
-            GameObject labelObject = new GameObject("Label", typeof(RectTransform));
-            labelObject.transform.SetParent(slotObject.transform, false);
-
-            RectTransform labelRect = (RectTransform)labelObject.transform;
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
-
-            Text label = labelObject.AddComponent<Text>();
-            label.font = ResolveFont();
-            label.fontSize = slotFontSize;
-            label.fontStyle = FontStyle.Bold;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.color = Color.black;
-            label.text = DescribeSlot(member);
+            GameObject slotObject = UiSlotFactory.CreateSlot(
+                parent,
+                $"Slot {member.jerseyNumber}",
+                anchoredPosition,
+                slotSize,
+                ResolveSlotColor(member),
+                DescribeSlot(member),
+                ResolveFont(),
+                slotFontSize,
+                () => HandleSlotClicked(captured));
 
             slotObjects.Add(slotObject);
         }
@@ -545,9 +522,7 @@ namespace TacticalSoccer.UI
                 return statsText.font;
             }
 
-            // Arial.ttf stopped being a built-in font in Unity 2022 and now
-            // throws; LegacyRuntime.ttf replaced it.
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return LocalizationManager.BuiltInFont;
         }
 
         private Color ResolveSlotColor(TeamMember member)

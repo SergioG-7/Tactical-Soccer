@@ -6,137 +6,9 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.Core
 {
-    /// <summary>The shapes a side may line up in. Six outfield players either way.</summary>
-    public enum FormationType
-    {
-        Balanced_2_2_2,
-        Defensive_3_2_1,
-        Offensive_1_3_2
-    }
-
-    /// <summary>
-    /// How hard the opposition plays. Two levers, both deliberately small: how
-    /// often the AI re-decides, and a flat handicap on every duel it fights.
-    ///
-    /// Neither touches the human's side at any setting. A difficulty that made
-    /// YOUR players worse would be indistinguishable from a bug from the other
-    /// side of the screen.
-    /// </summary>
-    public enum AIDifficulty
-    {
-        Facil,
-        Normal,
-        Dificil
-    }
-
-    /// <summary>
-    /// One outfield slot of a starting shape: where the player stands and which
-    /// line they hold.
-    /// </summary>
-    public readonly struct FormationSlot
-    {
-        public readonly PlayerRole Role;
-
-        /// <summary>Across the pitch. The two sides are mirror images, so one value serves both.</summary>
-        public readonly float X;
-
-        /// <summary>
-        /// Distance from the halfway line into the team's OWN half, always
-        /// positive. Callers multiply by the side's sign, so one table describes
-        /// both teams.
-        /// </summary>
-        public readonly float OwnHalfZ;
-
-        public FormationSlot(PlayerRole role, float x, float ownHalfZ)
-        {
-            Role = role;
-            X = x;
-            OwnHalfZ = ownHalfZ;
-        }
-    }
-
-    /// <summary>
-    /// The starting shapes, in one place. The scene generator spawns the squad
-    /// from the same tables the formation menu later re-arranges them with, so
-    /// picking the default shape in the menu puts everybody exactly back where
-    /// they began rather than somewhere subtly different.
-    ///
-    /// Every slot sits in its own half: the three lines are pinned to the same
-    /// depths whatever the shape, so a 3-2-1 reads as a deeper back line rather
-    /// than as a different pitch.
-    /// </summary>
-    public static class Formations
-    {
-        private const float DefenderLineZ = 16f;
-        private const float MidfieldLineZ = 9f;
-
-        // Just outside the centre circle, whose painted radius is 3.75 units.
-        private const float ForwardLineZ = 4.5f;
-
-        private static readonly FormationSlot[] Balanced =
-        {
-            new FormationSlot(PlayerRole.Defender, -4.5f, DefenderLineZ),
-            new FormationSlot(PlayerRole.Defender, 4.5f, DefenderLineZ),
-            new FormationSlot(PlayerRole.Midfielder, -7.5f, MidfieldLineZ),
-            new FormationSlot(PlayerRole.Midfielder, 7.5f, MidfieldLineZ),
-            new FormationSlot(PlayerRole.Forward, -3.5f, ForwardLineZ),
-            new FormationSlot(PlayerRole.Forward, 3.5f, ForwardLineZ)
-        };
-
-        private static readonly FormationSlot[] Defensive =
-        {
-            // The middle centre-back drops a metre deeper, so three across the
-            // back reads as a covered line rather than a flat wall.
-            new FormationSlot(PlayerRole.Defender, -7f, DefenderLineZ),
-            new FormationSlot(PlayerRole.Defender, 0f, DefenderLineZ + 1f),
-            new FormationSlot(PlayerRole.Defender, 7f, DefenderLineZ),
-            new FormationSlot(PlayerRole.Midfielder, -5f, MidfieldLineZ),
-            new FormationSlot(PlayerRole.Midfielder, 5f, MidfieldLineZ),
-            new FormationSlot(PlayerRole.Forward, 0f, ForwardLineZ)
-        };
-
-        private static readonly FormationSlot[] Offensive =
-        {
-            new FormationSlot(PlayerRole.Defender, 0f, DefenderLineZ),
-            new FormationSlot(PlayerRole.Midfielder, -8f, MidfieldLineZ + 1f),
-            new FormationSlot(PlayerRole.Midfielder, 0f, MidfieldLineZ),
-            new FormationSlot(PlayerRole.Midfielder, 8f, MidfieldLineZ + 1f),
-            new FormationSlot(PlayerRole.Forward, -3.5f, ForwardLineZ),
-            new FormationSlot(PlayerRole.Forward, 3.5f, ForwardLineZ)
-        };
-
-        /// <summary>How many outfield players a shape expects. The keeper is extra.</summary>
-        public const int OutfieldCount = 6;
-
-        public static FormationSlot[] Get(FormationType formation)
-        {
-            switch (formation)
-            {
-                case FormationType.Defensive_3_2_1: return Defensive;
-                case FormationType.Offensive_1_3_2: return Offensive;
-                default: return Balanced;
-            }
-        }
-
-        /// <summary>One of the shapes, at random. Used by the "surprise me" rival setting.</summary>
-        public static FormationType Random()
-        {
-            FormationType[] all = (FormationType[])System.Enum.GetValues(typeof(FormationType));
-
-            return all[UnityEngine.Random.Range(0, all.Length)];
-        }
-
-        /// <summary>Label for the HUD, so the UI does not hardcode the numbers.</summary>
-        public static string GetLabel(FormationType formation)
-        {
-            switch (formation)
-            {
-                case FormationType.Defensive_3_2_1: return "3-2-1";
-                case FormationType.Offensive_1_3_2: return "1-3-2";
-                default: return "2-2-2";
-            }
-        }
-    }
+    // FormationType, AIDifficulty, FormationSlot and Formations moved to
+    // Formations.cs — pure squad-shape data with no dependency on match
+    // state, kept apart from the orchestrator below.
 
     /// <summary>
     /// Owns the match-wide state nobody else can hold: how much time is left,
@@ -319,13 +191,6 @@ namespace TacticalSoccer.Core
         /// attack has to have reached for the half to play on past zero.
         /// </summary>
         private const float AttackingThirdShare = 1f / 3f;
-
-        /// <summary>
-        /// How far inside the painted lines a restart mark is pulled. The ball
-        /// is placed here, not the player, and a mark sitting exactly ON a line
-        /// is one rounding error away from being out of play again.
-        /// </summary>
-        private const float RestartBallInset = 0.2f;
 
         public static MatchManager Instance { get; private set; }
 
@@ -529,73 +394,19 @@ namespace TacticalSoccer.Core
         }
 
         /// <summary>
-        /// Repaints the human side in the chosen strip.
-        ///
-        /// Written through <c>renderer.material</c>, never <c>sharedMaterial</c>:
-        /// every blue player points at the same TeamBlueMaterial asset, so
-        /// writing the shared one would repaint the opposition's keeper gloves
-        /// on the way past and — worse — persist the change to disk, so the next
-        /// match would open in whatever colour the last one chose.
-        ///
-        /// Substitutes are included even though they are sitting in the dugout:
-        /// they come on later, and a side that changed colour halfway through
-        /// would be unreadable.
-        ///
-        /// The goalkeeper is deliberately left out. He has his own material so
-        /// he can be picked out of a crowded box at a glance, and that is worth
-        /// more than a matching strip — which is exactly why real keepers wear a
-        /// different one.
+        /// Repaints both sides in their chosen strips (see TeamKits.RepaintTeam
+        /// for how and why). Substitutes are included even though they are
+        /// sitting in the dugout: they come on later, and a side that changed
+        /// colour halfway through would be unreadable.
         /// </summary>
         private void ApplyHumanKit()
         {
-            int human = RepaintTeam(humanTeam, TeamKits.GetColor(humanKit));
-            int rival = RepaintTeam(Opponent(humanTeam), rivalKitColor);
+            int human = TeamKits.RepaintTeam(humanTeam, TeamKits.GetColor(humanKit));
+            int rival = TeamKits.RepaintTeam(Opponent(humanTeam), rivalKitColor);
 
             Debug.Log($"Equipación {TeamKits.GetLabel(humanKit)} aplicada a {human} jugadores de " +
                       $"{humanTeam}; rival repintado en {rivalKitColor} ({rival} jugadores). " +
                       "Porteros incluidos.");
-        }
-
-        /// <summary>
-        /// Paints one side's outfield players and tells each of them what colour
-        /// they are now, returning how many were changed.
-        /// </summary>
-        private static int RepaintTeam(TeamId team, Color color)
-        {
-            int repainted = 0;
-
-            foreach (TeamMember member in FindObjectsByType<TeamMember>())
-            {
-                // The keeper is repainted with everybody else. He used to be
-                // exempt so he could be picked out of a crowded box, but that
-                // meant a fixed yellow — and a tournament round can put the
-                // OPPOSITION in orange or gold, at which point the keeper's
-                // "distinguishing" colour is the colour of the other team.
-                // Reading the eleven as one side is worth more.
-                if (member.team != team)
-                {
-                    continue;
-                }
-
-                if (!member.TryGetComponent(out MeshRenderer renderer))
-                {
-                    continue;
-                }
-
-                renderer.material.color = color;
-                repainted++;
-
-                // The stun blink restores a colour it cached at Awake, off the
-                // SHARED material — i.e. the shirt this player was born in. Left
-                // alone, the first player stunned after a kit change would blink
-                // back to blue and stay there.
-                if (member.TryGetComponent(out Player.PlayerRoute route))
-                {
-                    route.RefreshOriginalColor(color);
-                }
-            }
-
-            return repainted;
         }
 
         private Coroutine kickoffRoutine;
@@ -2273,83 +2084,7 @@ namespace TacticalSoccer.Core
         /// </summary>
         private void ClearExclusionZone(Vector3 ballSpot, PlayerBallHandler taker)
         {
-            TeamMember takerMember = taker != null ? taker.GetComponent<TeamMember>() : null;
-
-            if (takerMember == null)
-            {
-                return;
-            }
-
-            int moved = 0;
-
-            foreach (TeamMember member in FindObjectsByType<TeamMember>())
-            {
-                if (member.team == takerMember.team || !member.isStarter || member.isGoalkeeper)
-                {
-                    continue;
-                }
-
-                Vector3 position = member.transform.position;
-
-                // Flat distance: the ball's height at a restart is the socket's,
-                // and nobody is closer for standing on lower ground.
-                Vector3 away = new Vector3(position.x - ballSpot.x, 0f, position.z - ballSpot.z);
-                float distance = away.magnitude;
-
-                if (distance >= restartExclusionRadius)
-                {
-                    continue;
-                }
-
-                // Standing exactly on the ball leaves no line to push along, so
-                // the retreat is towards the player's own goal — which is where
-                // a defender backing off would go anyway.
-                Vector3 direction = distance > 0.01f
-                    ? away / distance
-                    : new Vector3(0f, 0f, member.team == TeamId.Blue ? -1f : 1f);
-
-                Vector3 pushed = PitchBounds.ClampPlayer(new Vector3(
-                    ballSpot.x + (direction.x * restartExclusionRadius),
-                    position.y,
-                    ballSpot.z + (direction.z * restartExclusionRadius)));
-
-                // The clamp can hand back a spot still inside the circle — a
-                // corner is the obvious case, where "straight out" is straight
-                // off the pitch. Then the retreat goes towards the middle
-                // instead, which is always somewhere there is room.
-                if (Vector3.Distance(new Vector3(pushed.x, 0f, pushed.z),
-                        new Vector3(ballSpot.x, 0f, ballSpot.z)) < restartExclusionRadius - 0.05f)
-                {
-                    Vector3 inward = new Vector3(-ballSpot.x, 0f, -ballSpot.z);
-
-                    if (inward.sqrMagnitude < 0.01f)
-                    {
-                        inward = Vector3.forward;
-                    }
-
-                    inward.Normalize();
-
-                    pushed = PitchBounds.ClampPlayer(new Vector3(
-                        ballSpot.x + (inward.x * restartExclusionRadius),
-                        position.y,
-                        ballSpot.z + (inward.z * restartExclusionRadius)));
-                }
-
-                member.transform.position = pushed;
-
-                if (member.TryGetComponent(out PlayerRoute route))
-                {
-                    route.CancelRoute();
-                }
-
-                moved++;
-            }
-
-            if (moved > 0)
-            {
-                Debug.Log($"[Saque] {moved} jugador(es) de {(takerMember.team == TeamId.Blue ? TeamId.Red : TeamId.Blue)} " +
-                          $"retirados a {restartExclusionRadius:F1} u del balón.");
-            }
+            AI.SetPiecePositioning.ClearExclusionZone(ballSpot, taker, restartExclusionRadius);
         }
 
         /// <summary>
@@ -2376,64 +2111,7 @@ namespace TacticalSoccer.Core
         /// </summary>
         private void OfferForRestart(PlayerBallHandler taker, Vector3 ballSpot)
         {
-            if (!taker.TryGetComponent(out TeamMember takerMember))
-            {
-                return;
-            }
-
-            foreach (TeamMember member in FindObjectsByType<TeamMember>())
-            {
-                if (member.team != takerMember.team || member == takerMember
-                    || !member.isStarter || member.role == PlayerRole.Goalkeeper)
-                {
-                    continue;
-                }
-
-                float pull = RestartSupportPull(member.role);
-
-                if (pull <= 0f || !member.TryGetComponent(out AI.TacticalPositioning positioning))
-                {
-                    continue;
-                }
-
-                // Interpolated from the formation slot rather than from where the
-                // player happens to be standing, so a restart always produces the
-                // same shape instead of compounding wherever the last passage of
-                // play left everybody.
-                Vector3 slot = positioning.FormationSlot;
-                Vector3 target = Vector3.Lerp(slot, ballSpot, pull);
-
-                // Never on top of the ball: a team-mate standing on the mark
-                // blocks the taker and, worse, can trip a duel on the restart.
-                Vector3 away = target - ballSpot;
-                away.y = 0f;
-
-                if (away.magnitude < RestartSupportClearance)
-                {
-                    away = away.sqrMagnitude > 0.0001f ? away.normalized : Vector3.forward;
-                    target = ballSpot + (away * RestartSupportClearance);
-                }
-
-                target.y = member.transform.position.y;
-
-                if (member.TryGetComponent(out PlayerRoute route))
-                {
-                    route.CancelRoute();
-                }
-
-                member.transform.position = PitchBounds.ClampPlayer(target);
-            }
-        }
-
-        /// <summary>How far each line travels from its slot towards the restart, 0..1.</summary>
-        private static float RestartSupportPull(PlayerRole role)
-        {
-            switch (role)
-            {
-                case PlayerRole.Forward: return 0.75f;
-                case PlayerRole.Midfielder: return 0.4f;
-                default: return 0f;
-            }
+            AI.SetPiecePositioning.OfferForRestart(taker, ballSpot, RestartSupportClearance);
         }
 
         [Tooltip("How far the nearest supporting player is kept from the restart " +
@@ -2450,13 +2128,7 @@ namespace TacticalSoccer.Core
         /// </summary>
         private static Vector3 ClampToRestartArea(Vector3 spot)
         {
-            float maxX = PitchBounds.SideLineX - RestartBallInset;
-            float maxZ = PitchBounds.GoalLineZ - RestartBallInset;
-
-            return new Vector3(
-                Mathf.Clamp(spot.x, -maxX, maxX),
-                spot.y,
-                Mathf.Clamp(spot.z, -maxZ, maxZ));
+            return AI.SetPiecePositioning.ClampToRestartArea(spot);
         }
 
         /// <summary>
@@ -2542,36 +2214,7 @@ namespace TacticalSoccer.Core
         /// </summary>
         private TeamMember FindRestartReceiver(PlayerBallHandler taker)
         {
-            if (!taker.TryGetComponent(out TeamMember takerMember))
-            {
-                return null;
-            }
-
-            TeamMember best = null;
-            float bestSqr = float.MaxValue;
-
-            float minSqr = restartPassMinDistance * restartPassMinDistance;
-
-            foreach (TeamMember member in FindObjectsByType<TeamMember>())
-            {
-                if (member.team != takerMember.team || member == takerMember
-                    || !member.isStarter || member.isGoalkeeper)
-                {
-                    continue;
-                }
-
-                float sqr = (member.transform.position - taker.transform.position).sqrMagnitude;
-
-                if (sqr < minSqr || sqr >= bestSqr)
-                {
-                    continue;
-                }
-
-                bestSqr = sqr;
-                best = member;
-            }
-
-            return best;
+            return AI.SetPiecePositioning.FindRestartReceiver(taker, restartPassMinDistance);
         }
 
         [Tooltip("Shortest pass the AI will play from a restart. Anything under " +
@@ -2915,7 +2558,7 @@ namespace TacticalSoccer.Core
         private PlayerBallHandler FindNearestFieldPlayer(TeamId team, Vector3 point,
             PlayerBallHandler exclude = null)
         {
-            return FindNearestFieldPlayer(team, point, exclude, null);
+            return AI.SetPiecePositioning.FindNearestFieldPlayer(team, point, exclude);
         }
 
         /// <summary>
@@ -2925,36 +2568,7 @@ namespace TacticalSoccer.Core
         private PlayerBallHandler FindNearestFieldPlayer(TeamId team, Vector3 point,
             PlayerBallHandler exclude, PlayerRole? onlyRole)
         {
-            PlayerBallHandler closest = null;
-            float closestSqrDistance = float.MaxValue;
-
-            foreach (TeamMember member in FindObjectsByType<TeamMember>())
-            {
-                if (member.team != team || member.isGoalkeeper || !member.isStarter)
-                {
-                    continue;
-                }
-
-                if (onlyRole.HasValue && member.role != onlyRole.Value)
-                {
-                    continue;
-                }
-
-                if (!member.TryGetComponent(out PlayerBallHandler handler) || handler == exclude)
-                {
-                    continue;
-                }
-
-                float sqrDistance = (member.transform.position - point).sqrMagnitude;
-
-                if (sqrDistance < closestSqrDistance)
-                {
-                    closestSqrDistance = sqrDistance;
-                    closest = handler;
-                }
-            }
-
-            return closest;
+            return AI.SetPiecePositioning.FindNearestFieldPlayer(team, point, exclude, onlyRole);
         }
 
         /// <summary>
@@ -2973,23 +2587,7 @@ namespace TacticalSoccer.Core
         /// </summary>
         private PlayerBallHandler FindRestartTaker(TeamId team, Vector3 point)
         {
-            PlayerBallHandler midfielder = FindNearestFieldPlayer(team, point, null, PlayerRole.Midfielder);
-
-            if (midfielder != null)
-            {
-                return midfielder;
-            }
-
-            PlayerBallHandler defender = FindNearestFieldPlayer(team, point, null, PlayerRole.Defender);
-
-            if (defender != null)
-            {
-                return defender;
-            }
-
-            // Last resort, and it still has to work: a side reduced to forwards
-            // by substitutions must be able to take its own throw-in.
-            return FindNearestFieldPlayer(team, point);
+            return AI.SetPiecePositioning.FindRestartTaker(team, point);
         }
 
         /// <summary>

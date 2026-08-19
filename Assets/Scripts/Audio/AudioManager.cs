@@ -109,6 +109,12 @@ namespace TacticalSoccer.Audio
         /// </summary>
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             Instance = this;
 
             // The player's own levels win over the serialised defaults, which

@@ -106,14 +106,14 @@ namespace TacticalSoccer.Gameplay
         /// <summary>
         /// Drains an active burn, but only while the ball is actually in play.
         ///
-        /// Two separate guards, because timeScale alone is not enough. It covers
-        /// the things that FREEZE the match — a duel, the interval, a penalty —
-        /// since Time.deltaTime is zero throughout them. It does not cover the
-        /// states where the match is running at full speed but nobody may act:
-        /// a goal celebration, a corner being lined up, the wait before a
-        /// kickoff. The zone lasts ten seconds, so two seconds of it burning
-        /// away while the players stand still waiting for a restart is a fifth
-        /// of the reward gone for nothing.
+        /// IsWaitingForSetPiece covers both cases that matter here: the states
+        /// where timeScale is 0 (a duel, the interval, a penalty), where
+        /// Time.deltaTime is zero anyway, AND the states where the match runs
+        /// at full speed but nobody may act — a goal celebration, a corner
+        /// being lined up, the wait before a kickoff. The zone lasts ten
+        /// seconds, so two seconds of it burning away while the players stand
+        /// still waiting for a restart is a fifth of the reward gone for
+        /// nothing.
         /// </summary>
         private void Update()
         {
