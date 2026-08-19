@@ -1,0 +1,739 @@
+{
+  "code": "en",
+  "displayName": "English",
+  "fontFamilies": [],
+  "entries": [
+    {
+      "key": "title.heading",
+      "value": "TACTICAL SOCCER"
+    },
+    {
+      "key": "title.quickMatch",
+      "value": "QUICK MATCH"
+    },
+    {
+      "key": "title.options",
+      "value": "OPTIONS"
+    },
+    {
+      "key": "tournament.next.quarters",
+      "value": "TOURNAMENT"
+    },
+    {
+      "key": "tournament.next.semis",
+      "value": "TOURNAMENT · SEMIS"
+    },
+    {
+      "key": "tournament.next.final",
+      "value": "TOURNAMENT · FINAL"
+    },
+    {
+      "key": "tournament.hud.quarters",
+      "value": "TOURNAMENT - QUARTERS"
+    },
+    {
+      "key": "tournament.hud.semis",
+      "value": "TOURNAMENT - SEMI-FINAL"
+    },
+    {
+      "key": "tournament.hud.final",
+      "value": "TOURNAMENT - FINAL"
+    },
+    {
+      "key": "options.heading",
+      "value": "OPTIONS"
+    },
+    {
+      "key": "options.language",
+      "value": "LANGUAGE"
+    },
+    {
+      "key": "options.music",
+      "value": "CROWD & AMBIENCE"
+    },
+    {
+      "key": "options.sfx",
+      "value": "EFFECTS"
+    },
+    {
+      "key": "options.readout",
+      "value": "Crowd {0} %      Effects {1} %"
+    },
+    {
+      "key": "options.close",
+      "value": "BACK"
+    },
+    {
+      "key": "config.heading",
+      "value": "MATCH SETTINGS"
+    },
+    {
+      "key": "config.difficulty",
+      "value": "OPPONENT DIFFICULTY"
+    },
+    {
+      "key": "config.easy",
+      "value": "EASY"
+    },
+    {
+      "key": "config.normal",
+      "value": "NORMAL"
+    },
+    {
+      "key": "config.hard",
+      "value": "HARD"
+    },
+    {
+      "key": "config.rivalFormation",
+      "value": "OPPONENT FORMATION"
+    },
+    {
+      "key": "config.random",
+      "value": "RANDOM"
+    },
+    {
+      "key": "config.duration",
+      "value": "LENGTH OF EACH HALF"
+    },
+    {
+      "key": "config.kit",
+      "value": "KIT"
+    },
+    {
+      "key": "config.continue",
+      "value": "CONTINUE"
+    },
+    {
+      "key": "config.summary",
+      "value": "Opponent: {0}   ·   Their shape: {1}   ·   {2} s per half   ·   Kit: {3}"
+    },
+    {
+      "key": "config.randomShape",
+      "value": "Random"
+    },
+    {
+      "key": "difficulty.easy",
+      "value": "Easy"
+    },
+    {
+      "key": "difficulty.normal",
+      "value": "Normal"
+    },
+    {
+      "key": "difficulty.hard",
+      "value": "Hard"
+    },
+    {
+      "key": "common.back",
+      "value": "‹ BACK"
+    },
+    {
+      "key": "team.blue",
+      "value": "BLUE"
+    },
+    {
+      "key": "team.red",
+      "value": "RED"
+    },
+    {
+      "key": "role.full.gk",
+      "value": "Goalkeeper"
+    },
+    {
+      "key": "role.full.df",
+      "value": "Defender"
+    },
+    {
+      "key": "role.full.mf",
+      "value": "Midfielder"
+    },
+    {
+      "key": "role.full.fw",
+      "value": "Forward"
+    },
+    {
+      "key": "element.fire",
+      "value": "FIRE"
+    },
+    {
+      "key": "element.forest",
+      "value": "FOREST"
+    },
+    {
+      "key": "element.wind",
+      "value": "WIND"
+    },
+    {
+      "key": "element.mountain",
+      "value": "MOUNTAIN"
+    },
+    {
+      "key": "color.blue",
+      "value": "Blue"
+    },
+    {
+      "key": "color.green",
+      "value": "Green"
+    },
+    {
+      "key": "color.black",
+      "value": "Black"
+    },
+    {
+      "key": "color.white",
+      "value": "White"
+    },
+    {
+      "key": "color.grey",
+      "value": "Grey"
+    },
+    {
+      "key": "color.red",
+      "value": "Red"
+    },
+    {
+      "key": "color.orange",
+      "value": "Orange"
+    },
+    {
+      "key": "color.yellow",
+      "value": "Yellow"
+    },
+    {
+      "key": "color.cyan",
+      "value": "Cyan"
+    },
+    {
+      "key": "color.purple",
+      "value": "Purple"
+    },
+    {
+      "key": "color.pink",
+      "value": "Pink"
+    },
+    {
+      "key": "color.gold",
+      "value": "Gold"
+    },
+    {
+      "key": "passive.attack",
+      "value": "+ATTACK"
+    },
+    {
+      "key": "passive.defence",
+      "value": "+DEFENCE"
+    },
+    {
+      "key": "passive.stamina",
+      "value": "-FATIGUE"
+    },
+    {
+      "key": "stat.dribble",
+      "value": "DRIBBLE"
+    },
+    {
+      "key": "stat.power",
+      "value": "POWER"
+    },
+    {
+      "key": "stat.shoot",
+      "value": "SHOOT"
+    },
+    {
+      "key": "stat.tackle",
+      "value": "TACKLE"
+    },
+    {
+      "key": "stat.block",
+      "value": "BLOCK"
+    },
+    {
+      "key": "stat.goalkeeping",
+      "value": "SAVE"
+    },
+    {
+      "key": "stat.stamina",
+      "value": "STAMINA"
+    },
+    {
+      "key": "formation.heading",
+      "value": "CHOOSE YOUR FORMATION"
+    },
+    {
+      "key": "formation.squad",
+      "value": "SQUAD ›"
+    },
+    {
+      "key": "formation.kickoff",
+      "value": "KICK OFF!"
+    },
+    {
+      "key": "formation.balanced",
+      "value": "BALANCED"
+    },
+    {
+      "key": "formation.defensive",
+      "value": "DEFENSIVE"
+    },
+    {
+      "key": "formation.offensive",
+      "value": "ATTACKING"
+    },
+    {
+      "key": "formation.captainNone",
+      "value": "CAPTAIN: —"
+    },
+    {
+      "key": "formation.captainHeading",
+      "value": "CAPTAIN: {0} · {1} ({2}){3}"
+    },
+    {
+      "key": "formation.captainDefault",
+      "value": " (default)"
+    },
+    {
+      "key": "formation.captainSlot",
+      "value": "{0} · {1}\n{2}"
+    },
+    {
+      "key": "halftime.heading",
+      "value": "HALF TIME"
+    },
+    {
+      "key": "halftime.summary",
+      "value": "BLUE {0}  -  {1} RED\n\nStamina does not come back during a match.\nThese are the only changes you are going to get."
+    },
+    {
+      "key": "halftime.summaryNoScore",
+      "value": "Make your changes and head out for the second half."
+    },
+    {
+      "key": "halftime.subs",
+      "value": "MAKE CHANGES"
+    },
+    {
+      "key": "halftime.resume",
+      "value": "SECOND HALF"
+    },
+    {
+      "key": "subs.heading",
+      "value": "SUBSTITUTIONS"
+    },
+    {
+      "key": "subs.header",
+      "value": "SUBSTITUTIONS · {0} TEAM"
+    },
+    {
+      "key": "subs.pitch",
+      "value": "ON THE PITCH"
+    },
+    {
+      "key": "subs.bench",
+      "value": "BENCH"
+    },
+    {
+      "key": "subs.close",
+      "value": "BACK"
+    },
+    {
+      "key": "subs.edit",
+      "value": "EDIT PLAYER"
+    },
+    {
+      "key": "subs.hint",
+      "value": "Pick a starter and then a substitute\nto make the change.\n\n"
+    },
+    {
+      "key": "subs.ballNotice",
+      "value": "That player has the ball. Let it go before substituting him."
+    },
+    {
+      "key": "subs.statusPitch",
+      "value": "ON THE PITCH"
+    },
+    {
+      "key": "subs.statusBench",
+      "value": "ON THE BENCH"
+    },
+    {
+      "key": "subs.exhausted",
+      "value": "  (SPENT)"
+    },
+    {
+      "key": "subs.captain",
+      "value": "  ·  CAPTAIN"
+    },
+    {
+      "key": "subs.jersey",
+      "value": "NUMBER {0}"
+    },
+    {
+      "key": "subs.staminaLine",
+      "value": "Stamina  {0} / {1}  ({2}%)"
+    },
+    {
+      "key": "edit.role",
+      "value": "POSITION"
+    },
+    {
+      "key": "edit.element",
+      "value": "ELEMENT"
+    },
+    {
+      "key": "edit.save",
+      "value": "SAVE"
+    },
+    {
+      "key": "edit.close",
+      "value": "CLOSE"
+    },
+    {
+      "key": "edit.heading",
+      "value": "#{0}  ·  {1} · {2}"
+    },
+    {
+      "key": "edit.noKeeper",
+      "value": "You cannot leave the side without a goalkeeper. Promote another one first."
+    },
+    {
+      "key": "debug.heading",
+      "value": "DEVELOPER MENU"
+    },
+    {
+      "key": "debug.tension",
+      "value": "MAX MOMENTUM (BLUE)"
+    },
+    {
+      "key": "debug.stamina",
+      "value": "RESTORE STAMINA"
+    },
+    {
+      "key": "debug.endHalf",
+      "value": "FORCE END OF HALF"
+    },
+    {
+      "key": "debug.options",
+      "value": "OPTIONS"
+    },
+    {
+      "key": "debug.resetSquad",
+      "value": "CLEAR SQUAD EDITS"
+    },
+    {
+      "key": "debug.close",
+      "value": "CLOSE MENU"
+    },
+    {
+      "key": "hud.timer",
+      "value": "Half {0} · {1}"
+    },
+    {
+      "key": "hud.tensionBurning",
+      "value": "{0} · BURNING!"
+    },
+    {
+      "key": "hud.tensionPercent",
+      "value": "{0} · {1}%"
+    },
+    {
+      "key": "clash.foul",
+      "value": "FOUL!"
+    },
+    {
+      "key": "clash.foulOf",
+      "value": "FOUL BY {0}!"
+    },
+    {
+      "key": "clash.dribbleVsTackle",
+      "value": "DRIBBLE vs TACKLE"
+    },
+    {
+      "key": "clash.shotVsSave",
+      "value": "SHOT vs SAVE"
+    },
+    {
+      "key": "clash.side",
+      "value": "{0}  ·  {1}  ·  {2}"
+    },
+    {
+      "key": "clash.action.dribble",
+      "value": "Dribble\n(Beats Block)"
+    },
+    {
+      "key": "clash.action.power",
+      "value": "Charge\n(Beats Tackle)"
+    },
+    {
+      "key": "clash.action.tackle",
+      "value": "Tackle\n(Beats Dribble)"
+    },
+    {
+      "key": "clash.action.block",
+      "value": "Block\n(Beats Charge)"
+    },
+    {
+      "key": "clash.action.powerShot",
+      "value": "Power Shot\n(Beats Punch)"
+    },
+    {
+      "key": "clash.action.lobShot",
+      "value": "Lob\n(Beats Catch)"
+    },
+    {
+      "key": "clash.action.punch",
+      "value": "Punch\n(Beats Lob)"
+    },
+    {
+      "key": "clash.action.catch",
+      "value": "Catch\n(Beats Power Shot)"
+    },
+    {
+      "key": "clash.captain",
+      "value": "  (C)"
+    },
+    {
+      "key": "subs.captainShort",
+      "value": " (C)"
+    },
+    {
+      "key": "subs.slot",
+      "value": "{0} · {1}{2}\n{3}%"
+    },
+    {
+      "key": "clash.foulRisk",
+      "value": "{0}\n(Foul: {1}%)"
+    },
+    {
+      "key": "penalty.for",
+      "value": "PENALTY FOR YOU\nWhich side do you shoot?"
+    },
+    {
+      "key": "penalty.against",
+      "value": "PENALTY AGAINST\nWhich way do you dive?"
+    },
+    {
+      "key": "penalty.left",
+      "value": "LEFT"
+    },
+    {
+      "key": "penalty.right",
+      "value": "RIGHT"
+    },
+    {
+      "key": "penalty.striking",
+      "value": "You shoot {0}...\nThe keeper dives..."
+    },
+    {
+      "key": "penalty.diving",
+      "value": "You dive {0}...\nThe striker shoots..."
+    },
+    {
+      "key": "penalty.saved",
+      "value": "SAVED!"
+    },
+    {
+      "key": "penalty.goal",
+      "value": "GOAL!"
+    },
+    {
+      "key": "announce.goal",
+      "value": "GOAL!"
+    },
+    {
+      "key": "announce.stoppage",
+      "value": "+ STOPPAGE TIME"
+    },
+    {
+      "key": "announce.fullTime",
+      "value": "FULL TIME!"
+    },
+    {
+      "key": "announce.halfTime",
+      "value": "END OF THE FIRST HALF!"
+    },
+    {
+      "key": "announce.foul",
+      "value": "FOUL!"
+    },
+    {
+      "key": "announce.penalty",
+      "value": "PENALTY!"
+    },
+    {
+      "key": "announce.throwIn",
+      "value": "THROW-IN!"
+    },
+    {
+      "key": "announce.corner",
+      "value": "CORNER!"
+    },
+    {
+      "key": "announce.goalKick",
+      "value": "GOAL KICK!"
+    },
+    {
+      "key": "clash.attrOne",
+      "value": "{0}: {1}"
+    },
+    {
+      "key": "clash.attrPair",
+      "value": "{0}: {1}   {2}: {3}"
+    },
+    {
+      "key": "clash.exhaustedTag",
+      "value": "  (SPENT)"
+    },
+    {
+      "key": "clash.advantage",
+      "value": "ADVANTAGE!"
+    },
+    {
+      "key": "clash.elemental",
+      "value": "ELEMENTAL ADVANTAGE!"
+    },
+    {
+      "key": "clash.exhaustedShout",
+      "value": "SPENT!"
+    },
+    {
+      "key": "clash.critical",
+      "value": "CRITICAL!"
+    },
+    {
+      "key": "clash.intercepted",
+      "value": "CUT OUT!"
+    },
+    {
+      "key": "clash.interceptFailed",
+      "value": "MISSED!"
+    },
+    {
+      "key": "kit.blue",
+      "value": "BLUE"
+    },
+    {
+      "key": "kit.green",
+      "value": "GREEN"
+    },
+    {
+      "key": "kit.black",
+      "value": "BLACK"
+    },
+    {
+      "key": "kit.white",
+      "value": "WHITE"
+    },
+    {
+      "key": "subs.selectPlayer",
+      "value": "Select a player..."
+    },
+    {
+      "key": "stat.line",
+      "value": "{0}: {1}"
+    },
+    {
+      "key": "debug.tensionIgnited",
+      "value": "{0} enters the BURNING ZONE."
+    },
+    {
+      "key": "debug.tensionAlready",
+      "value": "{0} was already burning: the bar does not recharge during the burn."
+    },
+    {
+      "key": "debug.staminaHealed",
+      "value": "Stamina restored for {0} starter(s) of {1}."
+    },
+    {
+      "key": "debug.squadCleared",
+      "value": "{0} edit(s) cleared from the save. Players already on the pitch keep their values until a restart."
+    },
+    {
+      "key": "debug.squadEmpty",
+      "value": "There were no saved edits."
+    },
+    {
+      "key": "debug.opened",
+      "value": "Developer menu opened."
+    },
+    {
+      "key": "debug.noTensionManager",
+      "value": "No TensionManager in the scene."
+    },
+    {
+      "key": "debug.noMatchManager",
+      "value": "No MatchManager in the scene."
+    },
+    {
+      "key": "tournament.lost",
+      "value": "TOURNAMENT LOST"
+    },
+    {
+      "key": "tournament.eliminated",
+      "value": "KNOCKED OUT IN THE {0}"
+    },
+    {
+      "key": "tournament.champion",
+      "value": "TOURNAMENT WON!"
+    },
+    {
+      "key": "tournament.advance",
+      "value": "ON TO THE {0}!"
+    },
+    {
+      "key": "tournament.round.quarters",
+      "value": "QUARTER-FINALS"
+    },
+    {
+      "key": "tournament.round.semis",
+      "value": "SEMI-FINAL"
+    },
+    {
+      "key": "tournament.round.final",
+      "value": "FINAL"
+    },
+    {
+      "key": "matchover.victory",
+      "value": "VICTORY!"
+    },
+    {
+      "key": "matchover.defeat",
+      "value": "DEFEAT..."
+    },
+    {
+      "key": "matchover.draw",
+      "value": "DRAW"
+    },
+    {
+      "key": "matchover.playAgain",
+      "value": "PLAY AGAIN"
+    },
+    {
+      "key": "matchover.mainMenu",
+      "value": "MAIN MENU"
+    },
+    {
+      "key": "matchover.nextRound",
+      "value": "NEXT ROUND"
+    },
+    {
+      "key": "matchover.finishTournament",
+      "value": "FINISH TOURNAMENT"
+    },
+    {
+      "key": "matchover.goals",
+      "value": "GOALS"
+    },
+    {
+      "key": "matchover.shots",
+      "value": "SHOTS"
+    },
+    {
+      "key": "matchover.fouls",
+      "value": "FOULS"
+    },
+    {
+      "key": "matchover.passes",
+      "value": "PASSES"
+    }
+  ]
+}

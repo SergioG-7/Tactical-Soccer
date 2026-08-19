@@ -1,0 +1,10 @@
+Font: MainFont.ttf (Noto Sans JP Light), used as the project's main UI font.
+
+(c) 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
+Portions (c) 2014-2021 Google (Noto Sans CJK / Noto Sans JP).
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is available with a FAQ at: https://scripts.sil.org/OFL
+
+See MPLUS1p-OFL.txt in this same folder for the full OFL 1.1 text, which
+applies identically to this font.

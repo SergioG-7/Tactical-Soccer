@@ -1,0 +1,746 @@
+{
+  "code": "jp",
+  "displayName": "日本語",
+  "fontFamilies": [
+    "Yu Gothic UI",
+    "Yu Gothic",
+    "MS Gothic",
+    "Meiryo",
+    "Microsoft YaHei",
+    "SimSun"
+  ],
+  "entries": [
+    {
+      "key": "title.heading",
+      "value": "TACTICAL SOCCER"
+    },
+    {
+      "key": "title.quickMatch",
+      "value": "クイックマッチ"
+    },
+    {
+      "key": "title.options",
+      "value": "設定"
+    },
+    {
+      "key": "tournament.next.quarters",
+      "value": "トーナメント"
+    },
+    {
+      "key": "tournament.next.semis",
+      "value": "トーナメント · 準決勝"
+    },
+    {
+      "key": "tournament.next.final",
+      "value": "トーナメント · 決勝"
+    },
+    {
+      "key": "tournament.hud.quarters",
+      "value": "トーナメント - 準々決勝"
+    },
+    {
+      "key": "tournament.hud.semis",
+      "value": "トーナメント - 準決勝"
+    },
+    {
+      "key": "tournament.hud.final",
+      "value": "トーナメント - 決勝"
+    },
+    {
+      "key": "options.heading",
+      "value": "設定"
+    },
+    {
+      "key": "options.language",
+      "value": "言語"
+    },
+    {
+      "key": "options.music",
+      "value": "観客と環境音"
+    },
+    {
+      "key": "options.sfx",
+      "value": "効果音"
+    },
+    {
+      "key": "options.readout",
+      "value": "観客 {0} %      効果音 {1} %"
+    },
+    {
+      "key": "options.close",
+      "value": "もどる"
+    },
+    {
+      "key": "config.heading",
+      "value": "試合設定"
+    },
+    {
+      "key": "config.difficulty",
+      "value": "相手の強さ"
+    },
+    {
+      "key": "config.easy",
+      "value": "やさしい"
+    },
+    {
+      "key": "config.normal",
+      "value": "ふつう"
+    },
+    {
+      "key": "config.hard",
+      "value": "むずかしい"
+    },
+    {
+      "key": "config.rivalFormation",
+      "value": "相手のフォーメーション"
+    },
+    {
+      "key": "config.random",
+      "value": "ランダム"
+    },
+    {
+      "key": "config.duration",
+      "value": "前後半の長さ"
+    },
+    {
+      "key": "config.kit",
+      "value": "ユニフォーム"
+    },
+    {
+      "key": "config.continue",
+      "value": "つぎへ"
+    },
+    {
+      "key": "config.summary",
+      "value": "相手: {0}   ·   相手の布陣: {1}   ·   前後半 {2} 秒   ·   ユニフォーム: {3}"
+    },
+    {
+      "key": "config.randomShape",
+      "value": "ランダム"
+    },
+    {
+      "key": "difficulty.easy",
+      "value": "やさしい"
+    },
+    {
+      "key": "difficulty.normal",
+      "value": "ふつう"
+    },
+    {
+      "key": "difficulty.hard",
+      "value": "むずかしい"
+    },
+    {
+      "key": "common.back",
+      "value": "‹ もどる"
+    },
+    {
+      "key": "team.blue",
+      "value": "青"
+    },
+    {
+      "key": "team.red",
+      "value": "赤"
+    },
+    {
+      "key": "role.full.gk",
+      "value": "ゴールキーパー"
+    },
+    {
+      "key": "role.full.df",
+      "value": "ディフェンダー"
+    },
+    {
+      "key": "role.full.mf",
+      "value": "ミッドフィールダー"
+    },
+    {
+      "key": "role.full.fw",
+      "value": "フォワード"
+    },
+    {
+      "key": "element.fire",
+      "value": "ひ"
+    },
+    {
+      "key": "element.forest",
+      "value": "はやし"
+    },
+    {
+      "key": "element.wind",
+      "value": "かぜ"
+    },
+    {
+      "key": "element.mountain",
+      "value": "やま"
+    },
+    {
+      "key": "color.blue",
+      "value": "青"
+    },
+    {
+      "key": "color.green",
+      "value": "緑"
+    },
+    {
+      "key": "color.black",
+      "value": "黒"
+    },
+    {
+      "key": "color.white",
+      "value": "白"
+    },
+    {
+      "key": "color.grey",
+      "value": "灰"
+    },
+    {
+      "key": "color.red",
+      "value": "赤"
+    },
+    {
+      "key": "color.orange",
+      "value": "オレンジ"
+    },
+    {
+      "key": "color.yellow",
+      "value": "黄"
+    },
+    {
+      "key": "color.cyan",
+      "value": "水色"
+    },
+    {
+      "key": "color.purple",
+      "value": "紫"
+    },
+    {
+      "key": "color.pink",
+      "value": "ピンク"
+    },
+    {
+      "key": "color.gold",
+      "value": "金"
+    },
+    {
+      "key": "passive.attack",
+      "value": "+こうげき"
+    },
+    {
+      "key": "passive.defence",
+      "value": "+しゅび"
+    },
+    {
+      "key": "passive.stamina",
+      "value": "-しょうもう"
+    },
+    {
+      "key": "stat.dribble",
+      "value": "ドリブル"
+    },
+    {
+      "key": "stat.power",
+      "value": "パワー"
+    },
+    {
+      "key": "stat.shoot",
+      "value": "シュート"
+    },
+    {
+      "key": "stat.tackle",
+      "value": "タックル"
+    },
+    {
+      "key": "stat.block",
+      "value": "ブロック"
+    },
+    {
+      "key": "stat.goalkeeping",
+      "value": "キャッチ"
+    },
+    {
+      "key": "stat.stamina",
+      "value": "スタミナ"
+    },
+    {
+      "key": "formation.heading",
+      "value": "フォーメーションを選ぶ"
+    },
+    {
+      "key": "formation.squad",
+      "value": "メンバー ›"
+    },
+    {
+      "key": "formation.kickoff",
+      "value": "キックオフ!"
+    },
+    {
+      "key": "formation.balanced",
+      "value": "バランス"
+    },
+    {
+      "key": "formation.defensive",
+      "value": "まもり"
+    },
+    {
+      "key": "formation.offensive",
+      "value": "こうげき"
+    },
+    {
+      "key": "formation.captainNone",
+      "value": "キャプテン: —"
+    },
+    {
+      "key": "formation.captainHeading",
+      "value": "キャプテン: {0} · {1} ({2}){3}"
+    },
+    {
+      "key": "formation.captainDefault",
+      "value": " (デフォルト)"
+    },
+    {
+      "key": "formation.captainSlot",
+      "value": "{0} · {1}\n{2}"
+    },
+    {
+      "key": "halftime.heading",
+      "value": "ハーフタイム"
+    },
+    {
+      "key": "halftime.summary",
+      "value": "青 {0}  -  {1} 赤\n\nスタミナは試合中に回復しません。\n交代できるのはここだけです。"
+    },
+    {
+      "key": "halftime.summaryNoScore",
+      "value": "交代を決めて後半へ。"
+    },
+    {
+      "key": "halftime.subs",
+      "value": "選手交代"
+    },
+    {
+      "key": "halftime.resume",
+      "value": "後半へ"
+    },
+    {
+      "key": "subs.heading",
+      "value": "選手交代"
+    },
+    {
+      "key": "subs.header",
+      "value": "選手交代 · {0}チーム"
+    },
+    {
+      "key": "subs.pitch",
+      "value": "ピッチ"
+    },
+    {
+      "key": "subs.bench",
+      "value": "ベンチ"
+    },
+    {
+      "key": "subs.close",
+      "value": "もどる"
+    },
+    {
+      "key": "subs.edit",
+      "value": "選手を編集"
+    },
+    {
+      "key": "subs.hint",
+      "value": "先発を選んでから控えを選ぶと\n交代できます。\n\n"
+    },
+    {
+      "key": "subs.ballNotice",
+      "value": "その選手はボールを持っています。交代する前に手放してください。"
+    },
+    {
+      "key": "subs.statusPitch",
+      "value": "ピッチ"
+    },
+    {
+      "key": "subs.statusBench",
+      "value": "ベンチ"
+    },
+    {
+      "key": "subs.exhausted",
+      "value": "  (バテぎみ)"
+    },
+    {
+      "key": "subs.captain",
+      "value": "  ·  キャプテン"
+    },
+    {
+      "key": "subs.jersey",
+      "value": "背番号 {0}"
+    },
+    {
+      "key": "subs.staminaLine",
+      "value": "スタミナ  {0} / {1}  ({2}%)"
+    },
+    {
+      "key": "edit.role",
+      "value": "ポジション"
+    },
+    {
+      "key": "edit.element",
+      "value": "属性"
+    },
+    {
+      "key": "edit.save",
+      "value": "保存"
+    },
+    {
+      "key": "edit.close",
+      "value": "とじる"
+    },
+    {
+      "key": "edit.heading",
+      "value": "#{0}  ·  {1} · {2}"
+    },
+    {
+      "key": "edit.noKeeper",
+      "value": "ゴールキーパーが不在になります。先に別の選手を昇格させてください。"
+    },
+    {
+      "key": "debug.heading",
+      "value": "開発メニュー"
+    },
+    {
+      "key": "debug.tension",
+      "value": "テンション最大 (青)"
+    },
+    {
+      "key": "debug.stamina",
+      "value": "スタミナ回復"
+    },
+    {
+      "key": "debug.endHalf",
+      "value": "強制的に前後半終了"
+    },
+    {
+      "key": "debug.options",
+      "value": "設定"
+    },
+    {
+      "key": "debug.resetSquad",
+      "value": "選手編集を削除"
+    },
+    {
+      "key": "debug.close",
+      "value": "メニューを閉じる"
+    },
+    {
+      "key": "hud.timer",
+      "value": "第{0}ハーフ · {1}"
+    },
+    {
+      "key": "hud.tensionBurning",
+      "value": "{0} · ヒートアップ!"
+    },
+    {
+      "key": "hud.tensionPercent",
+      "value": "{0} · {1}%"
+    },
+    {
+      "key": "clash.foul",
+      "value": "ファウル!"
+    },
+    {
+      "key": "clash.foulOf",
+      "value": "{0}のファウル!"
+    },
+    {
+      "key": "clash.dribbleVsTackle",
+      "value": "ドリブル vs タックル"
+    },
+    {
+      "key": "clash.shotVsSave",
+      "value": "シュート vs キャッチ"
+    },
+    {
+      "key": "clash.side",
+      "value": "{0}  ·  {1}  ·  {2}"
+    },
+    {
+      "key": "clash.action.dribble",
+      "value": "ドリブル\n(ブロックに強い)"
+    },
+    {
+      "key": "clash.action.power",
+      "value": "チャージ\n(タックルに強い)"
+    },
+    {
+      "key": "clash.action.tackle",
+      "value": "タックル\n(ドリブルに強い)"
+    },
+    {
+      "key": "clash.action.block",
+      "value": "ブロック\n(チャージに強い)"
+    },
+    {
+      "key": "clash.action.powerShot",
+      "value": "パワーシュート\n(パンチに強い)"
+    },
+    {
+      "key": "clash.action.lobShot",
+      "value": "ループ\n(キャッチに強い)"
+    },
+    {
+      "key": "clash.action.punch",
+      "value": "パンチ\n(ループに強い)"
+    },
+    {
+      "key": "clash.action.catch",
+      "value": "キャッチ\n(パワーシュートに強い)"
+    },
+    {
+      "key": "clash.captain",
+      "value": "  (C)"
+    },
+    {
+      "key": "subs.captainShort",
+      "value": " (C)"
+    },
+    {
+      "key": "subs.slot",
+      "value": "{0} · {1}{2}\n{3}%"
+    },
+    {
+      "key": "clash.foulRisk",
+      "value": "{0}\n(ファウル: {1}%)"
+    },
+    {
+      "key": "penalty.for",
+      "value": "PK獲得\nどちらに蹴る?"
+    },
+    {
+      "key": "penalty.against",
+      "value": "PKを与えた\nどちらに跳ぶ?"
+    },
+    {
+      "key": "penalty.left",
+      "value": "ひだり"
+    },
+    {
+      "key": "penalty.right",
+      "value": "みぎ"
+    },
+    {
+      "key": "penalty.striking",
+      "value": "{0}へシュート...\nキーパーが跳ぶ..."
+    },
+    {
+      "key": "penalty.diving",
+      "value": "{0}へ跳ぶ...\nキッカーが蹴る..."
+    },
+    {
+      "key": "penalty.saved",
+      "value": "セーブ!"
+    },
+    {
+      "key": "penalty.goal",
+      "value": "ゴール!"
+    },
+    {
+      "key": "announce.goal",
+      "value": "ゴール!"
+    },
+    {
+      "key": "announce.stoppage",
+      "value": "+ アディショナルタイム"
+    },
+    {
+      "key": "announce.fullTime",
+      "value": "試合終了!"
+    },
+    {
+      "key": "announce.halfTime",
+      "value": "前半終了!"
+    },
+    {
+      "key": "announce.foul",
+      "value": "ファウル!"
+    },
+    {
+      "key": "announce.penalty",
+      "value": "PK!"
+    },
+    {
+      "key": "announce.throwIn",
+      "value": "スローイン!"
+    },
+    {
+      "key": "announce.corner",
+      "value": "コーナーキック!"
+    },
+    {
+      "key": "announce.goalKick",
+      "value": "ゴールキック!"
+    },
+    {
+      "key": "clash.attrOne",
+      "value": "{0}: {1}"
+    },
+    {
+      "key": "clash.attrPair",
+      "value": "{0}: {1}   {2}: {3}"
+    },
+    {
+      "key": "clash.exhaustedTag",
+      "value": "  (バテぎみ)"
+    },
+    {
+      "key": "clash.advantage",
+      "value": "ゆうい!"
+    },
+    {
+      "key": "clash.elemental",
+      "value": "属性ゆうい!"
+    },
+    {
+      "key": "clash.exhaustedShout",
+      "value": "バテた!"
+    },
+    {
+      "key": "clash.critical",
+      "value": "クリティカル!"
+    },
+    {
+      "key": "clash.intercepted",
+      "value": "カット!"
+    },
+    {
+      "key": "clash.interceptFailed",
+      "value": "しっぱい!"
+    },
+    {
+      "key": "kit.blue",
+      "value": "青"
+    },
+    {
+      "key": "kit.green",
+      "value": "緑"
+    },
+    {
+      "key": "kit.black",
+      "value": "黒"
+    },
+    {
+      "key": "kit.white",
+      "value": "白"
+    },
+    {
+      "key": "subs.selectPlayer",
+      "value": "選手を選んでください..."
+    },
+    {
+      "key": "stat.line",
+      "value": "{0}: {1}"
+    },
+    {
+      "key": "debug.tensionIgnited",
+      "value": "{0}がヒートアップゾーンに入った。"
+    },
+    {
+      "key": "debug.tensionAlready",
+      "value": "{0}はすでにヒートアップ中: その間バーは充填されません。"
+    },
+    {
+      "key": "debug.staminaHealed",
+      "value": "{1}の先発{0}人のスタミナを回復しました。"
+    },
+    {
+      "key": "debug.squadCleared",
+      "value": "保存から{0}件の編集を削除しました。出場中の選手は再起動まで現在の値のままです。"
+    },
+    {
+      "key": "debug.squadEmpty",
+      "value": "保存された編集はありませんでした。"
+    },
+    {
+      "key": "debug.opened",
+      "value": "開発メニューを開きました。"
+    },
+    {
+      "key": "debug.noTensionManager",
+      "value": "シーンにTensionManagerがありません。"
+    },
+    {
+      "key": "debug.noMatchManager",
+      "value": "シーンにMatchManagerがありません。"
+    },
+    {
+      "key": "tournament.lost",
+      "value": "トーナメント敗退"
+    },
+    {
+      "key": "tournament.eliminated",
+      "value": "{0}で敗退"
+    },
+    {
+      "key": "tournament.champion",
+      "value": "トーナメント制覇!"
+    },
+    {
+      "key": "tournament.advance",
+      "value": "{0}へ進出!"
+    },
+    {
+      "key": "tournament.round.quarters",
+      "value": "準々決勝"
+    },
+    {
+      "key": "tournament.round.semis",
+      "value": "準決勝"
+    },
+    {
+      "key": "tournament.round.final",
+      "value": "決勝"
+    },
+    {
+      "key": "matchover.victory",
+      "value": "勝利!"
+    },
+    {
+      "key": "matchover.defeat",
+      "value": "敗北..."
+    },
+    {
+      "key": "matchover.draw",
+      "value": "引き分け"
+    },
+    {
+      "key": "matchover.playAgain",
+      "value": "もう一度"
+    },
+    {
+      "key": "matchover.mainMenu",
+      "value": "メインメニュー"
+    },
+    {
+      "key": "matchover.nextRound",
+      "value": "次のラウンド"
+    },
+    {
+      "key": "matchover.finishTournament",
+      "value": "トーナメント終了"
+    },
+    {
+      "key": "matchover.goals",
+      "value": "ゴール"
+    },
+    {
+      "key": "matchover.shots",
+      "value": "シュート"
+    },
+    {
+      "key": "matchover.fouls",
+      "value": "ファウル"
+    },
+    {
+      "key": "matchover.passes",
+      "value": "パス"
+    }
+  ]
+}

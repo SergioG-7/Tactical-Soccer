@@ -1,0 +1,739 @@
+{
+  "code": "es",
+  "displayName": "Español",
+  "fontFamilies": [],
+  "entries": [
+    {
+      "key": "title.heading",
+      "value": "TACTICAL SOCCER"
+    },
+    {
+      "key": "title.quickMatch",
+      "value": "PARTIDO RÁPIDO"
+    },
+    {
+      "key": "title.options",
+      "value": "OPCIONES"
+    },
+    {
+      "key": "tournament.next.quarters",
+      "value": "TORNEO"
+    },
+    {
+      "key": "tournament.next.semis",
+      "value": "TORNEO · SEMIS"
+    },
+    {
+      "key": "tournament.next.final",
+      "value": "TORNEO · FINAL"
+    },
+    {
+      "key": "tournament.hud.quarters",
+      "value": "TORNEO - CUARTOS"
+    },
+    {
+      "key": "tournament.hud.semis",
+      "value": "TORNEO - SEMIFINAL"
+    },
+    {
+      "key": "tournament.hud.final",
+      "value": "TORNEO - FINAL"
+    },
+    {
+      "key": "options.heading",
+      "value": "OPCIONES"
+    },
+    {
+      "key": "options.language",
+      "value": "IDIOMA"
+    },
+    {
+      "key": "options.music",
+      "value": "PÚBLICO Y AMBIENTE"
+    },
+    {
+      "key": "options.sfx",
+      "value": "EFECTOS"
+    },
+    {
+      "key": "options.readout",
+      "value": "Público {0} %      Efectos {1} %"
+    },
+    {
+      "key": "options.close",
+      "value": "VOLVER"
+    },
+    {
+      "key": "config.heading",
+      "value": "CONFIGURACIÓN DEL PARTIDO"
+    },
+    {
+      "key": "config.difficulty",
+      "value": "DIFICULTAD DEL RIVAL"
+    },
+    {
+      "key": "config.easy",
+      "value": "FÁCIL"
+    },
+    {
+      "key": "config.normal",
+      "value": "NORMAL"
+    },
+    {
+      "key": "config.hard",
+      "value": "DIFÍCIL"
+    },
+    {
+      "key": "config.rivalFormation",
+      "value": "FORMACIÓN RIVAL"
+    },
+    {
+      "key": "config.random",
+      "value": "ALEATORIA"
+    },
+    {
+      "key": "config.duration",
+      "value": "DURACIÓN DE CADA PARTE"
+    },
+    {
+      "key": "config.kit",
+      "value": "EQUIPACIÓN"
+    },
+    {
+      "key": "config.continue",
+      "value": "CONTINUAR"
+    },
+    {
+      "key": "config.summary",
+      "value": "Rival: {0}   ·   Formación rival: {1}   ·   {2} s por parte   ·   Equipación: {3}"
+    },
+    {
+      "key": "config.randomShape",
+      "value": "Aleatoria"
+    },
+    {
+      "key": "difficulty.easy",
+      "value": "Fácil"
+    },
+    {
+      "key": "difficulty.normal",
+      "value": "Normal"
+    },
+    {
+      "key": "difficulty.hard",
+      "value": "Difícil"
+    },
+    {
+      "key": "common.back",
+      "value": "‹ ATRÁS"
+    },
+    {
+      "key": "team.blue",
+      "value": "AZUL"
+    },
+    {
+      "key": "team.red",
+      "value": "ROJO"
+    },
+    {
+      "key": "role.full.gk",
+      "value": "Portero"
+    },
+    {
+      "key": "role.full.df",
+      "value": "Defensa"
+    },
+    {
+      "key": "role.full.mf",
+      "value": "Centrocampista"
+    },
+    {
+      "key": "role.full.fw",
+      "value": "Delantero"
+    },
+    {
+      "key": "element.fire",
+      "value": "FUEGO"
+    },
+    {
+      "key": "element.forest",
+      "value": "BOSQUE"
+    },
+    {
+      "key": "element.wind",
+      "value": "AIRE"
+    },
+    {
+      "key": "element.mountain",
+      "value": "MONTAÑA"
+    },
+    {
+      "key": "color.blue",
+      "value": "Azul"
+    },
+    {
+      "key": "color.green",
+      "value": "Verde"
+    },
+    {
+      "key": "color.black",
+      "value": "Negro"
+    },
+    {
+      "key": "color.white",
+      "value": "Blanco"
+    },
+    {
+      "key": "color.grey",
+      "value": "Gris"
+    },
+    {
+      "key": "color.red",
+      "value": "Rojo"
+    },
+    {
+      "key": "color.orange",
+      "value": "Naranja"
+    },
+    {
+      "key": "color.yellow",
+      "value": "Amarillo"
+    },
+    {
+      "key": "color.cyan",
+      "value": "Cian"
+    },
+    {
+      "key": "color.purple",
+      "value": "Morado"
+    },
+    {
+      "key": "color.pink",
+      "value": "Rosa"
+    },
+    {
+      "key": "color.gold",
+      "value": "Dorado"
+    },
+    {
+      "key": "passive.attack",
+      "value": "+ATAQUE"
+    },
+    {
+      "key": "passive.defence",
+      "value": "+DEFENSA"
+    },
+    {
+      "key": "passive.stamina",
+      "value": "-DESGASTE"
+    },
+    {
+      "key": "stat.dribble",
+      "value": "REGATE"
+    },
+    {
+      "key": "stat.power",
+      "value": "FUERZA"
+    },
+    {
+      "key": "stat.shoot",
+      "value": "TIRO"
+    },
+    {
+      "key": "stat.tackle",
+      "value": "ENTRADA"
+    },
+    {
+      "key": "stat.block",
+      "value": "BLOQUEO"
+    },
+    {
+      "key": "stat.goalkeeping",
+      "value": "PARADA"
+    },
+    {
+      "key": "stat.stamina",
+      "value": "ESTAMINA"
+    },
+    {
+      "key": "formation.heading",
+      "value": "ELIGE TU FORMACIÓN"
+    },
+    {
+      "key": "formation.squad",
+      "value": "PLANTILLA ›"
+    },
+    {
+      "key": "formation.kickoff",
+      "value": "¡AL CÉSPED!"
+    },
+    {
+      "key": "formation.balanced",
+      "value": "EQUILIBRADA"
+    },
+    {
+      "key": "formation.defensive",
+      "value": "DEFENSIVA"
+    },
+    {
+      "key": "formation.offensive",
+      "value": "OFENSIVA"
+    },
+    {
+      "key": "formation.captainNone",
+      "value": "CAPITÁN: —"
+    },
+    {
+      "key": "formation.captainHeading",
+      "value": "CAPITÁN: {0} · {1} ({2}){3}"
+    },
+    {
+      "key": "formation.captainDefault",
+      "value": " (por defecto)"
+    },
+    {
+      "key": "formation.captainSlot",
+      "value": "{0} · {1}\n{2}"
+    },
+    {
+      "key": "halftime.heading",
+      "value": "DESCANSO"
+    },
+    {
+      "key": "halftime.summary",
+      "value": "AZUL {0}  -  {1} ROJO\n\nLa estamina no se recupera durante el partido.\nEstos son los únicos cambios que vas a poder hacer."
+    },
+    {
+      "key": "halftime.summaryNoScore",
+      "value": "Haz tus cambios y sal a la segunda parte."
+    },
+    {
+      "key": "halftime.subs",
+      "value": "HACER CAMBIOS"
+    },
+    {
+      "key": "halftime.resume",
+      "value": "SEGUNDA PARTE"
+    },
+    {
+      "key": "subs.heading",
+      "value": "CAMBIOS"
+    },
+    {
+      "key": "subs.header",
+      "value": "CAMBIOS · EQUIPO {0}"
+    },
+    {
+      "key": "subs.pitch",
+      "value": "EN EL CAMPO"
+    },
+    {
+      "key": "subs.bench",
+      "value": "BANQUILLO"
+    },
+    {
+      "key": "subs.close",
+      "value": "VOLVER"
+    },
+    {
+      "key": "subs.edit",
+      "value": "EDITAR JUGADOR"
+    },
+    {
+      "key": "subs.hint",
+      "value": "Elige un titular y luego un suplente\npara hacer el cambio.\n\n"
+    },
+    {
+      "key": "subs.ballNotice",
+      "value": "Ese jugador tiene el balón. Suéltalo antes de cambiarlo."
+    },
+    {
+      "key": "subs.statusPitch",
+      "value": "EN EL CAMPO"
+    },
+    {
+      "key": "subs.statusBench",
+      "value": "EN EL BANQUILLO"
+    },
+    {
+      "key": "subs.exhausted",
+      "value": "  (AGOTADO)"
+    },
+    {
+      "key": "subs.captain",
+      "value": "  ·  CAPITÁN"
+    },
+    {
+      "key": "subs.jersey",
+      "value": "DORSAL {0}"
+    },
+    {
+      "key": "subs.staminaLine",
+      "value": "Estamina  {0} / {1}  ({2}%)"
+    },
+    {
+      "key": "edit.role",
+      "value": "POSICIÓN"
+    },
+    {
+      "key": "edit.element",
+      "value": "ELEMENTO"
+    },
+    {
+      "key": "edit.save",
+      "value": "GUARDAR"
+    },
+    {
+      "key": "edit.close",
+      "value": "CERRAR"
+    },
+    {
+      "key": "edit.heading",
+      "value": "#{0}  ·  {1} · {2}"
+    },
+    {
+      "key": "edit.noKeeper",
+      "value": "No puedes dejar al equipo sin portero. Asciende antes a otro."
+    },
+    {
+      "key": "debug.heading",
+      "value": "MENÚ DE DESARROLLO"
+    },
+    {
+      "key": "debug.tension",
+      "value": "MAX TENSIÓN (AZUL)"
+    },
+    {
+      "key": "debug.stamina",
+      "value": "CURAR ESTAMINA"
+    },
+    {
+      "key": "debug.endHalf",
+      "value": "FORZAR FIN DE PARTE"
+    },
+    {
+      "key": "debug.options",
+      "value": "OPCIONES"
+    },
+    {
+      "key": "debug.resetSquad",
+      "value": "BORRAR EDICIONES DE PLANTILLA"
+    },
+    {
+      "key": "debug.close",
+      "value": "CERRAR MENÚ"
+    },
+    {
+      "key": "hud.timer",
+      "value": "{0}ª parte · {1}"
+    },
+    {
+      "key": "hud.tensionBurning",
+      "value": "{0} · ¡ARDOR!"
+    },
+    {
+      "key": "hud.tensionPercent",
+      "value": "{0} · {1}%"
+    },
+    {
+      "key": "clash.foul",
+      "value": "¡FALTA!"
+    },
+    {
+      "key": "clash.foulOf",
+      "value": "¡FALTA DE {0}!"
+    },
+    {
+      "key": "clash.dribbleVsTackle",
+      "value": "REGATE vs ENTRADA"
+    },
+    {
+      "key": "clash.shotVsSave",
+      "value": "TIRO vs PARADA"
+    },
+    {
+      "key": "clash.side",
+      "value": "{0}  ·  {1}  ·  {2}"
+    },
+    {
+      "key": "clash.action.dribble",
+      "value": "Regatear\n(Eficaz vs Bloqueo)"
+    },
+    {
+      "key": "clash.action.power",
+      "value": "Cargar\n(Eficaz vs Entrada)"
+    },
+    {
+      "key": "clash.action.tackle",
+      "value": "Entrada\n(Eficaz vs Regate)"
+    },
+    {
+      "key": "clash.action.block",
+      "value": "Bloquear\n(Eficaz vs Carga)"
+    },
+    {
+      "key": "clash.action.powerShot",
+      "value": "Tiro Potente\n(Eficaz vs Despeje)"
+    },
+    {
+      "key": "clash.action.lobShot",
+      "value": "Vaselina\n(Eficaz vs Atrape)"
+    },
+    {
+      "key": "clash.action.punch",
+      "value": "Despejar\n(Eficaz vs Vaselina)"
+    },
+    {
+      "key": "clash.action.catch",
+      "value": "Atrapar\n(Eficaz vs Potente)"
+    },
+    {
+      "key": "clash.captain",
+      "value": "  (C)"
+    },
+    {
+      "key": "subs.captainShort",
+      "value": " (C)"
+    },
+    {
+      "key": "subs.slot",
+      "value": "{0} · {1}{2}\n{3}%"
+    },
+    {
+      "key": "clash.foulRisk",
+      "value": "{0}\n(Falta: {1}%)"
+    },
+    {
+      "key": "penalty.for",
+      "value": "PENALTI A FAVOR\n¿A qué lado tiras?"
+    },
+    {
+      "key": "penalty.against",
+      "value": "PENALTI EN CONTRA\n¿A qué lado te lanzas?"
+    },
+    {
+      "key": "penalty.left",
+      "value": "IZQUIERDA"
+    },
+    {
+      "key": "penalty.right",
+      "value": "DERECHA"
+    },
+    {
+      "key": "penalty.striking",
+      "value": "Tiras a la {0}...\nEl portero se lanza..."
+    },
+    {
+      "key": "penalty.diving",
+      "value": "Te lanzas a la {0}...\nEl tirador dispara..."
+    },
+    {
+      "key": "penalty.saved",
+      "value": "¡PARADA!"
+    },
+    {
+      "key": "penalty.goal",
+      "value": "¡GOL!"
+    },
+    {
+      "key": "announce.goal",
+      "value": "¡GOL!"
+    },
+    {
+      "key": "announce.stoppage",
+      "value": "+ TIEMPO DE DESCUENTO"
+    },
+    {
+      "key": "announce.fullTime",
+      "value": "¡FINAL DEL PARTIDO!"
+    },
+    {
+      "key": "announce.halfTime",
+      "value": "¡FINAL DE LA PRIMERA PARTE!"
+    },
+    {
+      "key": "announce.foul",
+      "value": "¡FALTA!"
+    },
+    {
+      "key": "announce.penalty",
+      "value": "¡PENALTI!"
+    },
+    {
+      "key": "announce.throwIn",
+      "value": "¡SAQUE DE BANDA!"
+    },
+    {
+      "key": "announce.corner",
+      "value": "¡CÓRNER!"
+    },
+    {
+      "key": "announce.goalKick",
+      "value": "¡SAQUE DE PUERTA!"
+    },
+    {
+      "key": "clash.attrOne",
+      "value": "{0}: {1}"
+    },
+    {
+      "key": "clash.attrPair",
+      "value": "{0}: {1}   {2}: {3}"
+    },
+    {
+      "key": "clash.exhaustedTag",
+      "value": "  (AGOTADO)"
+    },
+    {
+      "key": "clash.advantage",
+      "value": "¡VENTAJA!"
+    },
+    {
+      "key": "clash.elemental",
+      "value": "¡VENTAJA ELEMENTAL!"
+    },
+    {
+      "key": "clash.exhaustedShout",
+      "value": "¡AGOTADO!"
+    },
+    {
+      "key": "clash.critical",
+      "value": "¡CRÍTICO!"
+    },
+    {
+      "key": "clash.intercepted",
+      "value": "¡CORTE!"
+    },
+    {
+      "key": "clash.interceptFailed",
+      "value": "¡FALLO!"
+    },
+    {
+      "key": "kit.blue",
+      "value": "AZUL"
+    },
+    {
+      "key": "kit.green",
+      "value": "VERDE"
+    },
+    {
+      "key": "kit.black",
+      "value": "NEGRO"
+    },
+    {
+      "key": "kit.white",
+      "value": "BLANCO"
+    },
+    {
+      "key": "subs.selectPlayer",
+      "value": "Selecciona un jugador..."
+    },
+    {
+      "key": "stat.line",
+      "value": "{0}: {1}"
+    },
+    {
+      "key": "debug.tensionIgnited",
+      "value": "{0} entra en ZONA DE ARDOR."
+    },
+    {
+      "key": "debug.tensionAlready",
+      "value": "{0} ya estaba ardiendo: la barra no recarga durante el ardor."
+    },
+    {
+      "key": "debug.staminaHealed",
+      "value": "Estamina restaurada a {0} titular(es) de {1}."
+    },
+    {
+      "key": "debug.squadCleared",
+      "value": "{0} edición(es) borrada(s) del guardado. Los jugadores en juego conservan sus valores hasta reiniciar."
+    },
+    {
+      "key": "debug.squadEmpty",
+      "value": "No había ninguna edición guardada."
+    },
+    {
+      "key": "debug.opened",
+      "value": "Menú de desarrollo abierto."
+    },
+    {
+      "key": "debug.noTensionManager",
+      "value": "No hay TensionManager en la escena."
+    },
+    {
+      "key": "debug.noMatchManager",
+      "value": "No hay MatchManager en la escena."
+    },
+    {
+      "key": "tournament.lost",
+      "value": "TORNEO PERDIDO"
+    },
+    {
+      "key": "tournament.eliminated",
+      "value": "ELIMINADO EN {0}"
+    },
+    {
+      "key": "tournament.champion",
+      "value": "¡TORNEO SUPERADO!"
+    },
+    {
+      "key": "tournament.advance",
+      "value": "¡A LA {0}!"
+    },
+    {
+      "key": "tournament.round.quarters",
+      "value": "CUARTOS"
+    },
+    {
+      "key": "tournament.round.semis",
+      "value": "SEMIFINAL"
+    },
+    {
+      "key": "tournament.round.final",
+      "value": "FINAL"
+    },
+    {
+      "key": "matchover.victory",
+      "value": "¡VICTORIA!"
+    },
+    {
+      "key": "matchover.defeat",
+      "value": "DERROTA..."
+    },
+    {
+      "key": "matchover.draw",
+      "value": "EMPATE"
+    },
+    {
+      "key": "matchover.playAgain",
+      "value": "JUGAR DE NUEVO"
+    },
+    {
+      "key": "matchover.mainMenu",
+      "value": "MENÚ PRINCIPAL"
+    },
+    {
+      "key": "matchover.nextRound",
+      "value": "SIGUIENTE RONDA"
+    },
+    {
+      "key": "matchover.finishTournament",
+      "value": "FINALIZAR TORNEO"
+    },
+    {
+      "key": "matchover.goals",
+      "value": "GOLES"
+    },
+    {
+      "key": "matchover.shots",
+      "value": "TIROS"
+    },
+    {
+      "key": "matchover.fouls",
+      "value": "FALTAS"
+    },
+    {
+      "key": "matchover.passes",
+      "value": "PASES"
+    }
+  ]
+}
