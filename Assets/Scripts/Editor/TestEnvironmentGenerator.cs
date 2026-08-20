@@ -386,6 +386,7 @@ namespace TacticalSoccer.Editor
             AudioClip kick = LoadAudioClip("kick-ball.wav");
             AudioClip tension = LoadAudioClip("tension-max.wav");
             AudioClip crowd = LoadAudioClip("crowd-ambience.wav");
+            AudioClip click = LoadAudioClip("click.mp3");
 
             // Three of the ten sounds share a recording with another, because the
             // project has six files for ten moments. Each reuse is a sound that
@@ -403,7 +404,7 @@ namespace TacticalSoccer.Editor
             // clip here would read as a second kick a beat after the first.
             audio.ConfigureClips(shortWhistle, longWhistle, fullTimeWhistle, kick,
                 net: null, impact: kick, foul: shortWhistle,
-                tension: tension, stadium: crowd, cheer: crowd);
+                tension: tension, stadium: crowd, cheer: crowd, click: click);
 
             EditorUtility.SetDirty(audio);
 
@@ -413,7 +414,8 @@ namespace TacticalSoccer.Editor
                 ("silbato final", fullTimeWhistle),
                 ("golpeo de balón", kick),
                 ("zona de ardor", tension),
-                ("ambiente de público", crowd));
+                ("ambiente de público", crowd),
+                ("click de menú", click));
 
         }
 
@@ -1573,10 +1575,13 @@ namespace TacticalSoccer.Editor
         private const float UiTensionBarInset = 4f;
         private static readonly Color UiTensionTroughColor = new Color(0f, 0f, 0f, 0.65f);
 
-        // Developer menu. The trigger is a generous corner: it has to be findable
-        // by somebody who knows it is there, on a phone, without being in the way
-        // of the scoreboard beside it.
-        private static readonly Vector2 UiDebugTriggerSize = new Vector2(180f, 180f);
+        // Developer menu. A small visible tool icon rather than the old
+        // invisible corner (this is a portfolio piece — the point now is that
+        // it CAN be found, not that it can't) — kept small on purpose so it
+        // never competes with the scoreboard beside it.
+        private static readonly Vector2 UiDebugTriggerSize = new Vector2(56f, 56f);
+        private static readonly Color UiDebugTriggerBackground = new Color(0.02f, 0.02f, 0.04f, 0.85f);
+        private static readonly Color UiDebugGearColor = new Color32(210, 210, 218, 255);
         private static readonly Color UiDebugBackground = new Color(0.02f, 0.02f, 0.04f, 0.88f);
         private static readonly Vector2 UiDebugHeadingSize = new Vector2(1400f, 100f);
         private static readonly Vector2 UiDebugHeadingOffset = new Vector2(0f, 330f);
@@ -2106,7 +2111,7 @@ namespace TacticalSoccer.Editor
         /// and the title screen, which want the same thing in the same place.
         /// </summary>
         private static Button CreateUiButton(Transform parent, string objectName, string caption,
-            Vector2 anchoredPosition, Vector2 size)
+            Vector2 anchoredPosition, Vector2 size, bool playClickSound = true)
         {
             GameObject buttonObject = new GameObject(objectName, typeof(RectTransform));
             Undo.RegisterCreatedObjectUndo(buttonObject, $"Create {objectName}");
@@ -2124,6 +2129,18 @@ namespace TacticalSoccer.Editor
 
             Button button = buttonObject.AddComponent<Button>();
             button.targetGraphic = background;
+
+            // Opt-out, not opt-in: every menu button gets the click by default,
+            // and only the handful that fire DURING live play (duel actions via
+            // the separate CreateActionButton, the two penalty direction
+            // buttons) ask for silence explicitly. A component rather than an
+            // AddListener call here — this runs at generation time, outside
+            // Play Mode, where a plain delegate listener is never serialized
+            // into the saved scene (see ButtonClickSound's own doc comment).
+            if (playClickSound)
+            {
+                buttonObject.AddComponent<ButtonClickSound>();
+            }
 
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
             Undo.RegisterCreatedObjectUndo(labelObject, $"Create {objectName} Label");
@@ -2677,14 +2694,18 @@ namespace TacticalSoccer.Editor
         /// whistle it exists to answer.
         /// </summary>
         /// <summary>
-        /// The developer menu, plus the invisible corner that opens it.
+        /// The developer menu, plus the small tool icon that opens it.
         ///
-        /// The trigger is an Image with alpha 0 rather than a disabled or absent
-        /// graphic: a fully transparent Image still receives raycasts, which is
-        /// what makes it a button nobody can see and anybody can press. It is
-        /// parented to the CANVAS and not to the panel, because it has to be
-        /// pressable while the panel is hidden — which is all the time until
-        /// somebody finds it.
+        /// A real, visible square with a procedurally-drawn gear on it — this is
+        /// a portfolio piece, so the point is that a visitor CAN find the
+        /// developer menu, not that they can't. Opens on a single click, kept
+        /// small (56x56) so it never competes with the scoreboard beside it. It
+        /// is parented to the CANVAS and not to the panel, because it has to be
+        /// pressable while the panel is hidden — same reachability window as
+        /// before (see DebugMenuUIController.IsReachable): only during a real
+        /// passage of play, where it is shown; hidden the rest of the time
+        /// instead of merely un-clickable, since an icon that looked live but
+        /// did nothing would read as broken rather than as a portfolio flourish.
         /// </summary>
         private static void CreateDebugMenuUI(Transform canvas)
         {
@@ -2696,18 +2717,30 @@ namespace TacticalSoccer.Editor
             triggerRect.anchorMin = new Vector2(0f, 1f);
             triggerRect.anchorMax = new Vector2(0f, 1f);
             triggerRect.pivot = new Vector2(0f, 1f);
-            triggerRect.anchoredPosition = Vector2.zero;
+            triggerRect.anchoredPosition = new Vector2(12f, -12f);
             triggerRect.sizeDelta = UiDebugTriggerSize;
 
             Image triggerImage = trigger.AddComponent<Image>();
-            triggerImage.color = new Color(0f, 0f, 0f, 0f);
+            triggerImage.color = UiDebugTriggerBackground;
 
             Button triggerButton = trigger.AddComponent<Button>();
             triggerButton.targetGraphic = triggerImage;
+            trigger.AddComponent<ButtonClickSound>();
 
-            // No press feedback: a corner that flashed when touched would stop
-            // being invisible the first time somebody brushed it.
-            triggerButton.transition = Selectable.Transition.None;
+            GameObject gearObject = new GameObject("Gear Icon", typeof(RectTransform));
+            Undo.RegisterCreatedObjectUndo(gearObject, "Create Debug Trigger Gear Icon");
+            gearObject.transform.SetParent(trigger.transform, false);
+
+            RectTransform gearRect = (RectTransform)gearObject.transform;
+            gearRect.anchorMin = new Vector2(0.5f, 0.5f);
+            gearRect.anchorMax = new Vector2(0.5f, 0.5f);
+            gearRect.pivot = new Vector2(0.5f, 0.5f);
+            gearRect.anchoredPosition = Vector2.zero;
+            gearRect.sizeDelta = UiDebugTriggerSize * 0.7f;
+
+            RawImage gearImage = gearObject.AddComponent<RawImage>();
+            gearImage.texture = GetOrCreateAsset("DebugGearIcon.asset", CreateGearIconTexture);
+            gearImage.raycastTarget = false;
 
             GameObject panel = new GameObject("Debug Panel", typeof(RectTransform));
             Undo.RegisterCreatedObjectUndo(panel, "Create Debug Panel");
@@ -3311,13 +3344,15 @@ namespace TacticalSoccer.Editor
                 new Vector2(0.5f, 0.5f), UiPenaltyHeadingOffset,
                 UiPenaltyHeadingSize, 70, TextAnchor.MiddleCenter);
 
+            // No click sound: taking the penalty IS playing the match, not
+            // navigating a menu.
             Button left = LocalizeButton(CreateUiButton(safeContent, "Penalty Left Button",
-                "IZQUIERDA", new Vector2(-UiPenaltyButtonSpacing, UiPenaltyButtonY), UiPenaltyButtonSize),
-                "penalty.left");
+                "IZQUIERDA", new Vector2(-UiPenaltyButtonSpacing, UiPenaltyButtonY), UiPenaltyButtonSize,
+                playClickSound: false), "penalty.left");
 
             Button right = LocalizeButton(CreateUiButton(safeContent, "Penalty Right Button",
-                "DERECHA", new Vector2(UiPenaltyButtonSpacing, UiPenaltyButtonY), UiPenaltyButtonSize),
-                "penalty.right");
+                "DERECHA", new Vector2(UiPenaltyButtonSpacing, UiPenaltyButtonY), UiPenaltyButtonSize,
+                playClickSound: false), "penalty.right");
 
             Text result = CreateHudText(safeContent, "Penalty Result", string.Empty,
                 new Vector2(0.5f, 0.5f), UiPenaltyResultOffset,
@@ -4019,6 +4054,59 @@ namespace TacticalSoccer.Editor
             texture.Apply();
 
             return texture;
+        }
+
+        /// <summary>
+        /// A small gear, drawn from primitives rather than imported art: a
+        /// filled disc, eight square teeth placed around its rim by angle, and a
+        /// smaller disc punched back out of the middle in full transparency —
+        /// which is what turns a solid circle into a recognisable gear/settings
+        /// icon at a glance, the universal shorthand for "tools live here".
+        /// </summary>
+        private static Texture2D CreateGearIconTexture()
+        {
+            const int size = 64;
+
+            Color32 transparent = new Color32(0, 0, 0, 0);
+            Color32 gear = UiDebugGearColor;
+
+            Color32[] pixels = new Color32[size * size];
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = transparent;
+            }
+
+            int center = size / 2;
+            int outerRadius = (size / 2) - 6;
+            int innerRadius = outerRadius / 2;
+            int toothHalf = size / 12;
+
+            TextureDrawing.FillCircle(pixels, size, size, center, center, outerRadius, gear);
+
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = i * Mathf.PI / 4f;
+                int toothX = center + Mathf.RoundToInt(Mathf.Cos(angle) * outerRadius);
+                int toothY = center + Mathf.RoundToInt(Mathf.Sin(angle) * outerRadius);
+
+                TextureDrawing.FillRect(pixels, size, size,
+                    toothX - toothHalf, toothY - toothHalf,
+                    toothX + toothHalf, toothY + toothHalf, gear);
+            }
+
+            TextureDrawing.FillCircle(pixels, size, size, center, center, innerRadius, transparent);
+
+            Texture2D gearTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "DebugGearIconTexture",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            gearTexture.SetPixels32(pixels);
+            gearTexture.Apply();
+
+            return gearTexture;
         }
 
         /// <summary>

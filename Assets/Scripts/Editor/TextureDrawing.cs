@@ -34,6 +34,33 @@ namespace TacticalSoccer.Editor
             }
         }
 
+        public static void FillCircle(Color32[] pixels, int texWidth, int texHeight,
+            int centerX, int centerY, int radius, Color32 color)
+        {
+            float radiusSqr = radius * radius;
+
+            int minX = Mathf.Max(0, centerX - radius);
+            int maxX = Mathf.Min(texWidth, centerX + radius);
+            int minY = Mathf.Max(0, centerY - radius);
+            int maxY = Mathf.Min(texHeight, centerY + radius);
+
+            for (int y = minY; y < maxY; y++)
+            {
+                int dy = y - centerY;
+                int rowStart = y * texWidth;
+
+                for (int x = minX; x < maxX; x++)
+                {
+                    int dx = x - centerX;
+
+                    if ((dx * dx) + (dy * dy) <= radiusSqr)
+                    {
+                        pixels[rowStart + x] = color;
+                    }
+                }
+            }
+        }
+
         public static void DrawRectOutline(Color32[] pixels, int texWidth, int texHeight,
             int x0, int y0, int x1, int y1, int thickness, Color32 color)
         {

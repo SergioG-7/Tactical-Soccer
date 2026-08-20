@@ -15,11 +15,12 @@ namespace TacticalSoccer.UI
     /// cannot produce, because a cheat that does is a cheat that finds bugs
     /// nobody can hit.
     ///
-    /// Opened by tapping a deliberately invisible corner of the screen three
-    /// times in quick succession. Hidden rather than absent because it has to be
-    /// reachable on a touch device, where there is no console and no key to bind
-    /// — and hidden rather than obvious because it should not be found by
-    /// accident mid-match.
+    /// Opened with a single click/tap on a small gear icon. Visible rather than
+    /// hidden on purpose — this is a portfolio piece, and the point is that a
+    /// visitor CAN find the developer menu — but shown only during a real
+    /// passage of play (see IsReachable) rather than always, so a non-functional
+    /// icon never sits on the title or a setup screen looking like a dead
+    /// button.
     ///
     /// Lives on the canvas rather than on the panel it owns. A component on a
     /// deactivated GameObject never receives Start, so a controller parked on its
@@ -29,9 +30,7 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Tooltip("The invisible corner that opens this. An Image with alpha 0 " +
-                 "still receives raycasts, which is the whole trick — it is a " +
-                 "button nobody can see but anybody can press.")]
+        [Tooltip("The small gear icon that opens this on a single click.")]
         public Button openTrigger;
 
         [Header("Acciones")]
@@ -53,21 +52,9 @@ namespace TacticalSoccer.UI
                  "does not look the same as one that worked.")]
         public Text feedbackText;
 
-        [Header("Activación")]
-        [Tooltip("Taps needed to open the menu.")]
-        [SerializeField] private int tapsToOpen = 3;
-
-        [Tooltip("Seconds allowed between taps. Short enough that three " +
-                 "deliberate taps open it and three ordinary taps over a match " +
-                 "never do.")]
-        [SerializeField] private float tapWindowSeconds = 1.2f;
-
         private const float FrozenTimeScale = 0f;
         private const float NormalTimeScale = 1f;
         private const float FixedDeltaTimeAtNormalScale = 0.02f;
-
-        private int tapCount;
-        private float lastTapTime = -99f;
 
         /// <summary>
         /// The timeScale the match was running at when the menu opened, so
@@ -92,6 +79,14 @@ namespace TacticalSoccer.UI
             if (uiPanel != null)
             {
                 uiPanel.SetActive(false);
+            }
+
+            // Starts hidden rather than waiting for the first Update(): without
+            // this the icon flashes visible for a frame on the title screen
+            // before IsReachable ever gets checked.
+            if (openTrigger != null)
+            {
+                openTrigger.gameObject.SetActive(false);
             }
         }
 
@@ -132,25 +127,30 @@ namespace TacticalSoccer.UI
             && !FormationUIController.IsOpen;
 
         /// <summary>
-        /// Switches the corner's raycast on and off with the match state.
+        /// Shows and hides the trigger icon with the match state.
         ///
-        /// raycastTarget rather than deactivating the object: an inactive
-        /// GameObject would take its Button with it, and the listener is wired
-        /// once in Start. This is also the cheapest possible per-frame check —
-        /// a handful of bools and a field write only when it changes.
+        /// Full active toggle now rather than the old raycastTarget-only switch:
+        /// the trigger used to stay invisibly present the whole time (the point
+        /// WAS that it could never be seen), but a visible icon that sat there
+        /// looking clickable while doing nothing on the title or a setup screen
+        /// would read as a broken button, not as a hidden one. Deactivating it
+        /// is safe here because its only listener is IPointerClickHandler on
+        /// ButtonClickSound plus this controller's own Bind() below — neither is
+        /// lost by SetActive(false), unlike a listener that had to survive being
+        /// wired only once in Start().
         /// </summary>
         private void Update()
         {
-            if (openTrigger == null || openTrigger.targetGraphic == null)
+            if (openTrigger == null)
             {
                 return;
             }
 
             bool reachable = IsReachable;
 
-            if (openTrigger.targetGraphic.raycastTarget != reachable)
+            if (openTrigger.gameObject.activeSelf != reachable)
             {
-                openTrigger.targetGraphic.raycastTarget = reachable;
+                openTrigger.gameObject.SetActive(reachable);
             }
         }
 
@@ -158,7 +158,7 @@ namespace TacticalSoccer.UI
         {
             // Cleared first: these listeners are added from code on every load,
             // and a duplicate would fire each action twice on one press.
-            Bind(openTrigger, RegisterTap);
+            Bind(openTrigger, Open);
             Bind(maxTensionButton, MaxTension);
             Bind(healStaminaButton, HealStamina);
             Bind(endHalfButton, ForceEndOfHalf);
@@ -192,40 +192,6 @@ namespace TacticalSoccer.UI
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(action);
-        }
-
-        /// <summary>
-        /// Counts taps on the hidden corner and opens the menu on the third
-        /// within the window.
-        ///
-        /// Unscaled time, because the corner is pressable while the match is
-        /// frozen — behind the interval or a duel — and Time.time does not
-        /// advance there, which would make every tap look simultaneous.
-        /// </summary>
-        private void RegisterTap()
-        {
-            // Belt to the braces of the raycast being switched off below. The
-            // trigger should not even be receiving this outside a match, but a
-            // refused tap must not quietly accumulate either — otherwise three
-            // taps spread across a menu and a kickoff would still open it.
-            if (!IsReachable)
-            {
-                tapCount = 0;
-                return;
-            }
-
-            float now = Time.unscaledTime;
-
-            tapCount = now - lastTapTime <= tapWindowSeconds ? tapCount + 1 : 1;
-            lastTapTime = now;
-
-            if (tapCount < tapsToOpen)
-            {
-                return;
-            }
-
-            tapCount = 0;
-            Open();
         }
 
         public void Open()

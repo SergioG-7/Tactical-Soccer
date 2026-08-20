@@ -46,6 +46,11 @@ namespace TacticalSoccer.UI
             button.targetGraphic = background;
             button.onClick.AddListener(onClick);
 
+            // Built at runtime (the board is repopulated from the live roster
+            // every time it opens), so — unlike the generator's buttons — a
+            // plain listener here is fine: it is added fresh each time anyway.
+            button.onClick.AddListener(PlayClick);
+
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
             labelObject.transform.SetParent(slotObject.transform, false);
 
@@ -64,6 +69,14 @@ namespace TacticalSoccer.UI
             label.text = labelText;
 
             return slotObject;
+        }
+
+        private static void PlayClick()
+        {
+            if (TacticalSoccer.Audio.AudioManager.Instance != null)
+            {
+                TacticalSoccer.Audio.AudioManager.Instance.PlayClick();
+            }
         }
     }
 }

@@ -47,6 +47,13 @@ namespace TacticalSoccer.Audio
         [Tooltip("The ball hitting the net.")]
         [SerializeField] private AudioClip netGoal;
 
+        [Header("Interfaz")]
+        [Tooltip("Every menu/options/developer-menu button click. Never fires " +
+                 "for anything that happens WHILE the match is being played — " +
+                 "the duel actions and the penalty direction buttons deliberately " +
+                 "don't carry this.")]
+        [SerializeField] private AudioClip clickSound;
+
         [Header("Duelos y faltas")]
         [Tooltip("Contact in a duel. Plays with the match frozen at timeScale 0 — " +
                  "audio is not governed by it, which is what makes the freeze " +
@@ -196,7 +203,7 @@ namespace TacticalSoccer.Audio
         public void ConfigureClips(AudioClip shortWhistle, AudioClip longWhistle,
             AudioClip fullTimeWhistle, AudioClip kick, AudioClip net,
             AudioClip impact, AudioClip foul, AudioClip tension,
-            AudioClip stadium, AudioClip cheer)
+            AudioClip stadium, AudioClip cheer, AudioClip click)
         {
             whistleShort = shortWhistle;
             whistleLong = longWhistle;
@@ -208,6 +215,7 @@ namespace TacticalSoccer.Audio
             tensionMax = tension;
             stadiumLoop = stadium;
             crowdCheer = cheer;
+            clickSound = click;
         }
 
         /// <summary>
@@ -264,6 +272,12 @@ namespace TacticalSoccer.Audio
         public void PlayFoulWhistle()
         {
             PlaySFX(foulWhistle);
+        }
+
+        /// <summary>Every menu button click. Classic SFX volume — no dedicated slider for this one.</summary>
+        public void PlayClick()
+        {
+            PlaySFX(clickSound);
         }
 
         /// <summary>
