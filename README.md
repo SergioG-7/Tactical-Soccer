@@ -4,7 +4,7 @@
 
 ---
 
-##Español
+## Español
 
 **Tactical Soccer** es un prototipo de juego de fútbol táctico con vista cenital donde el jugador dibuja las trayectorias de los futbolistas en tiempo real. Este proyecto demuestra conocimientos avanzados en la creación de mecánicas tácticas, inteligencia artificial (IA) y diseño de interfaces multiplataforma.
 
@@ -24,7 +24,7 @@
 
 ---
 
-##English
+## English
 
 **Tactical Soccer** is a top-down tactical soccer game prototype where players draw the trajectories of their footballers in real-time. This project showcases advanced skills in gameplay mechanics, artificial intelligence (AI), and cross-platform UI architecture.
 
@@ -44,7 +44,7 @@
 
 ---
 
-##日本語
+## 日本語
 
 **Tactical Soccer（タクティカル・サッカー）**は、プレイヤーがリアルタイムで選手の移動経路を描く、トップダウン型の戦術サッカーゲームのプロトタイプです。このプロジェクトは、ゲームプレイメカニクス、人工知能（AI）、およびクロスプラットフォームUIアーキテクチャの高度な実装スキルを示しています。
 
