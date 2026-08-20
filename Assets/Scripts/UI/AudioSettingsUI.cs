@@ -5,8 +5,8 @@ using TacticalSoccer.Core;
 namespace TacticalSoccer.UI
 {
     /// <summary>
-    /// The options: what language the game speaks, how loud the crowd is, and
-    /// how loud everything else is.
+    /// The options: what language the game speaks, and how loud the crowd, the
+    /// referee's whistle, and everything else are, each on its own slider.
     ///
     /// The volumes apply as they are dragged rather than on closing. A volume
     /// slider is the one setting nobody can judge from its number — the whole
@@ -35,6 +35,7 @@ namespace TacticalSoccer.UI
         public GameObject uiPanel;
 
         public Slider musicSlider;
+        public Slider whistleSlider;
         public Slider sfxSlider;
 
         public Button closeButton;
@@ -61,6 +62,7 @@ namespace TacticalSoccer.UI
         private const float PreviewSettleSeconds = 0.25f;
 
         private float musicPreviewDueAt;
+        private float whistlePreviewDueAt;
         private float sfxPreviewDueAt;
 
         public static AudioSettingsUI Instance { get; private set; }
@@ -103,6 +105,7 @@ namespace TacticalSoccer.UI
         private void Start()
         {
             Bind(musicSlider, OnMusicChanged);
+            Bind(whistleSlider, OnWhistleChanged);
             Bind(sfxSlider, OnSfxChanged);
 
             BindLanguageButtons();
@@ -187,6 +190,11 @@ namespace TacticalSoccer.UI
                     musicSlider.SetValueWithoutNotify(audio.MusicVolume);
                 }
 
+                if (whistleSlider != null)
+                {
+                    whistleSlider.SetValueWithoutNotify(audio.WhistleVolume);
+                }
+
                 if (sfxSlider != null)
                 {
                     sfxSlider.SetValueWithoutNotify(audio.SfxVolume);
@@ -252,6 +260,21 @@ namespace TacticalSoccer.UI
             RefreshReadout();
         }
 
+        private void OnWhistleChanged(float value)
+        {
+            if (Audio.AudioManager.Instance != null)
+            {
+                Audio.AudioManager.Instance.SetWhistleVolume(value);
+            }
+
+            // Only ARMS the preview. onValueChanged fires on every frame of a
+            // drag, so playing here directly would be a whistle per frame —
+            // forty of them over one sweep of the handle, each cutting the last.
+            whistlePreviewDueAt = Time.unscaledTime + PreviewSettleSeconds;
+
+            RefreshReadout();
+        }
+
         private void OnSfxChanged(float value)
         {
             if (Audio.AudioManager.Instance != null)
@@ -259,9 +282,9 @@ namespace TacticalSoccer.UI
                 Audio.AudioManager.Instance.SetSfxVolume(value);
             }
 
-            // Only ARMS the preview. onValueChanged fires on every frame of a
-            // drag, so playing here directly would be a whistle per frame —
-            // forty of them over one sweep of the handle, each cutting the last.
+            // Only ARMS the preview, same reasoning as the whistle slider above.
+            // The preview is a ball strike rather than a whistle now that the
+            // whistles have their own channel and their own slider to preview.
             sfxPreviewDueAt = Time.unscaledTime + PreviewSettleSeconds;
 
             RefreshReadout();
@@ -291,10 +314,16 @@ namespace TacticalSoccer.UI
                 audio.PreviewCrowd();
             }
 
+            if (whistlePreviewDueAt > 0f && Time.unscaledTime >= whistlePreviewDueAt)
+            {
+                whistlePreviewDueAt = 0f;
+                audio.PlayWhistle(isLong: false);
+            }
+
             if (sfxPreviewDueAt > 0f && Time.unscaledTime >= sfxPreviewDueAt)
             {
                 sfxPreviewDueAt = 0f;
-                audio.PlayWhistle(isLong: false);
+                audio.PlayKick();
             }
         }
 
@@ -308,10 +337,12 @@ namespace TacticalSoccer.UI
             Audio.AudioManager audio = Audio.AudioManager.Instance;
 
             float music = audio != null ? audio.MusicVolume : 0f;
+            float whistle = audio != null ? audio.WhistleVolume : 0f;
             float sfx = audio != null ? audio.SfxVolume : 0f;
 
             LocalizationManager.WriteFormatted(readoutText, "options.readout",
-                (music * 100f).ToString("F0"), (sfx * 100f).ToString("F0"));
+                (music * 100f).ToString("F0"), (whistle * 100f).ToString("F0"),
+                (sfx * 100f).ToString("F0"));
         }
 
         private static void Bind(Slider slider, UnityEngine.Events.UnityAction<float> action)

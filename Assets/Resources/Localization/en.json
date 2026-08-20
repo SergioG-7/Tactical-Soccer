@@ -52,12 +52,16 @@
       "value": "CROWD & AMBIENCE"
     },
     {
+      "key": "options.whistle",
+      "value": "WHISTLES"
+    },
+    {
       "key": "options.sfx",
       "value": "EFFECTS"
     },
     {
       "key": "options.readout",
-      "value": "Crowd {0} %      Effects {1} %"
+      "value": "Crowd {0} %      Whistles {1} %      Effects {2} %"
     },
     {
       "key": "options.close",

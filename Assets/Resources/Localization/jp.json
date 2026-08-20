@@ -59,12 +59,16 @@
       "value": "観客と環境音"
     },
     {
+      "key": "options.whistle",
+      "value": "ホイッスル"
+    },
+    {
       "key": "options.sfx",
       "value": "効果音"
     },
     {
       "key": "options.readout",
-      "value": "観客 {0} %      効果音 {1} %"
+      "value": "観客 {0} %      ホイッスル {1} %      効果音 {2} %"
     },
     {
       "key": "options.close",

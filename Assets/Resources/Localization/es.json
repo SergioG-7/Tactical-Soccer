@@ -52,12 +52,16 @@
       "value": "PÚBLICO Y AMBIENTE"
     },
     {
+      "key": "options.whistle",
+      "value": "SILBATOS"
+    },
+    {
       "key": "options.sfx",
       "value": "EFECTOS"
     },
     {
       "key": "options.readout",
-      "value": "Público {0} %      Efectos {1} %"
+      "value": "Público {0} %      Silbatos {1} %      Efectos {2} %"
     },
     {
       "key": "options.close",

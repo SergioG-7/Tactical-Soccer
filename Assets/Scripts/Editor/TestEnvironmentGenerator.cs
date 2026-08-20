@@ -415,9 +415,6 @@ namespace TacticalSoccer.Editor
                 ("zona de ardor", tension),
                 ("ambiente de público", crowd));
 
-            Debug.Log("[Audio] Sin sonido propio (reutilizan otro clip): falta, impacto de duelo, " +
-                      "ovación. Sin sonido en absoluto: balón a la red. El crítico ya no lleva " +
-                      "audio: se presenta con partículas doradas y sacudida de cámara.");
         }
 
         private static AudioClip LoadAudioClip(string fileName)
@@ -1593,24 +1590,26 @@ namespace TacticalSoccer.Editor
         // The options. A floating card rather than a full-screen panel, so the
         // screen that opened it stays visible around the edges.
         //
-        // Taller than it was: the language row went in above the two volumes,
-        // and everything below it moved down by that much. The block is laid out
+        // Taller than it was twice over: the language row went in above the
+        // volumes, and a third slider (whistles, split out of the classic
+        // effects channel) went in between music and SFX. The block is laid out
         // from the top edge down, with a gap between the EDGES of consecutive
         // elements rather than between their centres — evenly spaced centres are
         // not evenly spaced boxes when the boxes are different heights.
-        private static readonly Vector2 UiAudioPanelSize = new Vector2(1100f, 800f);
+        private static readonly Vector2 UiAudioPanelSize = new Vector2(1100f, 1040f);
         private static readonly Color UiAudioBackground = new Color(0.05f, 0.09f, 0.20f, 0.98f);
         private static readonly Vector2 UiAudioHeadingSize = new Vector2(1000f, 90f);
         private static readonly Vector2 UiAudioHeadingOffset = new Vector2(0f, 330f);
         private static readonly Vector2 UiAudioLabelSize = new Vector2(900f, 56f);
         private static readonly Vector2 UiAudioSliderSize = new Vector2(760f, 44f);
         private const float UiAudioMusicY = 0f;
-        private const float UiAudioSfxY = -140f;
+        private const float UiAudioWhistleY = -130f;
+        private const float UiAudioSfxY = -260f;
         private const float UiAudioLabelGap = 62f;
         private const float UiAudioHandleWidth = 44f;
-        private static readonly Vector2 UiAudioReadoutOffset = new Vector2(0f, -215f);
+        private static readonly Vector2 UiAudioReadoutOffset = new Vector2(0f, -335f);
         private static readonly Vector2 UiAudioCloseSize = new Vector2(420f, 100f);
-        private static readonly Vector2 UiAudioCloseOffset = new Vector2(0f, -310f);
+        private static readonly Vector2 UiAudioCloseOffset = new Vector2(0f, -430f);
 
         // The language row: one button per language, each captioned in its own
         // words. Wide enough for "ESPAÑOL" and for 日本語 at the same size, and
@@ -2820,6 +2819,12 @@ namespace TacticalSoccer.Editor
 
             Slider musicSlider = CreateVolumeSlider(panel.transform, "Music Slider", UiAudioMusicY);
 
+            Localize(CreateHudText(panel.transform, "Whistle Label", "SILBATOS",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, UiAudioWhistleY + UiAudioLabelGap),
+                UiAudioLabelSize, 32, TextAnchor.MiddleCenter), "options.whistle");
+
+            Slider whistleSlider = CreateVolumeSlider(panel.transform, "Whistle Slider", UiAudioWhistleY);
+
             Localize(CreateHudText(panel.transform, "Sfx Label", "EFECTOS",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, UiAudioSfxY + UiAudioLabelGap),
                 UiAudioLabelSize, 32, TextAnchor.MiddleCenter), "options.sfx");
@@ -2844,6 +2849,7 @@ namespace TacticalSoccer.Editor
             AudioSettingsUI controller = canvas.gameObject.AddComponent<AudioSettingsUI>();
             controller.uiPanel = panel;
             controller.musicSlider = musicSlider;
+            controller.whistleSlider = whistleSlider;
             controller.sfxSlider = sfxSlider;
             controller.closeButton = close;
             controller.languageButtons = languageButtons;

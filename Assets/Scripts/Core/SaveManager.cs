@@ -55,11 +55,18 @@ namespace TacticalSoccer.Core
         // everything else, the effects play at full.
         public const float DefaultMusicVolume = 0.35f;
         public const float DefaultSfxVolume = 1f;
+        public const float DefaultWhistleVolume = 1f;
 
         public string language = LocalizationManager.DefaultLanguage;
 
         public float musicVolume = DefaultMusicVolume;
         public float sfxVolume = DefaultSfxVolume;
+
+        // No legacy PlayerPrefs key to migrate here — this channel did not
+        // exist before, so a fresh field with its own default (matching what
+        // whistles sounded like when they were still on the classic SFX
+        // volume) is all a pre-existing save needs.
+        public float whistleVolume = DefaultWhistleVolume;
 
         public int tournamentStage;
 

@@ -83,6 +83,13 @@ namespace TacticalSoccer.Audio
         [Range(0f, 1f)]
         [SerializeField] private float sfxVolume = 1f;
 
+        [Tooltip("Live level of the whistles specifically — kickoff/restart, half-" +
+                 "time, full-time. Split from the classic effects volume so the " +
+                 "referee's whistle can be tuned on its own, independently of " +
+                 "tension stings and ball hits.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float whistleVolume = 1f;
+
         private AudioSource musicSource;
         private AudioSource sfxSource;
         private AudioSource tensionSource;
@@ -100,10 +107,12 @@ namespace TacticalSoccer.Audio
 
         public float SfxVolume => sfxVolume;
 
+        public float WhistleVolume => whistleVolume;
+
         /// <summary>
         /// All three sources are built here rather than serialised onto the
         /// object. They carry no tuning a human would ever want to open the
-        /// Inspector for — the mix lives in the two volumes above — and building
+        /// Inspector for — the mix lives in the volumes above — and building
         /// them keeps the generator from having to wire components whose only
         /// job is to exist.
         /// </summary>
@@ -124,6 +133,7 @@ namespace TacticalSoccer.Audio
             // reads back the same whether the game was closed properly or not.
             musicVolume = Core.SaveManager.Data.musicVolume;
             sfxVolume = Core.SaveManager.Data.sfxVolume;
+            whistleVolume = Core.SaveManager.Data.whistleVolume;
 
             musicSource = gameObject.AddComponent<AudioSource>();
             musicSource.loop = true;
@@ -207,23 +217,33 @@ namespace TacticalSoccer.Audio
         /// </summary>
         public void PlaySFX(AudioClip clip)
         {
+            PlaySFX(clip, sfxVolume);
+        }
+
+        /// <summary>
+        /// Plays one effect at an EXPLICIT level rather than the classic effects
+        /// one — what lets the whistles sit on their own slider below while
+        /// everything else (tension, kicks) stays on the shared effects volume.
+        /// </summary>
+        private void PlaySFX(AudioClip clip, float volume)
+        {
             if (clip == null || sfxSource == null)
             {
                 return;
             }
 
-            sfxSource.PlayOneShot(clip, sfxVolume);
+            sfxSource.PlayOneShot(clip, volume);
         }
 
         public void PlayWhistle(bool isLong)
         {
-            PlaySFX(isLong ? whistleLong : whistleShort);
+            PlaySFX(isLong ? whistleLong : whistleShort, whistleVolume);
         }
 
         /// <summary>The final whistle, falling back to the long blast if there is no separate one.</summary>
         public void PlayFullTimeWhistle()
         {
-            PlaySFX(whistleFullTime != null ? whistleFullTime : whistleLong);
+            PlaySFX(whistleFullTime != null ? whistleFullTime : whistleLong, whistleVolume);
         }
 
         public void PlayCrowdCheer()
@@ -446,6 +466,18 @@ namespace TacticalSoccer.Audio
             }
 
             Core.SaveManager.Data.sfxVolume = sfxVolume;
+            Core.SaveManager.Save();
+        }
+
+        /// <summary>
+        /// Sets the whistle level and remembers it. The one-shots read
+        /// <see cref="whistleVolume"/> as they fire, same as the effects one.
+        /// </summary>
+        public void SetWhistleVolume(float value)
+        {
+            whistleVolume = Mathf.Clamp01(value);
+
+            Core.SaveManager.Data.whistleVolume = whistleVolume;
             Core.SaveManager.Save();
         }
 
