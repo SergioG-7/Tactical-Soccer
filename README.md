@@ -9,7 +9,7 @@
 **Tactical Soccer** es un prototipo de juego de fútbol táctico con vista cenital donde el jugador dibuja las trayectorias de los futbolistas en tiempo real. Este proyecto demuestra conocimientos avanzados en la creación de mecánicas tácticas, inteligencia artificial (IA) y diseño de interfaces multiplataforma.
 
 ### 🎮 Jugar la Demo
-* Jugar en el navegador (WebGL) - [https://sergiog-7.itch.io/tactical-soccer] (contraseña = level5)
+* Jugar en el navegador (WebGL) - [https://sergiog-7.itch.io/tactical-soccer] (contraseña: level5)
 * Ver gameplay en YouTube - [https://youtu.be/NuzHjXO174s]
 
 ### 🛠️ Tecnologías y Herramientas
