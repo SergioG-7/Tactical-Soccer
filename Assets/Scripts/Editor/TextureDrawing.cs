@@ -2,20 +2,10 @@ using UnityEngine;
 
 namespace TacticalSoccer.Editor
 {
-    /// <summary>
-    /// Raw Color32-buffer drawing primitives: filled rects, rect outlines,
-    /// ring outlines. Used to paint the pitch markings directly into a
-    /// Texture2D's pixel buffer instead of building them out of meshes (see
-    /// TestEnvironmentGenerator.DrawPenaltyAreas for why — briefly, so a line
-    /// marking can never z-fight with the grass or catch a route raycast).
-    ///
-    /// Pulled out of TestEnvironmentGenerator because none of this knows
-    /// anything about football: it is generic pixel-buffer math that any
-    /// scene-generation code could reuse, and it does not belong in a
-    /// 4000+-line file whose actual job is building the test scene.
-    /// </summary>
+    // Funciones básicas para dibujar formas directamente sobre un buffer de píxeles.
     public static class TextureDrawing
     {
+        // Rellena un rectángulo de color en el buffer de píxeles.
         public static void FillRect(Color32[] pixels, int texWidth, int texHeight,
             int x0, int y0, int x1, int y1, Color32 color)
         {
@@ -34,6 +24,7 @@ namespace TacticalSoccer.Editor
             }
         }
 
+        // Rellena un círculo de color en el buffer de píxeles.
         public static void FillCircle(Color32[] pixels, int texWidth, int texHeight,
             int centerX, int centerY, int radius, Color32 color)
         {
@@ -61,6 +52,7 @@ namespace TacticalSoccer.Editor
             }
         }
 
+        // Dibuja el contorno de un rectángulo con el grosor indicado.
         public static void DrawRectOutline(Color32[] pixels, int texWidth, int texHeight,
             int x0, int y0, int x1, int y1, int thickness, Color32 color)
         {
@@ -70,6 +62,7 @@ namespace TacticalSoccer.Editor
             FillRect(pixels, texWidth, texHeight, x1 - thickness, y0, x1, y1, color);
         }
 
+        // Dibuja el contorno de un círculo (un anillo) con el grosor indicado.
         public static void DrawCircleOutline(Color32[] pixels, int texWidth, int texHeight,
             int centerX, int centerY, int radius, int thickness, Color32 color)
         {

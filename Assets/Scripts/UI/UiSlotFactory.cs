@@ -4,20 +4,10 @@ using UnityEngine.UI;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// Builds one clickable player slot: a centered, fixed-size button with a
-    /// coloured background and a bold centred label.
-    ///
-    /// Used to be built independently by SubstitutionUIController (the bench
-    /// board) and FormationUIController (the captain picker) — same rect
-    /// anchoring, same Image+Button+Text structure, differing only in size,
-    /// colour, label and click handler. One factory now; each caller still
-    /// owns its own colour/label rules and its own list of the GameObjects it
-    /// hands back (re-deriving Image/Text from them later with
-    /// TryGetComponent, same as before).
-    /// </summary>
+    // Crea slots de jugador clicables reutilizables: botón con fondo de color y etiqueta centrada.
     public static class UiSlotFactory
     {
+        // Construye un slot con botón, fondo e etiqueta de texto, y engancha el click.
         public static GameObject CreateSlot(
             Transform parent,
             string name,
@@ -46,9 +36,6 @@ namespace TacticalSoccer.UI
             button.targetGraphic = background;
             button.onClick.AddListener(onClick);
 
-            // Built at runtime (the board is repopulated from the live roster
-            // every time it opens), so — unlike the generator's buttons — a
-            // plain listener here is fine: it is added fresh each time anyway.
             button.onClick.AddListener(PlayClick);
 
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
@@ -71,6 +58,7 @@ namespace TacticalSoccer.UI
             return slotObject;
         }
 
+        // Reproduce el sonido de click del botón.
         private static void PlayClick()
         {
             if (TacticalSoccer.Audio.AudioManager.Instance != null)

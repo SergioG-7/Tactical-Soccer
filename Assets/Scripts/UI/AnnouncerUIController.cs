@@ -4,14 +4,7 @@ using UnityEngine.UI;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// Calls the restarts out loud. Set pieces used to happen in silence: the
-    /// ball simply reappeared somewhere with somebody standing over it, and
-    /// nothing told the player which infringement had been given.
-    ///
-    /// Holds the message for a beat, then fades it out, so a corner announced
-    /// during play does not sit over the pitch for the rest of the match.
-    /// </summary>
+    // Muestra por pantalla el anuncio de los reinicios de juego (faltas, saques, etc.) y lo desvanece tras un rato.
     public class AnnouncerUIController : MonoBehaviour
     {
         public Text announcerText;
@@ -26,6 +19,7 @@ namespace TacticalSoccer.UI
 
         private Coroutine fadeRoutine;
 
+        // Guarda la instancia y oculta el texto al iniciar.
         private void Awake()
         {
             Instance = this;
@@ -33,6 +27,7 @@ namespace TacticalSoccer.UI
             SetAlpha(0f);
         }
 
+        // Limpia la instancia al desactivarse.
         private void OnDisable()
         {
             if (Instance == this)
@@ -41,11 +36,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Puts a message on screen. Calling it again while one is still showing
-        /// replaces it outright — two restarts in quick succession should read as
-        /// the latest call, not as a queue.
-        /// </summary>
+        // Muestra un mensaje en pantalla, sustituyendo al anterior si aún está visible.
         public void ShowAnnouncement(string message)
         {
             if (announcerText == null)
@@ -63,12 +54,7 @@ namespace TacticalSoccer.UI
             fadeRoutine = StartCoroutine(FadeOutText());
         }
 
-        /// <summary>
-        /// Everything here runs on unscaled time. A duel freezes the match at
-        /// timeScale 0 and drawing a route drops it to 0.1, either of which
-        /// would leave an announcement stuck on screen or stretch it out to
-        /// fifteen real seconds.
-        /// </summary>
+        // Mantiene el texto visible un rato y luego lo desvanece, usando tiempo real (no afectado por pausas ni cámara lenta).
         private IEnumerator FadeOutText()
         {
             SetAlpha(1f);
@@ -89,6 +75,7 @@ namespace TacticalSoccer.UI
             fadeRoutine = null;
         }
 
+        // Ajusta la transparencia del texto del anuncio.
         private void SetAlpha(float alpha)
         {
             if (announcerText == null)

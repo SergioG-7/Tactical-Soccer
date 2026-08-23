@@ -4,19 +4,7 @@ using TacticalSoccer.UI;
 
 namespace TacticalSoccer.Gameplay
 {
-    /// <summary>
-    /// The move each side commits to in a duel.
-    ///
-    /// Tackle duels ring: Dribble &gt; Block &gt; Power &gt; Tackle &gt; Dribble.
-    /// Shot duels ring: LobShot &gt; Catch &gt; PowerShot &gt; Punch &gt; LobShot.
-    /// In both, every pairing hands exactly one side the advantage, so no
-    /// single choice is safe.
-    ///
-    /// Pass and Intercept have no ring and no panel: an interception is settled
-    /// in the air, in real time, so there is nothing to choose and nothing to
-    /// counter. They survive as actions only because the stat lookup is keyed on
-    /// the action, and reading a pass still has to map to a number.
-    /// </summary>
+    // La jugada que elige cada lado en un duelo.
     public enum ClashAction
     {
         Dribble,
@@ -31,26 +19,14 @@ namespace TacticalSoccer.Gameplay
         Intercept
     }
 
-    /// <summary>
-    /// Which kind of duel is on screen. Interceptions are deliberately absent:
-    /// they no longer freeze the match or open a panel, so there is no such
-    /// thing as an interception being "on screen".
-    /// </summary>
+    // Tipo de duelo que se muestra en pantalla.
     public enum ClashType
     {
         Tackle,
         Shot
     }
 
-    /// <summary>
-    /// Settles the contests. Two of them freeze the match and ask the player a
-    /// question — a challenge on the carrier, and a shot on goal — and one, the
-    /// interception, is resolved on the spot without stopping anything.
-    ///
-    /// Every one of them goes through the same maths: the stat for the chosen
-    /// move, plus the elemental edge, plus the counter, minus fatigue, plus a
-    /// d20 — and a natural 20 beats all of it.
-    /// </summary>
+    // Resuelve los duelos: entradas, tiros a puerta e intercepciones.
     public class ClashManager : MonoBehaviour
     {
         [Header("References")]
@@ -166,23 +142,18 @@ namespace TacticalSoccer.Gameplay
         private const float NormalTimeScale = 1f;
         private const float FixedDeltaTimeAtNormalScale = 0.02f;
 
-        // Inclusive 1, exclusive 21 — a d20 on top of the stats, big enough that
-        // an underdog can steal one but not big enough to drown the stats out.
+        // Rango del dado (1-20) que se suma a las estadísticas.
         private const int DiceMin = 1;
         private const int DiceMaxExclusive = 21;
 
-        // The kick the camera takes on a natural 20. Note the order: the camera
-        // takes (intensity, time), so this is a hard 0.5 lasting a short 0.3 —
-        // sharper and stronger than the goal shake, which is the other way round.
+        // Sacudida de cámara al sacar un crítico.
         private const float CriticalShakeIntensity = 0.5f;
         private const float CriticalShakeTime = 0.3f;
 
-        /// <summary>A natural 20 wins outright, whatever the numbers said.</summary>
+        // Un 20 natural gana el duelo automáticamente.
         private const int CriticalRoll = 20;
 
-        // Stacking levels for the readout over a player's head. Named because
-        // the whole point of the stack is that no two of them collide, and a
-        // literal 2 in three different methods is exactly how they start to.
+        // Niveles de apilado para los textos flotantes sobre la cabeza del jugador.
         private const int StackRoll = 0;
         private const int StackCounter = 1;
         private const int StackElement = 2;
@@ -195,13 +166,10 @@ namespace TacticalSoccer.Gameplay
 
         public static ClashManager Instance { get; private set; }
 
-        /// <summary>True while the match is frozen for a duel.</summary>
+        // True mientras el partido está congelado por un duelo.
         public static bool IsClashActive { get; private set; }
 
-        /// <summary>
-        /// Gate for anything that wants to start a duel. Unscaled time on
-        /// purpose: the cooldown has to keep running while timeScale is zero.
-        /// </summary>
+        // Indica si se puede iniciar un nuevo duelo ahora mismo.
         public static bool CanInitiateClash =>
             !IsClashActive
             && Time.unscaledTime >= clashBlockedUntil
@@ -212,12 +180,7 @@ namespace TacticalSoccer.Gameplay
         public TeamMember CurrentDefender { get; private set; }
         public ClashType CurrentClashType => currentClashType;
 
-        /// <summary>
-        /// One side of a duel, fully worked out. Built before anything is
-        /// compared, so the comparison itself is two lines rather than a wall of
-        /// interleaved arithmetic — and so the readout above the player's head
-        /// can be driven from exactly the numbers that decided it.
-        /// </summary>
+        // Representa un lado del duelo ya calculado, listo para comparar.
         private struct DuelSide
         {
             public TeamMember Member;
@@ -232,16 +195,16 @@ namespace TacticalSoccer.Gameplay
             public bool IsCritical => Roll == CriticalRoll;
         }
 
+        // Inicializa el singleton y resetea el estado estático de los duelos.
         private void Awake()
         {
             Instance = this;
 
-            // Statics survive a domain reload when the editor's fast enter-play
-            // mode is on, which would otherwise start the scene mid-clash.
             IsClashActive = false;
             clashBlockedUntil = 0f;
         }
 
+        // Se suscribe a los eventos de duelo, tiro y fin de partido.
         private void OnEnable()
         {
             Core.TacticalEvents.OnClashInitiated += HandleClash;
@@ -249,6 +212,7 @@ namespace TacticalSoccer.Gameplay
             Core.TacticalEvents.OnMatchOver += HandleMatchOver;
         }
 
+        // Se desuscribe de los eventos y corta cualquier duelo abierto al desactivarse.
         private void OnDisable()
         {
             Core.TacticalEvents.OnClashInitiated -= HandleClash;
@@ -260,75 +224,52 @@ namespace TacticalSoccer.Gameplay
                 Instance = null;
             }
 
-            // Nothing will click a button once this object is gone, so without
-            // this the game — and the editor — would be stranded at timeScale 0.
             if (IsClashActive)
             {
                 EndClash();
             }
         }
 
-        /// <summary>An attacker may only dribble or barge through.</summary>
+        // Elige al azar entre regatear o forzar con potencia.
         public static ClashAction RandomAttackerAction()
         {
             return Random.value < 0.5f ? ClashAction.Dribble : ClashAction.Power;
         }
 
-        /// <summary>A defender may only go in for it or stand firm.</summary>
+        // Elige al azar entre entrar a por el balón o plantarse.
         public static ClashAction RandomDefenderAction()
         {
             return Random.value < 0.5f ? ClashAction.Tackle : ClashAction.Block;
         }
 
-        /// <summary>A shooter may drive it or dink it.</summary>
+        // Elige al azar entre tiro potente o vaselina.
         public static ClashAction RandomShooterAction()
         {
             return Random.value < 0.5f ? ClashAction.PowerShot : ClashAction.LobShot;
         }
 
-        /// <summary>A keeper may gather it or beat it away.</summary>
+        // Elige al azar entre atajar o despejar con el puño.
         public static ClashAction RandomKeeperAction()
         {
             return Random.value < 0.5f ? ClashAction.Catch : ClashAction.Punch;
         }
 
-        /// <summary>
-        /// The whistle beats an open duel. Without this, a clash still on screen
-        /// at full time would leave IsClashActive latched true — every trigger,
-        /// every input and the restart itself would stay blocked behind a panel
-        /// buried under the results screen.
-        /// </summary>
+        // Cierra cualquier duelo abierto cuando termina el partido.
         private void HandleMatchOver()
         {
             if (IsClashActive)
             {
-                // EndClash checks IsPlayable, so the pitch stays frozen.
                 EndClash();
             }
         }
 
-        /// <summary>
-        /// True when one of these two is genuinely holding the ball.
-        ///
-        /// A duel is a contest FOR the ball, so a duel with the ball nowhere near
-        /// either player is not a duel — it is two players bumping into each
-        /// other. That was producing phantom clashes: the drift keeps everyone
-        /// moving and touching, and every contact between opponents was opening a
-        /// frozen panel over a ball lying somewhere else on the pitch.
-        ///
-        /// Checked against the BALL rather than against either handler's HasBall.
-        /// A handler's flag is its own opinion and can survive the ball being
-        /// taken off it; the socket the ball is riding on cannot lie.
-        /// </summary>
+        // Comprueba que el balón lo tiene de verdad uno de los dos jugadores implicados.
         private static bool IsContestOverTheBall(TeamMember attacker, TeamMember defender)
         {
             BallController ball = BallController.Instance;
 
             if (ball == null)
             {
-                // No ball in the scene at all: nothing to contest, but also
-                // nothing this check can meaningfully say. Let it through rather
-                // than silently disabling duels in a scene built without one.
                 return true;
             }
 
@@ -352,16 +293,19 @@ namespace TacticalSoccer.Gameplay
             return false;
         }
 
+        // Arranca un duelo de tipo entrada.
         private void HandleClash(TeamMember attacker, TeamMember defender)
         {
             BeginClash(attacker, defender, ClashType.Tackle);
         }
 
+        // Arranca un duelo de tipo tiro a puerta.
         private void HandleShot(TeamMember shooter, TeamMember goalkeeper)
         {
             BeginClash(shooter, goalkeeper, ClashType.Shot);
         }
 
+        // Congela el partido, mueve la cámara al duelo y abre el panel para elegir jugada.
         private void BeginClash(TeamMember attacker, TeamMember defender, ClashType type)
         {
             if (!CanInitiateClash || attacker == null || defender == null)
@@ -383,11 +327,6 @@ namespace TacticalSoccer.Gameplay
 
             Vector3 midPoint = (attacker.transform.position + defender.transform.position) * 0.5f;
 
-            // The camera is handed both players rather than a point: it stages
-            // the duel over the attacker's shoulder, which needs to know which
-            // way round the two of them are standing. Fired from here rather
-            // than from the UI controller — this is the same frame the panel
-            // opens, and the fail-safe path below has no UI to fire it from.
             if (CameraSystem.TacticalCamera.Instance != null)
             {
                 CameraSystem.TacticalCamera.Instance.ZoomToClash(attacker, defender);
@@ -410,9 +349,7 @@ namespace TacticalSoccer.Gameplay
                           $"VS {defender.team} (Entrada {defender.Tackle} / Bloqueo {defender.Block})");
             }
 
-            // Fail safe: with no UI there are no buttons, and the match would
-            // hang at timeScale 0 forever. Rolling for both sides is far better
-            // than a silent softlock.
+            // Sin UI asignada se resuelve el duelo al azar para no bloquear la partida.
             if (uiController == null)
             {
                 Debug.LogError("ClashManager no tiene uiController asignado. " +
@@ -426,12 +363,7 @@ namespace TacticalSoccer.Gameplay
             uiController.ShowClash(attacker, defender, type);
         }
 
-        /// <summary>
-        /// Settles the duel: base stat for the chosen action, the elemental edge
-        /// and the difficulty handicap folded into it, the counter bonus and the
-        /// fatigue penalty applied to that, plus a d20 each. Highest total wins,
-        /// ties go to the defender — and a natural 20 skips the lot.
-        /// </summary>
+        // Resuelve el duelo con las jugadas elegidas por cada lado y aplica el resultado.
         public void ResolveClash(TeamMember attacker, TeamMember defender,
             ClashAction attackerAction, ClashAction defenderAction)
         {
@@ -440,7 +372,6 @@ namespace TacticalSoccer.Gameplay
                 return;
             }
 
-            // Captured before EndClash wipes it.
             ClashType type = currentClashType;
 
             if (attacker == null || defender == null)
@@ -462,19 +393,9 @@ namespace TacticalSoccer.Gameplay
             Debug.Log($"[{type}] {DescribeSide(attackerSide)}  |  {DescribeSide(defenderSide)}" +
                       $"  ->  gana {(defenderWins ? defenderSide.Member.team : attackerSide.Member.team)}");
 
-            // The same facts the log carries, put over the players' heads so the
-            // duel can be read without the console open.
             SpawnDuelFeedback(attackerSide);
             SpawnDuelFeedback(defenderSide);
 
-            // A foul cancels the duel outright — before the ball changes hands,
-            // before a shot flies. Checked here rather than inside each outcome
-            // so there is exactly one place where a duel can be voided, and no
-            // way for one branch to apply its result anyway.
-            //
-            // The panel is deliberately still up at this point: the foul is shown
-            // on the frozen duel before anything is torn down, and the routine
-            // below is what closes it.
             TeamMember offender = ResolveFoulOffender(attackerSide, defenderSide);
 
             if (offender != null)
@@ -496,20 +417,7 @@ namespace TacticalSoccer.Gameplay
             ApplyTackleOutcome(attacker, defender, defenderWins);
         }
 
-        /// <summary>
-        /// The duel landing: the contact sound, sparks at the point of impact,
-        /// and — if either side rolled a natural 20 — a gold burst and a short,
-        /// hard kick of the camera instead.
-        ///
-        /// Fired at RESOLUTION rather than when the panel opened, because the
-        /// freeze is a question and this is the answer to it, and because the
-        /// critical is not known any earlier. Both a 20: still one burst, and it
-        /// still deserves one even though the two cancel out in the maths.
-        ///
-        /// The critical is carried entirely by the picture. It used to layer a
-        /// 5.6 s fanfare over the impact, which buried the sound of the duel
-        /// itself and ran on well past the next passage of play.
-        /// </summary>
+        // Reproduce sonido y efectos del impacto del duelo, con un estallido especial si hay crítico.
         private static void PlayDuelFeedback(DuelSide attackerSide, DuelSide defenderSide)
         {
             bool isCritical = attackerSide.IsCritical || defenderSide.IsCritical;
@@ -536,33 +444,11 @@ namespace TacticalSoccer.Gameplay
 
             if (isCritical && CameraSystem.TacticalCamera.Instance != null)
             {
-                // Shorter and harder than the goal shake: a critical is a single
-                // blow, a goal is a moment that wants to ring on a little.
                 CameraSystem.TacticalCamera.Instance.Shake(CriticalShakeIntensity, CriticalShakeTime);
             }
         }
 
-        /// <summary>
-        /// How likely each move is to give away a foul, as a percentage.
-        ///
-        /// The risk sits on the AGGRESSIVE moves — a charge and a tackle are the
-        /// two ways of going through a player rather than round them — so the
-        /// ring gains a second axis: Power beats Tackle, but Power is also the
-        /// move most likely to hand the other side a free kick. Dribbling and
-        /// blocking are near enough clean; they are what you pick when the
-        /// contact is happening on the edge of your own box.
-        ///
-        /// Read from the LOSER's move as well as the winner's: a mistimed
-        /// challenge is exactly the challenge that did not win the ball, and a
-        /// foul is most of the time what losing one looks like.
-        ///
-        /// A shot duel carries NO risk at all — not the strike, not the lob, not
-        /// the punch, not the catch. Nobody is being gone through: the striker is
-        /// hitting a ball and the keeper is playing it, and the two of them are
-        /// not even in contact. A foul there would also have nowhere sensible to
-        /// go, since the spot is inside the box and every one of them would come
-        /// out as a penalty.
-        /// </summary>
+        // Devuelve la probabilidad de falta de cada jugada, en porcentaje.
         public int FoulChanceFor(ClashAction action)
         {
             switch (action)
@@ -572,21 +458,13 @@ namespace TacticalSoccer.Gameplay
                 case ClashAction.Dribble: return dribbleFoulChance;
                 case ClashAction.Block: return blockFoulChance;
 
-                // Shooting, lobbing, punching, catching, passing, intercepting:
-                // none of them is a challenge on another player.
                 default: return 0;
             }
         }
 
-        /// <summary>
-        /// Rolls for a foul and names who gave it away, or null if the duel was
-        /// clean.
-        /// </summary>
+        // Sortea si hay falta y determina quién la comete, o null si el duelo es limpio.
         private TeamMember ResolveFoulOffender(DuelSide attackerSide, DuelSide defenderSide)
         {
-            // Only one side can give the foul away, and it is whichever of them
-            // committed the more reckless act. Rolling for both would double the
-            // rate and let a duel end in two fouls at once.
             DuelSide offender = FoulChanceFor(defenderSide.Action) >= FoulChanceFor(attackerSide.Action)
                 ? defenderSide
                 : attackerSide;
@@ -611,35 +489,15 @@ namespace TacticalSoccer.Gameplay
             return offender.Member;
         }
 
-        /// <summary>
-        /// Shows the foul on the frozen duel, holds it there, and only then
-        /// tears the panel down and asks for the restart.
-        ///
-        /// The pause is the whole point. The foul voids a duel the player has
-        /// just chosen a move for, so cutting straight to a free kick somewhere
-        /// else on the pitch reads as the game having ignored the press — the
-        /// beat is what connects the choice to its consequence.
-        ///
-        /// Realtime, necessarily: the duel is holding timeScale at zero, and a
-        /// scaled wait here would never advance a single frame.
-        /// </summary>
+        // Muestra la falta sobre el duelo congelado, espera un momento y luego cierra el panel.
         private System.Collections.IEnumerator CommitFoulRoutine(TeamMember offender)
         {
-            // At the whistle, not at the restart. The free kick is not placed
-            // until the dwell below has run, and a player who watched the foul
-            // banner for a second and a half with his own route still painted
-            // across the pitch has been told the game is stopped by everything
-            // except the picture in front of him.
             Core.MatchManager.ClearDrawnRoutes();
 
             FloatingTextManager texts = FloatingTextManager.Instance;
 
             if (texts != null)
             {
-                // Names the side and is thrown up at several times the size of a
-                // duel readout. The other messages in a duel are numbers you
-                // lean in to read; this one voids the decision the player just
-                // made, so it has to carry from the match camera.
                 texts.SpawnText(offender.transform.position,
                     $"¡FALTA DE {Fouls.DescribeTeam(offender.team)}!",
                     Fouls.AccusationColor(offender.team),
@@ -652,10 +510,6 @@ namespace TacticalSoccer.Gameplay
                 uiController.ShowFoul(offender);
             }
 
-            // Blown with the banner, not with the restart. OnFoulCommitted is
-            // only raised at the far end of the dwell below — it exists to hand
-            // the restart its spot — so hanging the whistle off it would sound
-            // it a second and a half after the decision it is announcing.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.PlayFoulWhistle();
@@ -663,19 +517,12 @@ namespace TacticalSoccer.Gameplay
 
             yield return new WaitForSecondsRealtime(foulDwellSeconds);
 
-            // Closed only now: the banner carried the "¡FALTA!" headline for the
-            // whole wait, and tearing it down first would have flashed it for a
-            // single frame.
             EndClash();
 
             Core.TacticalEvents.OnFoulCommitted?.Invoke(offender);
         }
 
-        /// <summary>
-        /// Charges both sides' momentum for the duel just fought. The winner
-        /// gains the most, but the loser gains something too — a side being
-        /// overrun still needs a road back.
-        /// </summary>
+        // Reparte tensión entre ganador y perdedor del duelo.
         private static void AwardTension(DuelSide attackerSide, DuelSide defenderSide, bool defenderWins)
         {
             TensionManager tension = TensionManager.Instance;
@@ -692,16 +539,8 @@ namespace TacticalSoccer.Gameplay
             tension.AddDuelLost(loser.team);
         }
 
-        /// <summary>
-        /// A pass cut out of the air, settled where it happens. No panel, no
-        /// freeze, no choice: the ball is travelling and the two players are
-        /// nowhere near each other, so there is nothing to stage and nobody to
-        /// read. The same maths as any other duel, resolved in one call.
-        /// </summary>
-        /// <returns>
-        /// True if the interceptor took the ball, so the caller knows not to
-        /// treat it as a loose ball afterwards.
-        /// </returns>
+        // Resuelve una intercepción de pase al vuelo, sin congelar el partido ni abrir panel.
+        // Devuelve true si el interceptor se queda con el balón.
         public bool ResolveRealTimeIntercept(GameObject passerObject, TeamMember interceptor)
         {
             if (interceptor == null || passerObject == null)
@@ -714,8 +553,6 @@ namespace TacticalSoccer.Gameplay
                 return false;
             }
 
-            // No counter ring here: one move per side, so neither can read the
-            // other. It is technique against reading of the game, and the roll.
             DuelSide passerSide = BuildSide(passer, interceptor, ClashAction.Pass, false, isAttacker: true);
             DuelSide interceptorSide = BuildSide(interceptor, passer, ClashAction.Intercept, false, isAttacker: false);
 
@@ -723,9 +560,6 @@ namespace TacticalSoccer.Gameplay
 
             Debug.Log($"[Intercept] {DescribeSide(passerSide)}  |  {DescribeSide(interceptorSide)}");
 
-            // Only the interceptor gets a readout. The passer is half a pitch
-            // away with the camera nowhere near them, so their numbers would
-            // scroll up over an empty patch of grass.
             SpawnDuelFeedback(interceptorSide);
 
             FloatingTextManager texts = FloatingTextManager.Instance;
@@ -733,9 +567,6 @@ namespace TacticalSoccer.Gameplay
 
             if (!interceptorWins)
             {
-                // The stun is what actually lets the ball through: without it the
-                // interceptor's own trigger collects the pass they just failed to
-                // cut out, on the very next contact tick.
                 if (interceptor.TryGetComponent(out PlayerRoute beatenRoute))
                 {
                     beatenRoute.ApplyStun(failedInterceptStunDuration);
@@ -776,16 +607,7 @@ namespace TacticalSoccer.Gameplay
             return true;
         }
 
-        /// <summary>
-        /// Works one side of a duel out in full: which number it is bringing,
-        /// what is modifying it and what it rolled.
-        ///
-        /// The elemental edge and the difficulty handicap go into the BASE, not
-        /// onto the total. Both are meant to change how good you are at the
-        /// thing you are attempting, so they should be multiplied by the counter
-        /// bonus and cut by fatigue like the rest of the stat — a flat bonus on
-        /// the total would be worth the same whether you were fresh or spent.
-        /// </summary>
+        // Calcula un lado del duelo: estadística base, modificadores y tirada de dado.
         private DuelSide BuildSide(TeamMember member, TeamMember opponent,
             ClashAction action, bool hasCounter, bool isAttacker)
         {
@@ -808,11 +630,6 @@ namespace TacticalSoccer.Gameplay
 
             float afterCounter = side.BaseStat * (hasCounter ? advantageMultiplier : 1f);
 
-            // Fatigue bites the stat, not the roll. Applied as a share rather
-            // than as a flat penalty on purpose: a fixed -20 would erase a
-            // 20-base action outright — a blown striker could not attempt a
-            // tackle at all — while barely troubling an 85. The d20 is left
-            // alone so a spent player can still steal one on luck.
             float afterFatigue = afterCounter * (side.IsBlown ? exhaustedPenaltyMultiplier : 1f);
 
             side.Score = afterFatigue + side.Roll;
@@ -820,11 +637,7 @@ namespace TacticalSoccer.Gameplay
             return side;
         }
 
-        /// <summary>
-        /// Who won. A natural 20 is an automatic win regardless of the totals —
-        /// which is the whole point of rolling one — and two of them cancel out
-        /// and fall back to the numbers, where a tie still goes to the defender.
-        /// </summary>
+        // Decide quién gana el duelo comparando críticos y, si no hay, la puntuación total.
         private static bool ResolveWinner(DuelSide attacker, DuelSide defender)
         {
             if (attacker.IsCritical != defender.IsCritical)
@@ -835,6 +648,7 @@ namespace TacticalSoccer.Gameplay
             return defender.Score >= attacker.Score;
         }
 
+        // Construye la línea de log con la jugada, la base y los modificadores de un lado del duelo.
         private static string DescribeSide(DuelSide side)
         {
             string modifiers = string.Empty;
@@ -863,13 +677,7 @@ namespace TacticalSoccer.Gameplay
                    $"+ d20 {side.Roll} = {side.Score:F1}";
         }
 
-        /// <summary>
-        /// Puts one player's duel readout over their head: the roll they made,
-        /// plus whichever modifiers actually applied. Stacked so they can
-        /// coexist — a player CAN counter their opponent, hold the elemental
-        /// edge and be blown all at once, and messages on the same spot would
-        /// simply overprint each other.
-        /// </summary>
+        // Muestra sobre el jugador los textos flotantes con la tirada y los modificadores aplicados.
         private void SpawnDuelFeedback(DuelSide side)
         {
             FloatingTextManager texts = FloatingTextManager.Instance;
@@ -908,11 +716,7 @@ namespace TacticalSoccer.Gameplay
             }
         }
 
-        /// <summary>
-        /// The handicap the chosen difficulty hands the AI, in raw stat points.
-        /// Zero for the human's side at every setting: the difficulty is meant
-        /// to change how hard the opposition is, not how good you are.
-        /// </summary>
+        // Bonificación de estadística que da la dificultad elegida a la IA.
         private static int DifficultyModifier(TeamMember member)
         {
             return Core.MatchManager.Instance != null
@@ -920,14 +724,7 @@ namespace TacticalSoccer.Gameplay
                 : 0;
         }
 
-        /// <summary>
-        /// What this player's side is worth in a duel for being in the zone.
-        ///
-        /// Goes into the BASE like the elemental edge, not onto the total, so a
-        /// side that is burning AND reads the opponent right gets the counter
-        /// multiplier applied to the bonus too — and a burning side that is
-        /// blown still has the bonus cut by its fatigue.
-        /// </summary>
+        // Bonificación de estadística por tensión acumulada del equipo.
         private static int TensionModifier(TeamMember member)
         {
             return TensionManager.Instance != null
@@ -935,7 +732,7 @@ namespace TacticalSoccer.Gameplay
                 : 0;
         }
 
-        /// <summary>Resolves the current duel with both sides rolled at random.</summary>
+        // Resuelve el duelo actual con jugadas aleatorias para ambos lados.
         public void ResolveClash()
         {
             ResolveClash(CurrentAttacker, CurrentDefender,
@@ -953,6 +750,7 @@ namespace TacticalSoccer.Gameplay
             return type == ClashType.Shot ? RandomKeeperAction() : RandomDefenderAction();
         }
 
+        // Aplica el resultado de un duelo de entrada: quién se queda con el balón y quién queda aturdido.
         private void ApplyTackleOutcome(TeamMember attacker, TeamMember defender, bool defenderWins)
         {
             PlayerBallHandler attackerHandler = attacker.GetComponent<PlayerBallHandler>();
@@ -984,20 +782,7 @@ namespace TacticalSoccer.Gameplay
             Debug.Log($"Clash resuelto: gana el atacante ({attacker.team}). Conserva el balón.");
         }
 
-        /// <summary>
-        /// No shot is ever teleported to its outcome: the striker always hits
-        /// the ball, and where it ends up is settled by the physics afterwards.
-        /// The duel decides the AIM, not the result.
-        ///
-        ///   shooter wins -> struck past the keeper, who is frozen so his trigger
-        ///                   cannot swallow the goal he has just been beaten for
-        ///   keeper wins  -> struck softly, straight at the keeper, who gathers
-        ///                   it on contact like any other loose ball
-        ///
-        /// The camera then chases the ball, because a shot that flies is only
-        /// worth flying if it can be seen from something other than a bird's-eye
-        /// view of the whole pitch.
-        /// </summary>
+        // Aplica el resultado del tiro: golpea el balón hacia la portería o hacia el portero según quién gane.
         private void ApplyShotOutcome(TeamMember shooter, TeamMember goalkeeper,
             ClashAction shotAction, bool keeperWins)
         {
@@ -1010,9 +795,6 @@ namespace TacticalSoccer.Gameplay
 
             if (keeperWins)
             {
-                // The keeper is left mobile on purpose: he keeps tracking the
-                // ball's X on his line, which is what turns "aimed at him" into
-                // "caught by him".
                 if (shooterRoute != null)
                 {
                     shooterRoute.ApplyStun(clashStunDuration);
@@ -1036,19 +818,13 @@ namespace TacticalSoccer.Gameplay
                 shooterHandler.ExecutePhysicalKick(shotAction, aim, forceScale);
             }
 
-            // After the kick: the ball is only free — and therefore worth
-            // chasing — once it has actually left the shooter's foot.
             if (CameraSystem.TacticalCamera.Instance != null)
             {
                 CameraSystem.TacticalCamera.Instance.FollowBallCinematic(shotCinematicDuration);
             }
         }
 
-        /// <summary>
-        /// Aims at the net the keeper is standing in front of, a few units past
-        /// them, so the ball travels through the goal trigger instead of dying
-        /// on the line.
-        /// </summary>
+        // Calcula el punto de la portería al que apuntar, un poco más allá del portero.
         private Vector3 CalculateGoalAim(TeamMember goalkeeper)
         {
             Vector3 keeperPosition = goalkeeper.transform.position;
@@ -1057,11 +833,7 @@ namespace TacticalSoccer.Gameplay
             return new Vector3(0f, 0.5f, keeperPosition.z + (side * goalAimOffset));
         }
 
-        /// <summary>
-        /// Tears the frozen state down: hides the panel, restores time and opens
-        /// the cooldown. Deliberately separate from the outcome, so leaving the
-        /// scene mid-duel unfreezes without awarding anybody the ball.
-        /// </summary>
+        // Cierra el duelo: oculta el panel, reanuda el tiempo y activa el cooldown.
         private void EndClash()
         {
             IsClashActive = false;
@@ -1075,16 +847,11 @@ namespace TacticalSoccer.Gameplay
                 uiController.HideClash();
             }
 
-            // Pulled out here rather than in ResolveClash, so leaving the scene
-            // or hitting full time mid-duel also puts the camera back.
             if (CameraSystem.TacticalCamera.Instance != null)
             {
                 CameraSystem.TacticalCamera.Instance.ResetToOverhead();
             }
 
-            // A duel can still be on screen when the clock runs out. Restoring
-            // time here would then un-freeze a finished match, so the whistle
-            // wins: the panel closes, but the pitch stays stopped.
             if (!Core.MatchManager.IsPlayable)
             {
                 return;
@@ -1094,6 +861,7 @@ namespace TacticalSoccer.Gameplay
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
         }
 
+        // Devuelve la estadística del atacante que corresponde a la jugada elegida.
         private static int AttackerStat(TeamMember attacker, ClashAction action)
         {
             switch (action)
@@ -1103,13 +871,11 @@ namespace TacticalSoccer.Gameplay
                 case ClashAction.PowerShot:
                 case ClashAction.LobShot: return attacker.Shoot;
 
-                // There is no passing stat, so weight of pass is read off the
-                // same technique the dribble uses. Worth revisiting if the stat
-                // block ever grows one.
                 default: return attacker.Dribble;
             }
         }
 
+        // Devuelve la estadística del defensor que corresponde a la jugada elegida.
         private static int DefenderStat(TeamMember defender, ClashAction action)
         {
             switch (action)
@@ -1119,11 +885,11 @@ namespace TacticalSoccer.Gameplay
                 case ClashAction.Catch:
                 case ClashAction.Punch: return defender.Goalkeeping;
 
-                // Reading a pass is the same instinct as going in for a tackle.
                 default: return defender.Tackle;
             }
         }
 
+        // Comprueba si la jugada del atacante contrarresta la del defensor.
         private static bool AttackerCounters(ClashAction attackerAction, ClashAction defenderAction)
         {
             return (attackerAction == ClashAction.Dribble && defenderAction == ClashAction.Block)
@@ -1132,6 +898,7 @@ namespace TacticalSoccer.Gameplay
                 || (attackerAction == ClashAction.PowerShot && defenderAction == ClashAction.Punch);
         }
 
+        // Comprueba si la jugada del defensor contrarresta la del atacante.
         private static bool DefenderCounters(ClashAction attackerAction, ClashAction defenderAction)
         {
             return (defenderAction == ClashAction.Tackle && attackerAction == ClashAction.Dribble)

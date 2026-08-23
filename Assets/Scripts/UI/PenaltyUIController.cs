@@ -5,25 +5,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The penalty: two buttons, one guess each, no statistics.
-    ///
-    /// Stats are deliberately not consulted. Every other contest in this game is
-    /// a stat check with a d20 on top, and a penalty that worked the same way
-    /// would be one more duel with a different backdrop. Making it a pure guess
-    /// is what makes it feel like a penalty — the best striker in the match and
-    /// the worst have exactly the same chance, and the only thing that decides it
-    /// is whether you read the other side right.
-    ///
-    /// The human is the striker when their side won the penalty and the keeper
-    /// when it was given against them, and both roles press the same two buttons:
-    /// matching sides is a save, differing sides is a goal, whichever end the
-    /// player happens to be standing at.
-    ///
-    /// Lives on the canvas rather than on the panel it owns. A component on a
-    /// deactivated GameObject never receives Start, so a controller parked on its
-    /// own hidden panel would never wire up the buttons that dismiss it.
-    /// </summary>
+    // Pantalla del penalti: el jugador elige un lado, sin estadísticas de por medio.
     public class PenaltyUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -36,10 +18,6 @@ namespace TacticalSoccer.UI
                  "guess being revealed. This is the entire suspense of the " +
                  "mechanic, so it is not free to shorten.")]
         [SerializeField] private float suspenseSeconds = 1.5f;
-
-        // The old "revealSeconds" beat is gone: which way the keeper went used to
-        // be a line of text held for a second, and is now something the player
-        // watches him do while the ball is in the air.
 
         [Tooltip("How long the outcome is left on screen before play resumes. " +
                  "Long enough to read which way both of them went.")]
@@ -80,9 +58,10 @@ namespace TacticalSoccer.UI
 
         public static PenaltyUIController Instance { get; private set; }
 
-        /// <summary>True while the penalty menu is up and the match is frozen.</summary>
+        // Cierto mientras el panel de penalti está abierto y el partido congelado.
         public static bool IsOpen { get; private set; }
 
+        // Guarda la instancia y oculta el panel al iniciar.
         private void Awake()
         {
             Instance = this;
@@ -94,6 +73,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Limpia la instancia al desactivarse.
         private void OnDisable()
         {
             if (Instance == this)
@@ -104,31 +84,25 @@ namespace TacticalSoccer.UI
             IsOpen = false;
         }
 
+        // Conecta los botones de izquierda y derecha.
         private void Start()
         {
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would take the same penalty twice on one press.
             Bind(leftButton, PenaltySide.Left);
             Bind(rightButton, PenaltySide.Right);
         }
 
+        // Lado hacia el que se lanza o se tira el penalti.
         private enum PenaltySide
         {
             Left,
             Right
         }
 
-        /// <summary>
-        /// Opens the menu and freezes the match. Called by MatchManager when a
-        /// foul lands inside the box.
-        /// </summary>
+        // Abre el panel de penalti y congela el partido.
         public void ShowPenalty(TeamId team)
         {
             attackingTeam = team;
 
-            // Whose penalty it is decides which end of it the player takes. Read
-            // from the match rather than assumed, so this still reads correctly
-            // if the human is ever put in charge of the other side.
             TeamId humanTeam = MatchManager.Instance != null
                 ? MatchManager.Instance.HumanTeam
                 : TeamId.Blue;
@@ -149,10 +123,6 @@ namespace TacticalSoccer.UI
 
             SetButtonsInteractable(true);
 
-            // Undo the last penalty's highlight, transitions included. Without
-            // this the second penalty of a match opens with one side already lit
-            // gold — telling the player which way they went last time, as though
-            // it were a recommendation.
             ResetSides();
 
             if (uiPanel != null)
@@ -165,6 +135,7 @@ namespace TacticalSoccer.UI
             IsOpen = true;
         }
 
+        // Conecta un botón a la elección de ese lado.
         private void Bind(Button button, PenaltySide side)
         {
             if (button == null)
@@ -176,12 +147,7 @@ namespace TacticalSoccer.UI
             button.onClick.AddListener(() => Choose(side));
         }
 
-        /// <summary>
-        /// Takes the penalty. The opposition's guess is rolled here, at the
-        /// moment of the press, rather than when the menu opened — not because it
-        /// changes the odds, which are the same either way, but because a side
-        /// decided in advance is a side that could be read out of the scene.
-        /// </summary>
+        // Resuelve la elección del jugador contra un lado aleatorio de la IA.
         private void Choose(PenaltySide humanSide)
         {
             if (isResolving)
@@ -194,8 +160,6 @@ namespace TacticalSoccer.UI
 
             PenaltySide aiSide = Random.value < 0.5f ? PenaltySide.Left : PenaltySide.Right;
 
-            // Same rule from both ends: the keeper guessing the striker's side
-            // and the striker being guessed are the same event.
             bool saved = humanSide == aiSide;
 
             Debug.Log($"[Penalti] {(humanIsStriker ? "Tirador humano" : "Portero humano")} elige {Describe(humanSide)}, " +
@@ -204,26 +168,14 @@ namespace TacticalSoccer.UI
             StartCoroutine(ResolvePenaltyRoutine(humanSide, aiSide, saved));
         }
 
+        // Traduce el lado a texto en el idioma del jugador.
         private static string Describe(PenaltySide side)
         {
             return Core.LocalizationManager.GetText(
                 side == PenaltySide.Left ? "penalty.left" : "penalty.right");
         }
 
-        /// <summary>
-        /// Walks the ball from the spot to the side of the goal it was struck
-        /// towards, over the suspense beat.
-        ///
-        /// Driven by hand rather than with an impulse. The match is frozen at
-        /// timeScale 0 for the whole menu, so the physics step is not running and
-        /// a kicked ball would simply sit there — the same reason every other
-        /// effect in this game that plays during a freeze animates its own
-        /// transform in unscaled time.
-        ///
-        /// The arc is a sine, not a straight line: a ball that slides flat along
-        /// the grass into the net reads as a bug, and the lift is what makes it
-        /// read as struck.
-        /// </summary>
+        // Anima a mano el vuelo del balón hacia la portería y la estirada del portero, en tiempo real.
         private System.Collections.IEnumerator FlyBall(PenaltySide shotSide, PenaltySide diveSide)
         {
             BallController ball = BallController.Instance;
@@ -238,17 +190,11 @@ namespace TacticalSoccer.UI
             Vector3 from = match.PenaltySpot;
             Vector3 goal = match.PenaltyGoalCentre;
 
-            // Just inside the post on the chosen side, and a little past the line
-            // so the ball finishes in the net rather than on it.
             float aimX = SidePost(shotSide);
             float overshoot = Mathf.Sign(goal.z) * 0.8f;
 
             Vector3 to = new Vector3(aimX, from.y, goal.z + overshoot);
 
-            // The keeper dives at the same time rather than after. Both are
-            // driven from one loop for exactly that reason: two coroutines would
-            // be two clocks, and the only thing this beat has to communicate is
-            // whether the two of them arrive at the same place.
             Transform keeper = match.PenaltyKeeper;
             Vector3 keeperFrom = keeper != null ? keeper.position : Vector3.zero;
             Vector3 keeperTo = keeper != null
@@ -272,11 +218,6 @@ namespace TacticalSoccer.UI
 
                 if (keeper != null)
                 {
-                    // Eased, and faster than the ball early on: a keeper who
-                    // travelled linearly alongside the ball would look like he
-                    // was escorting it rather than reacting to it. Squared
-                    // easing gets him committed to a side well before it
-                    // arrives, which is what makes a wrong guess look wrong.
                     float dive = Mathf.Clamp01(t * KeeperDiveLead);
 
                     keeper.position = Vector3.Lerp(keeperFrom, keeperTo,
@@ -294,11 +235,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Where a side is, in world X: just inside the post. Shared by the ball
-        /// and the keeper so that "same side" genuinely means the two of them
-        /// finish in the same place, and a save reads as a save.
-        /// </summary>
+        // Posición en X, junto al poste, del lado indicado.
         private float SidePost(PenaltySide side)
         {
             float sideSign = side == PenaltySide.Left ? -1f : 1f;
@@ -306,19 +243,10 @@ namespace TacticalSoccer.UI
             return sideSign * PitchBounds.GoalMouthHalfWidth * shotWidthShare;
         }
 
-        // How much of the flight the keeper's dive is compressed into. Above 1,
-        // so he is committed before the ball gets there.
+        // Fracción del vuelo en la que se comprime la estirada del portero.
         private const float KeeperDiveLead = 1.6f;
 
-        /// <summary>
-        /// Fades the whole panel out for the kick and back in for the verdict.
-        ///
-        /// A CanvasGroup rather than deactivating the panel: the coroutine
-        /// driving all this lives on the CANVAS, not on the panel, but the
-        /// buttons and the text do live on the panel, and turning the object off
-        /// and on again mid-routine is a good way to lose a reference. Alpha
-        /// costs nothing and cannot break anything.
-        /// </summary>
+        // Muestra u oculta el panel (y opcionalmente los botones) mediante un CanvasGroup.
         private void SetPanelVisible(bool visible, bool buttonsVisible = true)
         {
             if (uiPanel == null)
@@ -354,19 +282,7 @@ namespace TacticalSoccer.UI
                  "tap is acknowledged before the screen clears for the action.")]
         [SerializeField] private float choiceAcknowledgeSeconds = 0.6f;
 
-        /// <summary>
-        /// Plays the penalty out beat by beat instead of stamping the answer on
-        /// screen the instant the button is released.
-        ///
-        /// The order matters. First the player's own choice is lit, so the tap is
-        /// acknowledged; then the opposition's guess is revealed and held, which
-        /// is the only moment of suspense the mechanic has; only then the result.
-        /// Showing the outcome at the same time as the guess throws that away —
-        /// the player reads the verdict and never looks at the guess.
-        ///
-        /// Every wait is realtime: the match is frozen at timeScale 0 behind this
-        /// panel, and a scaled wait would sit here forever.
-        /// </summary>
+        // Resuelve el penalti paso a paso: elección, vuelo del balón y resultado.
         private System.Collections.IEnumerator ResolvePenaltyRoutine(
             PenaltySide humanSide, PenaltySide aiSide, bool saved)
         {
@@ -380,29 +296,15 @@ namespace TacticalSoccer.UI
                     Describe(humanSide));
             }
 
-            // Held just long enough for the player to see their own side light
-            // up. Without it the panel would vanish on the same frame as the
-            // tap and the choice would never be acknowledged.
             yield return new WaitForSecondsRealtime(choiceAcknowledgeSeconds);
 
-            // Which way the BALL goes is the striker's choice, whoever made it:
-            // when the human is in goal, the side they picked is where they dived
-            // and the AI's is where the ball was struck. The dive is the mirror
-            // of that — whichever of the two is the keeper.
             PenaltySide shotSide = humanIsStriker ? humanSide : aiSide;
             PenaltySide diveSide = humanIsStriker ? aiSide : humanSide;
 
-            // Out of the way BEFORE anything moves. The kick is the only part of
-            // this the player actually wants to watch, and a bank of buttons and
-            // two lines of commentary across the middle of the screen is exactly
-            // where the goal is.
             SetPanelVisible(false);
 
             yield return FlyBall(shotSide, diveSide);
 
-            // Back, with the verdict alone: the buttons stay hidden, because the
-            // decision has already been taken and re-showing them invites a tap
-            // that would do nothing.
             if (resultText != null)
             {
                 Core.LocalizationManager.Write(resultText, saved ? "penalty.saved" : "penalty.goal");
@@ -418,8 +320,6 @@ namespace TacticalSoccer.UI
                 uiPanel.SetActive(false);
             }
 
-            // Handed back ready for the next penalty, which may be a long time
-            // away and will open through ShowPenalty expecting a whole panel.
             SetPanelVisible(true);
 
             IsOpen = false;
@@ -438,20 +338,9 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Puts the ball in the net and lets the normal goal machinery take over:
-        /// the same event the goal trigger raises, and the same celebration.
-        ///
-        /// The ball is moved first so the celebration has something to show. It
-        /// is the whole point of holding the restart back — a goal announced over
-        /// an empty six-yard box would look like a bug.
-        /// </summary>
+        // Marca el gol y lanza la celebración normal, reutilizando el balón que ya está en la red.
         private void ScoreGoal()
         {
-            // The ball is already in the net: FlyBall put it there, past the line
-            // and on the side it was struck towards. Moving it again here would
-            // snap it to the middle of the goal after the player has just watched
-            // it go into a corner.
             TacticalEvents.OnGoalScored?.Invoke(
                 attackingTeam == TeamId.Red ? ScoreManager.RedTeamId : ScoreManager.BlueTeamId);
 
@@ -461,6 +350,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Activa o desactiva los dos botones de elección.
         private void SetButtonsInteractable(bool interactable)
         {
             if (leftButton != null)
@@ -474,16 +364,14 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Puts both sides back to neutral, with their normal press feedback
-        /// restored, ready for a fresh choice.
-        /// </summary>
+        // Devuelve ambos botones a su color neutro.
         private void ResetSides()
         {
             RestoreSide(leftButton);
             RestoreSide(rightButton);
         }
 
+        // Restaura el color y la transición normal de un botón.
         private void RestoreSide(Button button)
         {
             if (button == null)
@@ -499,20 +387,14 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Lights the side the player picked and leaves the other one plain.
-        ///
-        /// Written onto the button's own image rather than through its
-        /// ColorBlock: the block's colours are multipliers over this image, and a
-        /// non-interactable button is showing its disabled tint by now — which
-        /// would swallow the highlight entirely.
-        /// </summary>
+        // Resalta el lado que ha elegido el jugador.
         private void HighlightChoice(PenaltySide side)
         {
             Paint(leftButton, side == PenaltySide.Left);
             Paint(rightButton, side == PenaltySide.Right);
         }
 
+        // Pinta un botón con el color de elegido o no elegido, sin la transición por defecto.
         private void Paint(Button button, bool chosen)
         {
             if (button == null || button.targetGraphic == null)
@@ -520,10 +402,6 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Transitions off before painting. The buttons are non-interactable
-            // by this point, and Unity's default disabled tint is both grey AND
-            // half-transparent — it would multiply the highlight away to a pale
-            // ghost of itself, on the one frame that has to read clearly.
             button.transition = Selectable.Transition.None;
 
             button.targetGraphic.color = chosen ? chosenSideColor : unchosenSideColor;

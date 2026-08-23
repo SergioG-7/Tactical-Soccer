@@ -3,7 +3,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.Core
 {
-    /// <summary>The shapes a side may line up in. Six outfield players either way.</summary>
+    // Formaciones disponibles, con seis jugadores de campo cada una.
     public enum FormationType
     {
         Balanced_2_2_2,
@@ -11,14 +11,7 @@ namespace TacticalSoccer.Core
         Offensive_1_3_2
     }
 
-    /// <summary>
-    /// How hard the opposition plays. Two levers, both deliberately small: how
-    /// often the AI re-decides, and a flat handicap on every duel it fights.
-    ///
-    /// Neither touches the human's side at any setting. A difficulty that made
-    /// YOUR players worse would be indistinguishable from a bug from the other
-    /// side of the screen.
-    /// </summary>
+    // Nivel de dificultad de la IA rival.
     public enum AIDifficulty
     {
         Facil,
@@ -26,22 +19,15 @@ namespace TacticalSoccer.Core
         Dificil
     }
 
-    /// <summary>
-    /// One outfield slot of a starting shape: where the player stands and which
-    /// line they hold.
-    /// </summary>
+    // Un puesto de la formación inicial: rol, posición lateral y profundidad en el propio campo.
     public readonly struct FormationSlot
     {
         public readonly PlayerRole Role;
 
-        /// <summary>Across the pitch. The two sides are mirror images, so one value serves both.</summary>
+        // Posición lateral (X); ambos equipos usan el mismo valor en espejo.
         public readonly float X;
 
-        /// <summary>
-        /// Distance from the halfway line into the team's OWN half, always
-        /// positive. Callers multiply by the side's sign, so one table describes
-        /// both teams.
-        /// </summary>
+        // Distancia desde el medio campo hacia el propio campo, siempre positiva.
         public readonly float OwnHalfZ;
 
         public FormationSlot(PlayerRole role, float x, float ownHalfZ)
@@ -52,16 +38,7 @@ namespace TacticalSoccer.Core
         }
     }
 
-    /// <summary>
-    /// The starting shapes, in one place. The scene generator spawns the squad
-    /// from the same tables the formation menu later re-arranges them with, so
-    /// picking the default shape in the menu puts everybody exactly back where
-    /// they began rather than somewhere subtly different.
-    ///
-    /// Every slot sits in its own half: the three lines are pinned to the same
-    /// depths whatever the shape, so a 3-2-1 reads as a deeper back line rather
-    /// than as a different pitch.
-    /// </summary>
+    // Define las posiciones de cada formación disponible.
     public static class Formations
     {
         private const float DefenderLineZ = 16f;
@@ -82,8 +59,6 @@ namespace TacticalSoccer.Core
 
         private static readonly FormationSlot[] Defensive =
         {
-            // The middle centre-back drops a metre deeper, so three across the
-            // back reads as a covered line rather than a flat wall.
             new FormationSlot(PlayerRole.Defender, -7f, DefenderLineZ),
             new FormationSlot(PlayerRole.Defender, 0f, DefenderLineZ + 1f),
             new FormationSlot(PlayerRole.Defender, 7f, DefenderLineZ),
@@ -102,9 +77,10 @@ namespace TacticalSoccer.Core
             new FormationSlot(PlayerRole.Forward, 3.5f, ForwardLineZ)
         };
 
-        /// <summary>How many outfield players a shape expects. The keeper is extra.</summary>
+        // Número de jugadores de campo por formación (sin contar al portero).
         public const int OutfieldCount = 6;
 
+        // Devuelve los puestos de la formación indicada.
         public static FormationSlot[] Get(FormationType formation)
         {
             switch (formation)
@@ -115,7 +91,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>One of the shapes, at random. Used by the "surprise me" rival setting.</summary>
+        // Devuelve una formación al azar.
         public static FormationType Random()
         {
             FormationType[] all = (FormationType[])System.Enum.GetValues(typeof(FormationType));
@@ -123,7 +99,7 @@ namespace TacticalSoccer.Core
             return all[UnityEngine.Random.Range(0, all.Length)];
         }
 
-        /// <summary>Label for the HUD, so the UI does not hardcode the numbers.</summary>
+        // Devuelve la etiqueta de texto de la formación (ej. "2-2-2").
         public static string GetLabel(FormationType formation)
         {
             switch (formation)

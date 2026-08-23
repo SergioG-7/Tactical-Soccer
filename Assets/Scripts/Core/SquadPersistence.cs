@@ -3,32 +3,12 @@ using UnityEngine;
 
 namespace TacticalSoccer.Core
 {
-    /// <summary>
-    /// Makes the squad edits outlive the session that made them.
-    ///
-    /// The squad itself is NOT random and never was: the generator gives every
-    /// player a shirt number, a line from the formation table, the stat asset of
-    /// his role and a face seeded from that same number, all of it repeatable.
-    /// The only part of a player that varies is what somebody typed into the
-    /// editing panel — and that lived on the TeamMember in the scene, which
-    /// meant it survived a match and a rematch but not closing Unity, and not
-    /// regenerating the scene. That is what this restores.
-    ///
-    /// Only edited players are written. A file that listed all twenty would
-    /// freeze today's stat assets into the save as well, so tuning
-    /// MidfielderStats.asset afterwards would quietly do nothing for players
-    /// nobody ever touched.
-    ///
-    /// A component rather than a static hook because restoring needs the players
-    /// to exist: Start runs after every TeamMember's Awake, which is where the
-    /// stamina and the initial-state snapshot are taken.
-    /// </summary>
+    // Guarda y restaura los cambios hechos a la plantilla entre sesiones.
     public class SquadPersistence : MonoBehaviour
     {
+        // Se suscribe a los eventos de edición de jugadores.
         private void OnEnable()
         {
-            // Subscribed here rather than in Start so no edit can slip through
-            // between the two: OnEnable runs first.
             UI.PlayerEditUIController.OnPlayerEdited += Capture;
         }
 
@@ -37,21 +17,13 @@ namespace TacticalSoccer.Core
             UI.PlayerEditUIController.OnPlayerEdited -= Capture;
         }
 
+        // Restaura los cambios guardados sobre la plantilla actual.
         private void Start()
         {
             Restore();
         }
 
-        /// <summary>
-        /// Puts every saved edit back onto its player.
-        ///
-        /// Roles go through the same swap rule the editing panel used, and that
-        /// is not tidiness: promoting somebody to keeper also DEMOTED the old
-        /// one, and the old one never raised an edit event, so he has no record
-        /// of his own. Replaying the promotion through the same rule demotes him
-        /// again, exactly as it did the first time, and the side ends with the
-        /// one keeper it must have.
-        /// </summary>
+        // Aplica a cada jugador de la escena los cambios guardados que le correspondan.
         public static void Restore()
         {
             if (SaveManager.Data.squad.Count == 0)
@@ -90,13 +62,7 @@ namespace TacticalSoccer.Core
                       $"{SaveManager.FileName}" + (refused > 0 ? $", {refused} con la posición rechazada." : "."));
         }
 
-        /// <summary>
-        /// Writes one player into the save, the moment his edit is confirmed.
-        ///
-        /// Immediate rather than deferred: this is a deliberate change a player
-        /// made on purpose, and the next thing they do is likely to be closing
-        /// the game to see whether it stuck.
-        /// </summary>
+        // Guarda de inmediato los datos editados de un jugador.
         private void Capture(TeamMember member)
         {
             if (member == null)
@@ -109,10 +75,7 @@ namespace TacticalSoccer.Core
             record.role = (int)member.role;
             record.element = (int)member.element;
 
-            // The BASE numbers, not the ones the duel reads: those carry the
-            // captain's passive on top, and saving them would bake a bonus that
-            // belongs to an armband into the player himself — worth another ten
-            // points every time the game was reopened.
+            // Se guardan las estadísticas base, sin el bonus de capitán.
             record.dribble = member.BaseDribble;
             record.power = member.BasePower;
             record.shoot = member.BaseShoot;

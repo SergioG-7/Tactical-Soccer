@@ -5,23 +5,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// Edits one player: what they play, what element they carry, how good they
-    /// are and how long they last.
-    ///
-    /// Opened from the squad board, over it, and hands it straight back. The
-    /// board owns WHO is in the eleven; this owns what each of them is.
-    ///
-    /// Nothing is written until SAVE. The panel works on its own copy of the
-    /// numbers, so backing out of a half-finished edit leaves the player exactly
-    /// as they were — which matters most for the role, whose side effects are
-    /// the awkward part of this screen (see ApplyRole).
-    ///
-    /// Every edit lands on the TeamMember, never on the PlayerStatsSO. Those
-    /// assets are shared by every player of the same role on BOTH sides and are
-    /// files on disk: an edit written there would buff the opposition too, and
-    /// survive into the next match and into the repository.
-    /// </summary>
+    // Editor de un jugador: rol, elemento, estadísticas y estamina. Los cambios no se aplican hasta pulsar Guardar.
     public class PlayerEditUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -82,25 +66,12 @@ namespace TacticalSoccer.UI
 
         [SerializeField] private float staminaStep = 25f;
 
-        /// <summary>
-        /// Raised after an edit has been written to a player.
-        /// </summary>
-        /// <remarks>
-        /// The squad board that opened this listens for it: it drew that
-        /// player's card and stat readout before the edit, and nothing else
-        /// would tell it those numbers had moved — so the board went on showing
-        /// the old ones until the player was deselected and picked again.
-        ///
-        /// An event rather than a direct call back into the board, because the
-        /// editor should not have to know who opened it. Static so a listener
-        /// does not need a reference to this instance, which is created by the
-        /// scene generator.
-        /// </remarks>
+        // Se lanza cuando se ha guardado un cambio en un jugador, para que el tablero de plantilla se refresque.
         public static event System.Action<TeamMember> OnPlayerEdited;
 
         public static PlayerEditUIController Instance { get; private set; }
 
-        /// <summary>True while the editor is up. Read by the input layer.</summary>
+        // Cierto mientras el editor está abierto.
         public static bool IsOpen => Instance != null
             && Instance.uiPanel != null
             && Instance.uiPanel.activeSelf;
@@ -121,6 +92,7 @@ namespace TacticalSoccer.UI
 
         private string notice = string.Empty;
 
+        // Inicializa el singleton y oculta el panel.
         private void Awake()
         {
             Instance = this;
@@ -131,6 +103,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Limpia la referencia al singleton al desactivarse.
         private void OnDisable()
         {
             if (Instance == this)
@@ -139,6 +112,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Conecta todos los botones del editor con sus acciones.
         private void Start()
         {
             Bind(roleGoalkeeperButton, () => StageRole(PlayerRole.Goalkeeper));
@@ -171,10 +145,7 @@ namespace TacticalSoccer.UI
             Bind(closeButton, Close);
         }
 
-        /// <summary>
-        /// Opens the editor on <paramref name="member"/>, returning to
-        /// <paramref name="returnTo"/> when it closes.
-        /// </summary>
+        // Abre el editor sobre un jugador, guardando una copia de sus datos para poder cancelar sin aplicar nada.
         public void ShowEditor(TeamMember member, GameObject returnTo)
         {
             if (member == null || uiPanel == null)
@@ -186,9 +157,6 @@ namespace TacticalSoccer.UI
             returnPanel = returnTo;
             notice = string.Empty;
 
-            // Copied out, not referenced. Backing out has to leave the player
-            // untouched, and the role in particular cannot be tried on and undone
-            // once it has been applied for real.
             role = member.role;
             element = member.element;
             dribble = member.BaseDribble;
@@ -209,6 +177,7 @@ namespace TacticalSoccer.UI
             Refresh();
         }
 
+        // Cierra el editor sin guardar cambios y vuelve al panel anterior.
         public void Close()
         {
             if (uiPanel != null)
@@ -225,12 +194,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Writes the staged edit onto the player and closes.
-        ///
-        /// The role goes last and through its own method, because it is the only
-        /// field here with consequences beyond the player it belongs to.
-        /// </summary>
+        // Aplica los cambios preparados al jugador y cierra el editor.
         public void Save()
         {
             if (subject == null)
@@ -248,29 +212,14 @@ namespace TacticalSoccer.UI
                       $"{element}, REG {dribble} FUE {power} TIR {shoot} / " +
                       $"ENT {tackle} BLO {block} PAR {goalkeeping}, estamina {maxStamina:F0}.");
 
-            // Captured before Close clears it.
             TeamMember edited = subject;
 
             Close();
 
-            // Raised AFTER closing, so the screen that listens is back on
-            // screen and active when it redraws itself. Announced from here and
-            // not from the caller: an edit is a fact about the player, and
-            // anything showing that player needs to hear it whether or not it
-            // was the thing that opened this panel.
             OnPlayerEdited?.Invoke(edited);
         }
 
-        /// <summary>
-        /// Moves a player between lines, and puts the refusal on screen when the
-        /// move is one the side cannot survive — demoting its last goalkeeper.
-        ///
-        /// The rule itself lives in <see cref="SquadRoles"/> rather than here,
-        /// because this panel is no longer the only thing that moves a player
-        /// between lines: restoring a saved squad replays exactly these changes
-        /// at startup, and two copies of a rule about goalkeepers would be two
-        /// copies that can disagree about how many a side has.
-        /// </summary>
+        // Cambia el rol del jugador; si el equipo no puede quedarse sin portero, muestra el aviso de rechazo.
         private void ApplyRole(TeamMember member, PlayerRole newRole)
         {
             if (!SquadRoles.TrySetRole(member, newRole, out string refusal))
@@ -279,6 +228,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Prepara un cambio de rol pendiente de guardar.
         private void StageRole(PlayerRole value)
         {
             role = value;
@@ -286,6 +236,7 @@ namespace TacticalSoccer.UI
             Refresh();
         }
 
+        // Prepara un cambio de elemento pendiente de guardar.
         private void StageElement(Element value)
         {
             element = value;
@@ -293,12 +244,14 @@ namespace TacticalSoccer.UI
             Refresh();
         }
 
+        // Ajusta una estadística dentro de sus límites.
         private void Nudge(ref int stat, int delta)
         {
             stat = Mathf.Clamp(stat + delta, TeamMember.StatMinimum, TeamMember.StatMaximum);
             Refresh();
         }
 
+        // Ajusta la estamina máxima dentro de sus límites.
         private void NudgeStamina(float delta)
         {
             maxStamina = Mathf.Clamp(maxStamina + delta,
@@ -307,6 +260,7 @@ namespace TacticalSoccer.UI
             Refresh();
         }
 
+        // Redibuja toda la pantalla del editor con los valores actuales.
         private void Refresh()
         {
             if (subject == null)
@@ -316,23 +270,12 @@ namespace TacticalSoccer.UI
 
             if (headingText != null)
             {
-                // NOT the GameObject's name. That is generated once ("Team
-                // Blue Midfielder 1"), it is English, and it goes stale the
-                // moment a formation reassigns the role — so it was both
-                // untranslatable and wrong. The side is named by the strip it is
-                // actually wearing, which is what the player sees on the pitch.
                 Core.LocalizationManager.WriteFormatted(headingText, "edit.heading",
                     subject.jerseyNumber,
                     Fouls.DescribeTeam(subject.team),
                     PlayerRoles.Describe(subject.role));
             }
 
-            // Captions first, then the tint. Both the positions and the
-            // elements pair a translated word with something that is not one —
-            // a role abbreviation, an elemental kanji — so no single key can
-            // carry them and a LocalizedText cannot write them. Rewritten on
-            // every refresh, which is what makes them follow a language change
-            // the next time the panel is opened.
             WriteRoleCaptions();
             WriteElementCaptions();
 
@@ -346,10 +289,6 @@ namespace TacticalSoccer.UI
             Tint(elementWindButton, element == Element.Aire);
             Tint(elementMountainButton, element == Element.Montaña);
 
-            // Each number goes in its own row, next to the buttons that move it.
-            // There used to be a summary block repeating all seven at once in
-            // the corner; it said nothing the rows do not and it sat on top of
-            // the element buttons.
             WriteValue(0, dribble.ToString());
             WriteValue(1, power.ToString());
             WriteValue(2, shoot.ToString());
@@ -364,6 +303,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Escribe las etiquetas abreviadas de los botones de rol.
         private void WriteRoleCaptions()
         {
             Caption(roleGoalkeeperButton, PlayerRoles.Abbreviate(PlayerRole.Goalkeeper));
@@ -372,6 +312,7 @@ namespace TacticalSoccer.UI
             Caption(roleForwardButton, PlayerRoles.Abbreviate(PlayerRole.Forward));
         }
 
+        // Escribe las etiquetas de los botones de elemento.
         private void WriteElementCaptions()
         {
             Caption(elementFireButton, DescribeElement(Element.Fuego));
@@ -380,12 +321,13 @@ namespace TacticalSoccer.UI
             Caption(elementMountainButton, DescribeElement(Element.Montaña));
         }
 
-        /// <summary>The kanji and the name, matching the badge on the player's own tag.</summary>
+        // Texto de un elemento: su símbolo y su nombre.
         private static string DescribeElement(Element value)
         {
             return $"{Elements.Glyph(value)} {Elements.Describe(value)}";
         }
 
+        // Pone el texto de un botón, aplicando la fuente que sabe dibujar los símbolos de elemento.
         private static void Caption(Button button, string text)
         {
             if (button == null)
@@ -398,13 +340,11 @@ namespace TacticalSoccer.UI
             if (label != null)
             {
                 label.text = text;
-
-                // The element names include a kanji, and the built-in UI font
-                // cannot draw one: the badge would silently come out blank.
                 LocalizationManager.ApplyFont(label);
             }
         }
 
+        // Escribe el valor de una estadística en su fila correspondiente.
         private void WriteValue(int row, string value)
         {
             if (statValueTexts == null || row >= statValueTexts.Length || statValueTexts[row] == null)
@@ -415,6 +355,7 @@ namespace TacticalSoccer.UI
             statValueTexts[row].text = value;
         }
 
+        // Colorea un botón según si su opción está seleccionada.
         private void Tint(Button button, bool isSelected)
         {
             if (button == null || button.targetGraphic == null)
@@ -425,6 +366,7 @@ namespace TacticalSoccer.UI
             button.targetGraphic.color = isSelected ? selectedColor : unselectedColor;
         }
 
+        // Conecta un botón a una acción, evitando listeners duplicados.
         private static void Bind(Button button, UnityEngine.Events.UnityAction action)
         {
             if (button == null)

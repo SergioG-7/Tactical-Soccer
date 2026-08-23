@@ -2,20 +2,7 @@ using UnityEngine;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// One piece of combat text: a 3D <see cref="TextMesh"/> that rises off the
-    /// pitch, fades out and deletes itself. Spawned by
-    /// <see cref="FloatingTextManager"/>, which is the only thing that knows how
-    /// to build one.
-    ///
-    /// EVERYTHING here runs on unscaled time. A duel resolving is not the only
-    /// thing that can be on screen while the clock is stopped: the whistle and a
-    /// set piece both leave timeScale at 0 with these still in the air, and on
-    /// scaled time the text would then neither rise, nor fade, nor ever reach
-    /// its own lifetime — it would simply hang over the player's head until
-    /// something else started the world again. Same trap the VFX shockwave
-    /// already fell into.
-    /// </summary>
+    // Un texto flotante individual: sube, se desvanece y se autodestruye.
     [RequireComponent(typeof(TextMesh))]
     public class FloatingText : MonoBehaviour
     {
@@ -31,6 +18,7 @@ namespace TacticalSoccer.UI
         private Color baseColor;
         private float elapsed;
 
+        // Guarda el color inicial del texto.
         private void Awake()
         {
             textMesh = GetComponent<TextMesh>();
@@ -41,11 +29,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Sets what this text says and how long it lives. Called by the manager
-        /// straight after the component is added, so the colour captured in Awake
-        /// is refreshed here rather than trusted.
-        /// </summary>
+        // Fija el mensaje, el color y la duración de vida del texto.
         public void Configure(string message, Color color, float lifetime)
         {
             if (textMesh == null)
@@ -64,6 +48,7 @@ namespace TacticalSoccer.UI
             elapsed = 0f;
         }
 
+        // Sube el texto y lo desvanece hasta destruirlo al cumplir su duración.
         private void Update()
         {
             float delta = Time.unscaledDeltaTime;
@@ -82,8 +67,6 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Alpha rides the vertex colours of the shared font material, so
-            // every instance fades on its own without any material being copied.
             float fadeProgress = Mathf.InverseLerp(duration * holdFraction, duration, elapsed);
 
             Color color = baseColor;
@@ -91,12 +74,7 @@ namespace TacticalSoccer.UI
             textMesh.color = color;
         }
 
-        /// <summary>
-        /// Late, not Update: the duel camera has already been moved for this
-        /// frame, so the text faces the pose actually being rendered instead of
-        /// the previous one — which, during the swoop into a clash, is a
-        /// noticeably different direction.
-        /// </summary>
+        // Orienta el texto hacia la cámara actual.
         private void LateUpdate()
         {
             Transform viewpoint = CameraSystem.TacticalCamera.Instance != null

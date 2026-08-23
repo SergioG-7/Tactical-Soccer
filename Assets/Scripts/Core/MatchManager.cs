@@ -6,20 +6,9 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.Core
 {
-    // FormationType, AIDifficulty, FormationSlot and Formations moved to
-    // Formations.cs — pure squad-shape data with no dependency on match
-    // state, kept apart from the orchestrator below.
+    // FormationType, AIDifficulty, FormationSlot y Formations están en Formations.cs.
 
-    /// <summary>
-    /// Owns the match-wide state nobody else can hold: how much time is left,
-    /// and whether the ball is actually in play.
-    ///
-    /// Every restart — kickoff, throw-in, corner, goal kick — works the same
-    /// way: the ball is handed to one specific player, everyone else stands
-    /// still, and play resumes the moment that player passes or shoots. When
-    /// the taker belongs to the AI it takes its own restart after a beat,
-    /// because nothing else ever would and the match would simply stop.
-    /// </summary>
+    // Controla el estado global del partido: tiempo, marcador, saques y reinicios de juego.
     public class MatchManager : MonoBehaviour
     {
         [Header("Clock")]
@@ -27,8 +16,7 @@ namespace TacticalSoccer.Core
                  "an interval between them, so a full game is twice this.")]
         public float matchDuration = 45f;
 
-        /// <summary>Seconds left. Counts in scaled time, so a frozen duel or a
-        /// slow-motion route draw does not burn the clock at full rate.</summary>
+        // Segundos que quedan en la parte actual.
         public float currentTime { get; private set; }
 
         [Tooltip("Which half is being played. 1 until the interval, 2 after it.")]
@@ -36,50 +24,31 @@ namespace TacticalSoccer.Core
 
         public bool isMatchOver = false;
 
-        /// <summary>
-        /// True between the two halves. Not folded into isMatchOver: full time
-        /// is final and nothing may thaw it, while this one exists precisely to
-        /// be undone by the interval screen.
-        /// </summary>
+        // True entre las dos partes, mientras dura el descanso.
         public bool isHalftime { get; private set; }
 
-        /// <summary>
-        /// False until the player presses Play on the title screen. Nothing on
-        /// the pitch may act before that.
-        /// </summary>
+        // True desde que el jugador pulsa Jugar en la pantalla de título.
         public bool isMatchStarted { get; private set; }
 
-        /// <summary>True between a restart and the first pass or shot.</summary>
+        // True entre un reinicio y el primer pase o tiro.
         public bool isWaitingForKickoff { get; private set; }
 
-        /// <summary>True between the ball crossing a touchline and the throw being taken.</summary>
+        // True mientras se espera un saque de banda.
         public bool isWaitingForThrowIn { get; private set; }
 
-        /// <summary>True while a corner is being lined up.</summary>
+        // True mientras se está preparando un córner.
         public bool isWaitingForCorner { get; private set; }
 
-        /// <summary>True while a goal kick is being lined up.</summary>
+        // True mientras se está preparando un saque de puerta.
         public bool isWaitingForGoalKick { get; private set; }
 
-        /// <summary>True while a free kick is being lined up.</summary>
+        // True mientras se está preparando un tiro libre.
         public bool isWaitingForFreeKick { get; private set; }
 
-        /// <summary>
-        /// True from the moment a penalty is given until it has been taken.
-        /// Kept apart from the other restarts because a penalty is not put back
-        /// into play by a pass: it is a menu, and the ball does not move until
-        /// somebody has pressed a side.
-        /// </summary>
+        // True desde que se pita un penalti hasta que se lanza.
         public bool isWaitingForPenalty { get; private set; }
 
-        /// <summary>
-        /// True while a goal is being shown before play restarts.
-        ///
-        /// It is a set-piece state like any other — the ball is dead and nobody
-        /// may act — which is why it is folded into IsWaitingForSetPiece rather
-        /// than given guards of its own. That one flag already stops the clock,
-        /// the AI, the drift and the duels, and a celebration needs all four.
-        /// </summary>
+        // True mientras se celebra un gol antes de reanudar el juego.
         public bool IsCelebratingGoal { get; private set; }
 
         [Header("Sides")]
@@ -186,18 +155,12 @@ namespace TacticalSoccer.Core
 
         private const int HalvesPerMatch = 2;
 
-        /// <summary>
-        /// Share of the pitch that counts as the attacking third — the zone an
-        /// attack has to have reached for the half to play on past zero.
-        /// </summary>
+        // Parte del campo que cuenta como tercio de ataque.
         private const float AttackingThirdShare = 1f / 3f;
 
         public static MatchManager Instance { get; private set; }
 
-        /// <summary>
-        /// Gate for anything that restores Time.timeScale. Once the whistle has
-        /// gone, nothing may thaw the match back out.
-        /// </summary>
+        // True si el partido puede seguir corriendo (no ha terminado).
         public static bool IsPlayable => Instance == null || !Instance.isMatchOver;
 
         // The kick the camera takes on a goal: a soft 0.3 held for a long 0.5 s.
@@ -213,75 +176,32 @@ namespace TacticalSoccer.Core
                  "while time is still running slow.")]
         [SerializeField] private float goalSlowMotionDuration = 1.2f;
 
-        /// <summary>
-        /// True while the ball is dead, waiting to be put back into play by any
-        /// kind of restart. Systems that must stand down do not care which one.
-        ///
-        /// A match that has not started yet counts as dead too. Folding it in
-        /// here is what makes the title screen actually hold: the AI, the
-        /// off-the-ball drift and the duels all already consult this, so none of
-        /// them needs to know a title screen exists.
-        /// </summary>
+        // True mientras el balón está parado, esperando cualquier tipo de reinicio.
         public bool IsWaitingForSetPiece =>
             !isMatchStarted || isHalftime || IsCelebratingGoal || isWaitingForKickoff
             || isWaitingForThrowIn || isWaitingForCorner || isWaitingForGoalKick
             || isWaitingForFreeKick || isWaitingForPenalty;
 
-        /// <summary>
-        /// True while something has taken the pitch over and owns the screen: a
-        /// frozen duel, a goal being celebrated, a penalty waiting to be taken.
-        ///
-        /// Deliberately NOT the same thing as <see cref="IsWaitingForSetPiece"/>.
-        /// A throw-in is a dead ball, but nothing is on screen and the half can
-        /// end on it perfectly well — that is what closes out stoppage time.
-        /// These three are different: each one is a moment the player is looking
-        /// at and, in the case of the duel, one they are being asked to answer.
-        /// Ending the half on top of any of them puts a second screen over one
-        /// that was already up, and both of them write timeScale.
-        /// </summary>
+        // True mientras hay algo ocupando la pantalla: un duelo, un gol o un penalti pendiente.
         private bool IsPitchInterrupted =>
             Gameplay.ClashManager.IsClashActive || IsCelebratingGoal || isWaitingForPenalty;
 
-        /// <summary>
-        /// Gate for the input layer while the penalty menu is up. Same reason as
-        /// the title screen and the interval: input is not governed by timeScale,
-        /// and a route drawn behind the menu would have TimeController set 0.1
-        /// and run the match on underneath it.
-        /// </summary>
+        // True mientras el menú de penalti está abierto.
         public static bool IsPenaltyPending => Instance != null && Instance.isWaitingForPenalty;
 
-        /// <summary>
-        /// Gate for the ball's own out-of-play check, which is not a listener on
-        /// any of this and runs every frame regardless. A ball sitting in the
-        /// back of the net is past the goal line by every measure the pitch
-        /// knows, so without this the celebration would immediately be
-        /// interrupted by the goal kick it looks like.
-        /// </summary>
+        // True mientras se celebra un gol, para que el chequeo de fuera de juego del balón no salte.
         public static bool IsGoalBeingCelebrated => Instance != null && Instance.IsCelebratingGoal;
 
-        /// <summary>
-        /// Gate for the input layer, which is not governed by timeScale and so
-        /// could otherwise draw routes behind the title screen — and drawing a
-        /// route sets timeScale to 0.1, thawing the pitch through the back door.
-        /// </summary>
+        // True si el partido ya ha empezado.
         public static bool IsStarted => Instance == null || Instance.isMatchStarted;
 
-        /// <summary>
-        /// Gate for the input layer at the interval, for the same reason as the
-        /// two above: the pitch is frozen at timeScale 0 behind the team talk,
-        /// and a route drawn through it would have TimeController set 0.1 and
-        /// send the players out before anybody pressed anything.
-        /// </summary>
+        // True durante el descanso entre partes.
         public static bool IsHalftime => Instance != null && Instance.isHalftime;
 
-        /// <summary>The side the player controls. Read by the menus, which need
-        /// to know whose team sheet they are showing.</summary>
+        // Equipo que controla el jugador.
         public TeamId HumanTeam => humanTeam;
 
-        /// <summary>
-        /// The handicap the chosen difficulty hands a side in every duel. Always
-        /// zero for the human: the setting changes the opposition, not you.
-        /// </summary>
+        // Bonificación o penalización de estadística que da la dificultad elegida a un equipo en los duelos.
         public int DuelModifierFor(TeamId team)
         {
             if (team == humanTeam)
@@ -297,12 +217,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Multiplier on how long the opposition waits between decisions. Above
-        /// 1 is a side that reacts late — it keeps pressing the space the ball
-        /// has already left — and below 1 is one that reads the play almost as
-        /// it happens.
-        /// </summary>
+        // Multiplicador del tiempo de reacción de la IA según la dificultad.
         public float AiThinkIntervalScale
         {
             get
@@ -316,10 +231,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Applies the pre-match settings. Called by the configuration screen
-        /// before anything has kicked off, so the clock can still be re-seeded.
-        /// </summary>
+        // Aplica la configuración elegida antes del partido: duración, dificultad, formación rival y equipación.
         public void ConfigureMatch(float halfDurationSeconds, AIDifficulty difficulty,
             bool randomRivalShape, FormationType rivalShape, TeamKit kit)
         {
@@ -331,8 +243,6 @@ namespace TacticalSoccer.Core
             rivalFormation = rivalShape;
             humanKit = kit;
 
-            // A quick match always puts the opposition back in red, whatever a
-            // tournament round left them wearing.
             rivalKitColor = Color.red;
 
             Debug.Log($"Configuración: {matchDuration:F0} s por parte, dificultad {aiDifficulty}, " +
@@ -340,15 +250,7 @@ namespace TacticalSoccer.Core
                       $"equipación {TeamKits.GetLabel(humanKit)}.");
         }
 
-        /// <summary>
-        /// Sets a tournament round up. Separate from ConfigureMatch because the
-        /// two disagree about who decides: a quick match takes the player's
-        /// answers, a tournament round dictates the terms and skips the
-        /// configuration screen entirely.
-        ///
-        /// The human's own strip is deliberately NOT touched — that is the one
-        /// choice they keep across the whole run.
-        /// </summary>
+        // Configura un partido de torneo con la duración, dificultad, formación y color rival dados.
         public void ConfigureTournamentMatch(float halfDurationSeconds, AIDifficulty difficulty,
             FormationType rivalShape, Color rivalColor)
         {
@@ -366,21 +268,10 @@ namespace TacticalSoccer.Core
                  "screen and applied at the opening whistle.")]
         [SerializeField] private TeamKit humanKit = TeamKit.Azul;
 
-        // The opposition's strip. Defaults to the red it is generated in, and is
-        // repainted on EVERY kickoff rather than only when a tournament has
-        // dictated a colour — skipping it would leave the opposition still
-        // wearing the last round's purple in the quick match after it.
+        // Color de la equipación rival.
         private Color rivalKitColor = Color.red;
 
-        /// <summary>
-        /// What colour a side is actually wearing right now.
-        ///
-        /// The single source of truth for it, because there are two answers —
-        /// the human's is a TeamKit chosen on the configuration screen, the
-        /// opposition's is a raw colour a tournament round may have dictated —
-        /// and anything wanting to name a team in its own colour has to be able
-        /// to ask without knowing which of the two applies.
-        /// </summary>
+        // Devuelve el color que lleva puesto un equipo ahora mismo.
         public static Color GetTeamColor(TeamId team)
         {
             if (Instance == null)
@@ -393,12 +284,7 @@ namespace TacticalSoccer.Core
                 : Instance.rivalKitColor;
         }
 
-        /// <summary>
-        /// Repaints both sides in their chosen strips (see TeamKits.RepaintTeam
-        /// for how and why). Substitutes are included even though they are
-        /// sitting in the dugout: they come on later, and a side that changed
-        /// colour halfway through would be unreadable.
-        /// </summary>
+        // Repinta ambos equipos con sus equipaciones elegidas, incluyendo suplentes.
         private void ApplyHumanKit()
         {
             int human = TeamKits.RepaintTeam(humanTeam, TeamKits.GetColor(humanKit));
@@ -419,18 +305,7 @@ namespace TacticalSoccer.Core
                  "free pass every time.")]
         [SerializeField] private float restartExclusionRadius = 4f;
 
-        /// <summary>
-        /// What each side did with the match, for the full-time board.
-        ///
-        /// Counted here rather than in the systems that produce the events. A
-        /// shot is raised by the ball handler, a foul by the duel manager and a
-        /// pass by whoever received it — three places that have nothing to do
-        /// with each other and no business owning a scoreboard. This class
-        /// already owns everything else that is true of the match as a whole.
-        ///
-        /// Indexed by TeamId so a stat is one array lookup rather than a branch
-        /// per team repeated six times.
-        /// </summary>
+        // Estadísticas del partido por equipo, para el marcador final.
         private readonly int[] shots = new int[2];
         private readonly int[] fouls = new int[2];
         private readonly int[] passes = new int[2];
@@ -439,24 +314,25 @@ namespace TacticalSoccer.Core
         public int FoulsFor(TeamId team) => fouls[(int)team];
         public int PassesFor(TeamId team) => passes[(int)team];
 
-        /// <summary>Counted when a player commits to a shot, won or lost.</summary>
+        // Suma un tiro a puerta al equipo.
         public void RecordShot(TeamId team)
         {
             shots[(int)team]++;
         }
 
-        /// <summary>Counted against the side that gave the foul away.</summary>
+        // Suma una falta cometida al equipo.
         public void RecordFoul(TeamId team)
         {
             fouls[(int)team]++;
         }
 
-        /// <summary>Counted when a pass reaches a team-mate.</summary>
+        // Suma un pase completado al equipo.
         public void RecordPass(TeamId team)
         {
             passes[(int)team]++;
         }
 
+        // Pone a cero las estadísticas de ambos equipos.
         private void ResetStatistics()
         {
             for (int i = 0; i < shots.Length; i++)
@@ -467,33 +343,19 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>True while the clock is at zero but an attack is still alive.</summary>
+        // True cuando el reloj llega a cero pero un ataque sigue vivo (descuento).
         private bool isInStoppageTime;
 
-        /// <summary>True between the final whistle and the screen that follows it.</summary>
+        // True entre el pitido final y la pantalla que lo sigue.
         private bool isEndingHalf;
 
-        /// <summary>
-        /// True once the whistle has gone for the end of a half, until the
-        /// screen that follows takes over.
-        ///
-        /// Public because the duel manager has to refuse NEW duels in this
-        /// window. The match is deliberately still live through it — the point
-        /// is to watch the last action come to rest — but "still live" must not
-        /// mean two players can start a fresh tackle after the referee has ended
-        /// the half. Duels already open when it blows still resolve normally.
-        /// </summary>
+        // True mientras se está cerrando la parte, para que no se abran duelos nuevos.
         public static bool IsEndingHalf => Instance != null && Instance.isEndingHalf;
 
-        /// <summary>
-        /// Who takes the next kickoff. The opening one is the human's; after
-        /// that it belongs to whoever has just been scored against, which is the
-        /// whole reason this is a field rather than a constant — it used to be
-        /// the human side every time, so a team could concede and then be handed
-        /// the ball back at the centre spot as a reward.
-        /// </summary>
+        // Equipo que saca de centro en el próximo reinicio.
         private TeamId kickoffTeam;
 
+        // Inicializa el estado del partido al cargar la escena.
         private void Awake()
         {
             Instance = this;
@@ -509,6 +371,7 @@ namespace TacticalSoccer.Core
             ClearSetPieceFlags();
         }
 
+        // Se suscribe a los eventos de reinicio, gol y falta.
         private void OnEnable()
         {
             TacticalEvents.OnMatchReset += HandleMatchReset;
@@ -516,6 +379,7 @@ namespace TacticalSoccer.Core
             TacticalEvents.OnFoulCommitted += HandleFoul;
         }
 
+        // Se desuscribe de los eventos al desactivarse.
         private void OnDisable()
         {
             TacticalEvents.OnMatchReset -= HandleMatchReset;
@@ -528,15 +392,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// A goal decides who restarts: the side that conceded takes it.
-        ///
-        /// Read here rather than passed into the kickoff, because the two are
-        /// raised separately — the goal trigger announces the goal and then asks
-        /// the ball to reset, and it is the reset that starts the kickoff. They
-        /// arrive in that order on the same frame, so the side is always known
-        /// by the time it is needed.
-        /// </summary>
+        // Al marcar un gol, decide que el saque de centro es para el equipo que encajó.
         private void HandleGoalScored(int scoringTeamId)
         {
             TeamId scoringTeam = scoringTeamId == ScoreManager.RedTeamId ? TeamId.Red : TeamId.Blue;
@@ -546,18 +402,7 @@ namespace TacticalSoccer.Core
             Debug.Log($"Gol de {scoringTeam}: el saque de centro es para {kickoffTeam}.");
         }
 
-        /// <summary>
-        /// Holds the goal on screen, then restarts from the centre spot.
-        ///
-        /// Called by the goal trigger INSTEAD of resetting the ball itself. The
-        /// wait has to happen before the reset, not after: resetting first puts
-        /// the ball on the halfway line and everybody back in shape, so a delay
-        /// added afterwards would only be a pause staring at a kickoff that had
-        /// already happened.
-        ///
-        /// Nothing may act during it — the flag is a set-piece state, so the
-        /// clock, the AI, the drift and the duels are all already standing down.
-        /// </summary>
+        // Muestra el gol en pantalla y luego reinicia desde el centro del campo.
         public void CelebrateGoal()
         {
             if (isMatchOver)
@@ -565,10 +410,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // A second goal cannot be scored into a ball that is already being
-            // celebrated, but the trigger can fire again if the ball rolls back
-            // out of the net and in again, which would restart the wait and
-            // stack a second restart behind it.
             if (IsCelebratingGoal)
             {
                 return;
@@ -577,25 +418,14 @@ namespace TacticalSoccer.Core
             StartCoroutine(GoalCelebrationRoutine());
         }
 
+        // Pone el partido a cámara lenta al marcar, muestra el anuncio y reinicia tras la espera.
         private IEnumerator GoalCelebrationRoutine()
         {
             IsCelebratingGoal = true;
 
-            // Slowed, not frozen, and the distinction is the whole point: a duel
-            // resolved a frame before the goal may have left timeScale at 0, and
-            // a celebration nobody can see move is just a stutter. This
-            // explicitly overwrites whatever the last system left behind.
-            //
-            // fixedDeltaTime is scaled with it so the physics step keeps its
-            // usual relationship to the frame — the ball is still settling into
-            // the net through all of this, and leaving the step at 0.02 while
-            // time runs at a third makes it settle in visible jerks.
             Time.timeScale = GoalSlowMotionScale;
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale * GoalSlowMotionScale;
 
-            // Softer and longer than the one a critical gets: a goal is a moment
-            // that rings on, not a single blow. Note the argument order — the
-            // camera takes (intensity, time), so this is 0.3 held for 0.5 s.
             if (CameraSystem.TacticalCamera.Instance != null)
             {
                 CameraSystem.TacticalCamera.Instance.Shake(GoalShakeIntensity, GoalShakeTime);
@@ -603,20 +433,10 @@ namespace TacticalSoccer.Core
 
             Announce("announce.goal");
 
-            // Realtime rather than scaled: this routine owns the timeScale it
-            // just set, and anything that changed it underneath — a route being
-            // drawn drops it to 0.1 — would otherwise stretch the wait out to
-            // twenty-five real seconds.
-            // Realtime rather than scaled — doubly so now. The routine owns the
-            // timeScale it just set, and a scaled wait against a third-speed
-            // clock would run three times as long as intended.
             float slowMotion = Mathf.Min(goalSlowMotionDuration, goalCelebrationDelay);
 
             yield return new WaitForSecondsRealtime(slowMotion);
 
-            // Back to full speed for the rest of the celebration, so the slow
-            // motion is the moment the ball hits the net rather than a sluggish
-            // pause the player sits through until the restart.
             Time.timeScale = NormalTimeScale;
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
 
@@ -638,8 +458,6 @@ namespace TacticalSoccer.Core
 
             if (ball != null)
             {
-                // Releases possession, re-centres the ball AND raises
-                // OnMatchReset, which is what starts the kickoff.
                 ball.ResetToKickoff();
             }
             else
@@ -648,44 +466,21 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Starts the match. Called by the title screen, not from Start: the
-        /// game opens on a menu, and a kickoff that ran on its own would be
-        /// under way behind it before anyone pressed anything.
-        ///
-        /// The opening kickoff runs through exactly the same routine as one
-        /// after a goal, so there is only ever one way play begins.
-        /// </summary>
+        // Arranca el partido: mete al público, aplica las equipaciones y hace el saque inicial.
         public void StartInitialKickoff()
         {
             isMatchStarted = true;
 
-            // The crowd comes in here and nowhere earlier. Started on Awake it
-            // would be roaring behind the title screen and the team sheet, over
-            // a stadium with nobody playing in it. Idempotent, so the second
-            // half picks the same bed back up rather than restarting it.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.PlayStadiumLoop();
                 Audio.AudioManager.Instance.ResumeCrowd();
             }
 
-            // Applied at the whistle rather than when the menu closed, so it
-            // also covers the substitutes who were never on the pitch to be
-            // repainted. Idempotent, so the second half repeating it is free.
             ApplyHumanKit();
 
-            // Nobody has conceded anything, so the kickoff goes by convention:
-            // the human opens the match, and the other side opens the second
-            // half. Derived from the half rather than remembered, so a restarted
-            // match cannot inherit the last one's turn.
             kickoffTeam = currentHalf >= HalvesPerMatch ? Opponent(humanTeam) : humanTeam;
 
-            // The opposition is lined up and given its armband once, at the
-            // opening whistle. Doing it again at the interval would re-sort the
-            // side by depth and hand players roles they did not have a moment
-            // earlier — which, after a substitution, reads as the game undoing
-            // the change you just made.
             if (currentHalf < HalvesPerMatch)
             {
                 SetUpRivalSide();
@@ -694,14 +489,7 @@ namespace TacticalSoccer.Core
             BeginKickoff();
         }
 
-        /// <summary>
-        /// Puts the opposition into the shape the player asked for and gives it
-        /// a captain.
-        ///
-        /// The random shape is rolled HERE rather than when the menu closes, so
-        /// "Aleatoria" cannot be read off the pitch behind the team sheet before
-        /// the player has committed to their own.
-        /// </summary>
+        // Coloca al rival en la formación elegida y le asigna un capitán.
         private void SetUpRivalSide()
         {
             TeamId rival = Opponent(humanTeam);
@@ -720,12 +508,7 @@ namespace TacticalSoccer.Core
             SetCaptain(rival, redCaptain);
         }
 
-        /// <summary>
-        /// Any outfield starter will do. The keeper is skipped: a keeper captain
-        /// is legal in football and dull here, since his line only ever hands out
-        /// the defensive passive and he is the one player who never leaves his
-        /// own box to use it.
-        /// </summary>
+        // Elige al azar un capitán entre los titulares de campo (sin contar al portero).
         private static TeamMember PickRandomCaptain(TeamId team)
         {
             List<TeamMember> candidates = new List<TeamMember>();
@@ -741,17 +524,7 @@ namespace TacticalSoccer.Core
             return candidates.Count > 0 ? candidates[Random.Range(0, candidates.Count)] : null;
         }
 
-        /// <summary>
-        /// Hands one side's armband to <paramref name="captain"/> and pushes the
-        /// resulting passive onto every player on that side.
-        ///
-        /// The buff is written into the players rather than looked up per duel
-        /// on purpose. The stat assets are SHARED — every striker in the match
-        /// points at one StrikerStats — so a captaincy applied to the asset
-        /// would buff both teams at once, and a captaincy resolved at read time
-        /// would walk the squad six times per duel to find out who was wearing
-        /// it.
-        /// </summary>
+        // Nombra capitán a un jugador y aplica su bonificación a todo el equipo.
         public void SetCaptain(TeamId team, TeamMember captain)
         {
             if (captain != null && captain.team != team)
@@ -785,7 +558,6 @@ namespace TacticalSoccer.Core
                         drainMultiplier = captainStaminaDrainMultiplier;
                         break;
 
-                    // Defenders and keepers both harden the back of the side.
                     default:
                         defenceBonus = captainStatBonus;
                         break;
@@ -799,8 +571,6 @@ namespace TacticalSoccer.Core
                     continue;
                 }
 
-                // Cleared on everybody first, so moving the armband cannot leave
-                // the old captain still flagged.
                 member.isCaptain = member == captain;
                 member.ApplyCaptainBonuses(attackBonus, defenceBonus, drainMultiplier);
             }
@@ -816,23 +586,13 @@ namespace TacticalSoccer.Core
                       $"ataque +{attackBonus}, defensa +{defenceBonus}, desgaste x{drainMultiplier:F2}.");
         }
 
+        // Devuelve el equipo contrario.
         private static TeamId Opponent(TeamId team)
         {
             return team == TeamId.Blue ? TeamId.Red : TeamId.Blue;
         }
 
-        /// <summary>
-        /// Lines a side up in <paramref name="formation"/>: re-roles every
-        /// outfield player, walks them onto their new slot, and tells both the
-        /// drift and the restart logic that the slot has moved.
-        ///
-        /// Updating those two is the whole job. The physical move alone lasts
-        /// about a second — the off-the-ball drift would walk everyone back to
-        /// where they spawned, and the first goal would snap them there outright.
-        ///
-        /// The keeper is left alone: he is not part of the shape, and every
-        /// formation here is the six in front of him.
-        /// </summary>
+        // Coloca a un equipo en la formación dada: reasigna roles y mueve a cada jugador a su puesto.
         public void ApplyFormation(TeamId team, FormationType formation)
         {
             List<TeamMember> outfield = CollectOutfield(team);
@@ -843,10 +603,7 @@ namespace TacticalSoccer.Core
                                  $"y la formación espera {Formations.OutfieldCount}. Se colocan los que haya.");
             }
 
-            // Deepest first, so the players already at the back become the back
-            // line. FindObjectsByType returns no particular order, and without
-            // sorting the same choice could shuffle the squad differently every
-            // time it was made.
+            // Ordena de más atrás a más adelante para que los jugadores más retrasados formen la línea defensiva.
             float attackDirection = team == TeamId.Blue ? 1f : -1f;
 
             outfield.Sort((a, b) =>
@@ -873,18 +630,13 @@ namespace TacticalSoccer.Core
                       $"{assigned} jugadores de campo colocados.");
         }
 
-        /// <summary>
-        /// Moves one player into a slot and makes every system that remembers a
-        /// position agree about where that player now lives.
-        /// </summary>
+        // Mueve a un jugador a su puesto en la formación y actualiza ruta e IA táctica.
         private static void PlaceInSlot(TeamMember member, FormationSlot slot, float side)
         {
             member.role = slot.Role;
 
             Vector3 position = new Vector3(slot.X, member.transform.position.y, side * slot.OwnHalfZ);
 
-            // Any run still in progress would drag the player straight back off
-            // the slot they have just been given.
             if (member.TryGetComponent(out PlayerRoute route))
             {
                 route.CancelRoute();
@@ -899,6 +651,7 @@ namespace TacticalSoccer.Core
             member.transform.position = position;
         }
 
+        // Recopila a los titulares de campo (sin portero) de un equipo.
         private static List<TeamMember> CollectOutfield(TeamId team)
         {
             List<TeamMember> outfield = new List<TeamMember>();
@@ -916,6 +669,7 @@ namespace TacticalSoccer.Core
             return outfield;
         }
 
+        // Corre el reloj del partido y decide cuándo termina la parte, respetando el descuento.
         private void Update()
         {
             if (isMatchOver || isHalftime)
@@ -923,33 +677,18 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // The whistle has gone and the closing routine owns the match now.
             if (isEndingHalf)
             {
                 return;
             }
 
-            // Something is on screen waiting to be answered or watched out.
-            // Ending the half underneath it would tear it down mid-decision and,
-            // worse, race its own resolution: both of them write timeScale and
-            // whichever finished second would win.
-            //
-            // Nothing is lost by waiting. The clock is already at zero and stays
-            // there, so the first Update after the pitch clears blows the whistle
-            // exactly as it would have.
             if (IsPitchInterrupted)
             {
                 return;
             }
 
-            // The clock does not run while the ball is dead. Arranging the
-            // formation or lining up a restart is deliberation, not play, and
-            // charging the match for it would punish thinking.
             if (IsWaitingForSetPiece)
             {
-                // Unless the clock had already run out and we were only playing
-                // on for an attack: a restart means that attack is over, whether
-                // it ended in a goal, a throw-in or a goal kick.
                 if (isInStoppageTime)
                 {
                     BeginEndOfHalf("La jugada acaba en balón parado");
@@ -960,8 +699,6 @@ namespace TacticalSoccer.Core
 
             if (isInStoppageTime)
             {
-                // Time is already up; the only question left is whether the
-                // attack that bought the extra seconds is still alive.
                 if (!IsPromisingAttack())
                 {
                     BeginEndOfHalf("La jugada se apaga");
@@ -979,10 +716,6 @@ namespace TacticalSoccer.Core
 
             currentTime = 0f;
 
-            // The clock is not the referee. Cutting a match dead the instant it
-            // hits zero takes a goal away from whoever happened to be shaping to
-            // shoot, so an attack in the final third plays on with the clock
-            // frozen at zero until it resolves itself.
             if (IsPromisingAttack())
             {
                 isInStoppageTime = true;
@@ -996,15 +729,7 @@ namespace TacticalSoccer.Core
             BeginEndOfHalf("Tiempo cumplido");
         }
 
-        /// <summary>
-        /// True while one side is carrying the ball in the final third of the
-        /// pitch they are attacking.
-        ///
-        /// Possession is the whole test. A loose ball is not an attack — it is
-        /// the moment an attack ended — so a clearance, a save or a ball rolling
-        /// out of play all end the stoppage on their own without needing a case
-        /// each.
-        /// </summary>
+        // True si algún jugador lleva el balón en el último tercio del campo que ataca.
         private bool IsPromisingAttack()
         {
             foreach (TeamMember member in FindObjectsByType<TeamMember>())
@@ -1019,8 +744,6 @@ namespace TacticalSoccer.Core
                     continue;
                 }
 
-                // How far this player has advanced towards the goal they attack,
-                // which is the opposite end from the one they defend.
                 float advance = member.transform.position.z * -PitchBounds.DefendedSide(member.team);
 
                 return advance >= PitchBounds.GoalLineZ * (1f - AttackingThirdShare);
@@ -1029,15 +752,7 @@ namespace TacticalSoccer.Core
             return false;
         }
 
-        /// <summary>
-        /// Ends the half right now, skipping any stoppage time.
-        ///
-        /// For the developer menu. It goes through BeginEndOfHalf like the clock
-        /// does rather than calling BeginHalftime or EndMatch directly, so the
-        /// forced ending is the same ending — closing delay, announcement and the
-        /// half-versus-full-time decision all included — instead of a second path
-        /// that can drift away from the real one.
-        /// </summary>
+        // Termina la parte al instante, saltándose el descuento. Lo usa el menú de desarrollo.
         public void ForceEndOfHalf()
         {
             if (isMatchOver || isHalftime || isEndingHalf)
@@ -1051,14 +766,7 @@ namespace TacticalSoccer.Core
             BeginEndOfHalf("Forzado desde el menú de desarrollo");
         }
 
-        /// <summary>
-        /// Blows the whistle, then waits before the screen takes over.
-        ///
-        /// The delay is the point: freezing the pitch on the same frame as the
-        /// final touch means the last thing that happened in the half is never
-        /// actually seen. Guarded rather than trusted — the clock, a restart and
-        /// a dying attack can all reach this on the same frame.
-        /// </summary>
+        // Pita el final de la parte y arranca la espera antes de mostrar la pantalla siguiente.
         private void BeginEndOfHalf(string reason)
         {
             if (isEndingHalf)
@@ -1074,15 +782,13 @@ namespace TacticalSoccer.Core
             StartCoroutine(EndHalfRoutine());
         }
 
+        // Anuncia el final de parte o de partido, espera un momento y pasa al descanso o al resultado.
         private IEnumerator EndHalfRoutine()
         {
             bool isFullTime = currentHalf >= HalvesPerMatch;
 
             Announce(isFullTime ? "announce.fullTime" : "announce.halfTime");
 
-            // Blown here, at the top, not after the wait below. The wait exists
-            // so the last action of the half can be watched out — the whistle is
-            // what starts it, the same way the referee's does.
             if (Audio.AudioManager.Instance != null)
             {
                 if (isFullTime)
@@ -1095,24 +801,8 @@ namespace TacticalSoccer.Core
                 }
             }
 
-            // Realtime, and the match keeps running underneath at normal speed:
-            // this is a beat to watch the ball come to rest, not a freeze. A
-            // duel or a goal in these seconds resolves normally.
             yield return new WaitForSecondsRealtime(endOfHalfDelay);
 
-            // ...and because the match IS still live through that beat, a duel,
-            // a goal or a penalty can start inside it. The guard in Update only
-            // covers the decision to blow the whistle; by here the whistle has
-            // already gone, so nothing was stopping this from dropping the
-            // interval screen on top of a frozen duel — which is how the match
-            // locked up: the duel panel ended up under the team talk with
-            // timeScale at 0 and no way left to answer it, and Update, seeing a
-            // clash still active, never ran again.
-            //
-            // Realtime again, and unbounded on purpose: a duel is answered by
-            // the player, so there is no timeout that would not eventually fire
-            // in the middle of somebody thinking. Every interruption here ends
-            // by itself.
             while (IsPitchInterrupted)
             {
                 yield return null;
@@ -1129,16 +819,7 @@ namespace TacticalSoccer.Core
             EndMatch();
         }
 
-        /// <summary>
-        /// The interval. The match is frozen and handed to the team talk screen,
-        /// which is the only thing that can send the sides back out.
-        ///
-        /// The AI takes its substitutions HERE, before the freeze, rather than
-        /// from the interval screen: a side has to change its blown players
-        /// whether or not anybody is looking at a menu, and making the UI
-        /// responsible for the opposition's team sheet would mean the AI never
-        /// substituted at all if the human skipped straight through.
-        /// </summary>
+        // Congela el partido para el descanso: hace los cambios de la IA y muestra la pantalla de descanso.
         private void BeginHalftime()
         {
             ClearSetPieceFlags();
@@ -1149,10 +830,6 @@ namespace TacticalSoccer.Core
 
             Time.timeScale = MatchOverTimeScale;
 
-            // The stands go quiet for the team talk and the team sheet. Paused,
-            // not stopped: this is a break in the same match, and a bed that
-            // restarted from sample zero would announce the cut instead of
-            // hiding it.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.PauseCrowd();
@@ -1163,13 +840,7 @@ namespace TacticalSoccer.Core
             TacticalEvents.OnHalftime?.Invoke();
         }
 
-        /// <summary>
-        /// Sends the teams back out. Called by the interval screen, not from a
-        /// timer: the second half starts when the manager says so.
-        ///
-        /// The kickoff goes to the side that did NOT take the opening one, which
-        /// is what StartInitialKickoff already works out from the half number.
-        /// </summary>
+        // Reanuda el partido para la segunda parte y coloca a los equipos en su formación.
         public void StartSecondHalf()
         {
             if (isMatchOver || !isHalftime)
@@ -1186,11 +857,6 @@ namespace TacticalSoccer.Core
             Time.timeScale = NormalTimeScale;
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
 
-            // Both sides walk back out into their shape before the whistle. The
-            // first half ends wherever it ended — a side camped in the other's
-            // box, a defender who chased a loose ball into a corner — and the
-            // kickoff only ever moved the taker, so the second half used to
-            // start from the sprawl the first one finished in.
             RestoreFormationPositions();
 
             Debug.Log("Comienza la 2ª parte.");
@@ -1198,6 +864,7 @@ namespace TacticalSoccer.Core
             StartInitialKickoff();
         }
 
+        // Termina el partido: para el tiempo, silencia el público y reporta el resultado del torneo.
         private void EndMatch()
         {
             isMatchOver = true;
@@ -1206,17 +873,11 @@ namespace TacticalSoccer.Core
 
             Time.timeScale = MatchOverTimeScale;
 
-            // Stopped outright, not paused: unlike the interval there is nothing
-            // left to resume into. The result screen and the menu behind it are
-            // both meant to be quiet.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.StopCrowd();
             }
 
-            // Settled BEFORE the event, so the result screen that listens for it
-            // can read the outcome the tournament just worked out rather than
-            // racing it.
             ReportTournamentResult();
 
             Debug.Log("¡FINAL DEL PARTIDO!");
@@ -1224,15 +885,7 @@ namespace TacticalSoccer.Core
             TacticalEvents.OnMatchOver?.Invoke();
         }
 
-        /// <summary>
-        /// Hands the final score to the tournament, if this was a tournament
-        /// match. Does nothing for a quick match — the tournament ignores a
-        /// result it did not start a round for.
-        ///
-        /// The human's goals are read by TEAM rather than assumed to be the blue
-        /// column, because humanTeam is a field and nothing here should quietly
-        /// start lying if it is ever flipped.
-        /// </summary>
+        // Envía el resultado final al torneo, si el partido formaba parte de uno.
         private void ReportTournamentResult()
         {
             if (TournamentManager.Instance == null || ScoreManager.Instance == null)
@@ -1250,18 +903,7 @@ namespace TacticalSoccer.Core
                 humanIsBlue ? red : blue);
         }
 
-        /// <summary>
-        /// The AI's team sheet at the interval: every blown starter comes off
-        /// for the freshest substitute available.
-        ///
-        /// Only the side the human does not control is touched — the human makes
-        /// his own changes on the substitutions board, and having the game make
-        /// them for him would be taking the decision away.
-        ///
-        /// The keeper is skipped: there is no keeper on the bench to replace
-        /// him with, so swapping him out would leave the goal genuinely
-        /// undefended. Same rule the substitutions board enforces by hand.
-        /// </summary>
+        // Cambia a los titulares cansados de la IA por suplentes frescos del mismo rol, en el descanso.
         public void PerformAISubstitutions()
         {
             TeamId aiTeam = Opponent(humanTeam);
@@ -1278,10 +920,6 @@ namespace TacticalSoccer.Core
 
                 if (member.isStarter)
                 {
-                    // Anything under a full tank by this much is worth changing.
-                    // It used to be IsExhausted, which with a 300 tank meant the
-                    // last 60 units — a state a player barely reaches inside one
-                    // half, so the AI almost never made a substitution at all.
                     if (member.StaminaFraction < tiredSubstitutionFraction)
                     {
                         tired.Add(member);
@@ -1290,9 +928,6 @@ namespace TacticalSoccer.Core
                     continue;
                 }
 
-                // Only a completely fresh man is worth bringing on. A substitute
-                // who has already been on and come off again would be replacing
-                // tired legs with tired legs.
                 if (member.StaminaFraction >= 1f)
                 {
                     bench.Add(member);
@@ -1306,10 +941,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // Emptiest man off first: with only three on the bench the order is
-            // the whole decision, and taking them in whatever order the scene
-            // happened to return would spend the fresh legs on whoever was
-            // merely a little tired.
             tired.Sort((a, b) => a.currentStamina.CompareTo(b.currentStamina));
 
             int changes = 0;
@@ -1317,10 +948,6 @@ namespace TacticalSoccer.Core
 
             foreach (TeamMember outgoing in tired)
             {
-                // Like for like. A back three that loses a defender and gains a
-                // forward is not a substitution, it is a different formation —
-                // and the shape is not re-applied at the interval on purpose, so
-                // nothing downstream would ever put that right.
                 TeamMember incoming = null;
 
                 foreach (TeamMember candidate in bench)
@@ -1349,16 +976,13 @@ namespace TacticalSoccer.Core
                           : "."));
         }
 
-        /// <summary>
-        /// Puts the ball into play. Called the moment the taker commits to a
-        /// pass or a shot, which is what "under way" actually means — and it
-        /// clears every kind of restart, because they are all taken with a pass.
-        /// </summary>
+        // Pone el balón en juego: se llama cuando el que saca pasa o tira.
         public void EndKickoff()
         {
             ClearSetPieceFlags();
         }
 
+        // Limpia todas las banderas de espera de reinicio.
         private void ClearSetPieceFlags()
         {
             isWaitingForKickoff = false;
@@ -1369,15 +993,7 @@ namespace TacticalSoccer.Core
             isWaitingForPenalty = false;
         }
 
-        /// <summary>
-        /// Turns a foul into the right restart: a penalty if it happened inside
-        /// the offender's own box, a free kick anywhere else.
-        ///
-        /// The offender's own box, specifically — not "a box". The same patch of
-        /// grass is a penalty against the side defending it and a free kick in a
-        /// harmless position for the side attacking it, so the question can only
-        /// be asked about a named team.
-        /// </summary>
+        // Convierte una falta en el reinicio correcto: penalti si fue dentro del área propia, libre directo si no.
         private void HandleFoul(TeamMember offender)
         {
             if (offender == null || isMatchOver)
@@ -1389,19 +1005,11 @@ namespace TacticalSoccer.Core
 
             Vector3 spot = offender.transform.position;
 
-            // The restart always goes to the OTHER side. Stated here as the one
-            // rule rather than worked out again at each call site: whoever gave
-            // the foul away cannot also be the team that takes it, and the two
-            // restarts below are the only places that decision is made.
             TeamId attackingTeam = Opponent(offender.team);
 
             Debug.Log($"Falta de {offender.name} ({offender.team}) en " +
                       $"({spot.x:F1}, {spot.z:F1}) -> saque para {attackingTeam}.");
 
-            // Whoever is carrying loses it here, before anybody is moved. The
-            // restart hands the ball out itself, but the losing side has to stop
-            // believing it still has possession first — otherwise its AI spends
-            // the whole set piece running a play that no longer exists.
             ClearPossession();
 
             if (PitchBounds.IsInsidePenaltyArea(spot, offender.team))
@@ -1413,11 +1021,7 @@ namespace TacticalSoccer.Core
             StartFreeKick(spot, attackingTeam);
         }
 
-        /// <summary>
-        /// Free kick to <paramref name="attackingTeam"/> from where the foul
-        /// happened. Played exactly like every other restart: the ball is put on
-        /// the spot, everyone stands still, and play resumes on the first pass.
-        /// </summary>
+        // Prepara un tiro libre desde el punto de la falta para el equipo atacante.
         public void StartFreeKick(Vector3 foulPosition, TeamId attackingTeam)
         {
             if (isMatchOver)
@@ -1462,22 +1066,13 @@ namespace TacticalSoccer.Core
             Debug.Log($"FALTA para {attackingTeam}: saca {taker.name} desde " +
                       $"({spot.x:F1}, {spot.z:F1}).");
 
-            // Aimed upfield, towards the goal being attacked.
             float attackDirection = -PitchBounds.DefendedSide(attackingTeam);
 
             ScheduleAiRestart(attackingTeam, taker,
                 new Vector3(spot.x, 0f, spot.z + (attackDirection * throwInDistance)));
         }
 
-        /// <summary>
-        /// Takes the ball off whoever has it and stops the run they were on.
-        ///
-        /// Both halves matter. Clearing possession alone leaves the player
-        /// walking a route that was drawn for a passage of play that has just
-        /// been whistled dead — he arrives at the far post seconds later with
-        /// nothing to do there — and cancelling the route alone leaves him
-        /// reporting HasBall for a ball that is about to be somewhere else.
-        /// </summary>
+        // Quita el balón a quien lo lleve y cancela su ruta en curso.
         private static void ClearPossession()
         {
             BallController ball = BallController.Instance;
@@ -1500,20 +1095,7 @@ namespace TacticalSoccer.Core
             ball.Release();
         }
 
-        /// <summary>
-        /// Pushes everybody who is not taking the restart clear of the ball.
-        ///
-        /// A free kick is the one restart taken from wherever the last thing
-        /// happened, so unlike a corner or a kickoff there is no guarantee the
-        /// mark is empty — it is, by definition, the spot two players were
-        /// wrestling over a moment ago. Overlapping capsules will not push each
-        /// other apart on their own here, because the match is standing still
-        /// waiting for the kick.
-        ///
-        /// Pushed radially outward rather than "backwards": the offender may be
-        /// on any side of the ball, and shoving him along a fixed axis would as
-        /// often move him into the taker as away from him.
-        /// </summary>
+        // Aparta del balón a todos los jugadores que no sacan el reinicio.
         private void SeparateFromRestart(Vector3 ballSpot, PlayerBallHandler taker)
         {
             int moved = 0;
@@ -1525,10 +1107,6 @@ namespace TacticalSoccer.Core
                     continue;
                 }
 
-                // The taker is the one player who must not be moved: he is
-                // standing on the mark with the ball on his foot. Compared by
-                // reference rather than by distance — PlaceTaker offsets him from
-                // the mark by the socket, so he is never exactly on it.
                 if (taker != null && member.gameObject == taker.gameObject)
                 {
                     continue;
@@ -1544,8 +1122,6 @@ namespace TacticalSoccer.Core
                     continue;
                 }
 
-                // Dead centre on the mark gives no direction to push along, so
-                // one is chosen rather than dividing by zero.
                 Vector3 direction = distance > 0.01f ? away / distance : Vector3.back;
 
                 Vector3 target = ballSpot + (direction * restartClearanceRadius);
@@ -1561,13 +1137,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Penalty to <paramref name="attackingTeam"/>.
-        ///
-        /// Nothing is placed on the pitch and no taker is chosen: the penalty is
-        /// a menu, not a passage of play, and the ball only moves once a side has
-        /// been picked. The match is frozen until then.
-        /// </summary>
+        // Concede un penalti al equipo atacante y abre el menú para lanzarlo.
         public void StartPenaltyKick(TeamId attackingTeam)
         {
             if (isMatchOver)
@@ -1589,9 +1159,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // No menu in the scene to take it with. Rather than freeze the match
-            // on a penalty nobody can ever take, it is waved away and play
-            // restarts from the centre.
             Debug.LogWarning("No hay PenaltyUIController: el penalti se anula y se reanuda desde el centro.");
 
             isWaitingForPenalty = false;
@@ -1604,40 +1171,21 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Where the ball sits for the penalty about to be taken. Read by the
-        /// menu so the kick can be animated towards the right goal.
-        /// </summary>
+        // Punto donde se coloca el balón para el penalti.
         public Vector3 PenaltySpot { get; private set; }
 
-        /// <summary>Centre of the goal being shot at.</summary>
+        // Centro de la portería a la que se tira.
         public Vector3 PenaltyGoalCentre { get; private set; }
 
         private TeamMember penaltyTaker;
         private TeamMember penaltyKeeper;
 
-        /// <summary>
-        /// The keeper staged for the penalty, so the shot cinematic can dive him
-        /// while the ball is in the air.
-        ///
-        /// Exposed as a Transform rather than as the TeamMember: the only thing
-        /// the cinematic is allowed to do to him is move him, and handing over
-        /// the component would hand over his stats and his possession with it.
-        /// </summary>
+        // Transform del portero colocado para el penalti, para animarlo durante el tiro.
         public Transform PenaltyKeeper => penaltyKeeper != null ? penaltyKeeper.transform : null;
         private Vector3 penaltyTakerOrigin;
         private Vector3 penaltyKeeperOrigin;
 
-        /// <summary>
-        /// Puts a striker on the spot and a keeper on his line, so the penalty is
-        /// something you watch rather than two buttons over a pitch where nobody
-        /// has moved.
-        ///
-        /// Both original positions are kept, because a penalty is not a restart:
-        /// play resumes from wherever it was, and dragging two players across the
-        /// pitch permanently would quietly reshape both sides every time one was
-        /// given.
-        /// </summary>
+        // Coloca al lanzador en el punto de penalti y al portero en su línea.
         private void StagePenalty(TeamId attackingTeam)
         {
             TeamId defendingTeam = Opponent(attackingTeam);
@@ -1686,15 +1234,8 @@ namespace TacticalSoccer.Core
                     attackDirection * (PitchBounds.GoalLineZ - 0.6f));
             }
 
-            // Everybody else out of the box. A penalty is the striker, the keeper
-            // and nobody else — twenty players still standing where the foul left
-            // them clutter the one shot the whole sequence exists to show, and
-            // their colliders sit in the ball's flight path.
             ClearPenaltyArea(defendingTeam);
 
-            // The ball is put on the spot AFTER the taker has been given it,
-            // which releases it from him again — the kick is a flight from the
-            // mark, not a carry.
             BallController ball = BallController.Instance;
 
             if (ball != null)
@@ -1715,16 +1256,7 @@ namespace TacticalSoccer.Core
                       $"balón en z={PenaltySpot.z:F1}.");
         }
 
-        /// <summary>
-        /// Walks everybody except the two principals out of the penalty area and
-        /// back behind the halfway line.
-        ///
-        /// Their positions are not saved: UnstagePenalty restores the striker and
-        /// the keeper, and everybody else is meant to stay where this puts them.
-        /// A penalty is a break in play, and the sides re-forming around the
-        /// halfway line is what a break in play looks like — restoring them into
-        /// the tangle the foul happened in would only recreate the pile-up.
-        /// </summary>
+        // Aparta del área a todos los jugadores excepto el lanzador y el portero.
         private void ClearPenaltyArea(TeamId defendingTeam)
         {
             int moved = 0;
@@ -1747,9 +1279,6 @@ namespace TacticalSoccer.Core
                     route.CancelRoute();
                 }
 
-                // Back towards the middle, spread across the width so they do not
-                // all land on the same spot and jam into each other there
-                // instead.
                 float lane = ((moved % 5) - 2) * 3f;
 
                 Vector3 target = new Vector3(
@@ -1767,10 +1296,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Puts the two players back where the match had them and hands the
-        /// camera back to the follow rig.
-        /// </summary>
+        // Devuelve al lanzador y al portero a su posición original y recupera la cámara.
         private void UnstagePenalty()
         {
             if (penaltyTaker != null)
@@ -1785,17 +1311,10 @@ namespace TacticalSoccer.Core
                 penaltyKeeper = null;
             }
 
-            // Forced back rather than asked politely: the duel framing this
-            // borrowed does not return the view on its own, and a camera left
-            // staring at an empty penalty spot is a match played off screen.
             CameraSystem.TacticalCamera.Instance?.CenterCamera();
         }
 
-        /// <summary>
-        /// Called by the penalty menu once it has been taken and the outcome
-        /// applied. A save resumes from a goal kick to the defending side; a goal
-        /// has already started its own celebration and restart.
-        /// </summary>
+        // Cierra el penalti: si falló, reanuda con saque de puerta para el defensor.
         public void EndPenalty(TeamId attackingTeam, bool scored)
         {
             isWaitingForPenalty = false;
@@ -1809,19 +1328,11 @@ namespace TacticalSoccer.Core
 
             TeamId defendingTeam = Opponent(attackingTeam);
 
-            // Gathered by the keeper, so play restarts from his hands.
             StartGoalKick(defendingTeam,
                 new Vector3(0f, 0f, PitchBounds.DefendedSide(defendingTeam) * PitchBounds.GoalLineZ));
         }
 
-        /// <summary>
-        /// Sets up a throw-in for <paramref name="throwingTeam"/> at the point
-        /// where the ball left the pitch.
-        ///
-        /// Deliberately does NOT raise OnMatchReset: a restart puts the ball
-        /// back, not the match, and announcing a reset would snap every player
-        /// back to their kickoff formation.
-        /// </summary>
+        // Prepara un saque de banda para el equipo que saca, en el punto por donde salió el balón.
         public void StartThrowIn(TeamId throwingTeam, Vector3 outOfBoundsPos)
         {
             if (isMatchOver)
@@ -1838,8 +1349,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // Stand the thrower ON the touchline the ball left by, level with
-            // the exit point rather than wherever they happened to be.
             float sideline = Mathf.Sign(outOfBoundsPos.x) * PitchBounds.SideLineX;
 
             Vector3 spot = new Vector3(
@@ -1861,15 +1370,11 @@ namespace TacticalSoccer.Core
             Debug.Log($"SAQUE DE BANDA para {throwingTeam}: saca {thrower.name} desde " +
                       $"x={sideline:F1}, z={spot.z:F1}.");
 
-            // Aimed straight back infield, away from the line it went out over.
             ScheduleAiRestart(throwingTeam, thrower,
                 new Vector3(sideline - (Mathf.Sign(sideline) * throwInDistance), 0f, spot.z));
         }
 
-        /// <summary>
-        /// Corner to <paramref name="attackingTeam"/>: the defending side put it
-        /// behind their own goal line.
-        /// </summary>
+        // Prepara un saque de esquina para el equipo atacante.
         public void StartCorner(TeamId attackingTeam, Vector3 outPos)
         {
             if (isMatchOver)
@@ -1909,10 +1414,7 @@ namespace TacticalSoccer.Core
                 new Vector3(0f, 0f, Mathf.Sign(cornerZ) * (PitchBounds.GoalLineZ - 4f)));
         }
 
-        /// <summary>
-        /// Goal kick to <paramref name="defendingTeam"/>: the attacking side put
-        /// it behind the goal line without scoring.
-        /// </summary>
+        // Prepara un saque de puerta para el equipo defensor.
         public void StartGoalKick(TeamId defendingTeam, Vector3 outPos)
         {
             if (isMatchOver)
@@ -1949,23 +1451,11 @@ namespace TacticalSoccer.Core
 
             Debug.Log($"SAQUE DE PUERTA para {defendingTeam}: saca {keeper.name} desde z={spot.z:F1}.");
 
-            // Hoofed upfield, away from the goal being defended.
             ScheduleAiRestart(defendingTeam, keeper,
                 new Vector3(0f, 0f, spot.z - (side * goalKickDistance)));
         }
 
-        /// <summary>
-        /// Moves a player onto the restart spot and gives them the ball. Any run
-        /// they were on is cancelled first, or the route would immediately drag
-        /// them back off the mark.
-        /// </summary>
-        /// <param name="offerSupport">
-        /// Whether the taker's team-mates rearrange themselves to offer for the
-        /// pass. False for the kickoff, which is the one restart where both
-        /// sides are supposed to be standing in their formation — dragging the
-        /// forwards onto the centre spot there would undo the shape the team
-        /// sheet has just set.
-        /// </param>
+        // Coloca a un jugador en el punto de reinicio y le entrega el balón.
         private bool PlaceTaker(PlayerBallHandler taker, Vector3 spot, bool offerSupport = true)
         {
             BallController ball = BallController.Instance;
@@ -1980,12 +1470,6 @@ namespace TacticalSoccer.Core
                 route.CancelRoute();
             }
 
-            // The spot is where the BALL goes, and the ball rides on a socket
-            // about half a metre behind the player. Standing the taker on the
-            // mark therefore left the ball just outside it — which at a corner
-            // meant behind the goal line, still out of play by the check that
-            // had awarded the corner in the first place, so the same corner was
-            // awarded again on the next frame, and the next.
             Vector3 ballSpot = ClampToRestartArea(spot);
             Vector3 offset = taker.BallOffset;
 
@@ -1996,11 +1480,6 @@ namespace TacticalSoccer.Core
 
             taker.ForceTakeBall(ball);
 
-            // Everybody who is not taking it gets out of the way. Done here
-            // rather than in each restart because this is the one place all five
-            // of them pass through — throw-in, corner, goal kick, free kick and
-            // kickoff — and a rule about distance that only held for some of
-            // them would be no rule at all.
             ClearExclusionZone(ballSpot, taker);
 
             if (offerSupport)
@@ -2011,24 +1490,7 @@ namespace TacticalSoccer.Core
             return true;
         }
 
-        /// <summary>
-        /// Cuts and erases every drawn route the moment play stops.
-        ///
-        /// A route is two things at once — a line painted across the pitch and a
-        /// player running along it — and a restart ends both. Left alone the
-        /// line stayed on screen through the whole stoppage and the runner kept
-        /// going, so a throw-in was taken with half the side still carrying out
-        /// orders given before the whistle.
-        ///
-        /// The gesture in progress is cancelled FIRST. Cancelling the routes
-        /// without it would clear a line that the finger, still down, would
-        /// immediately start drawing again.
-        ///
-        /// Public and static because the whistle is blown from two places: the
-        /// restarts here, and the foul, which is called the moment the referee
-        /// decides rather than a second and a half later when the free kick is
-        /// finally placed.
-        /// </summary>
+        // Cancela el gesto de dibujo activo y borra todas las rutas dibujadas al detenerse el juego.
         public static void ClearDrawnRoutes()
         {
             TacticalSoccer.Input.TacticalInputManager input =
@@ -2043,9 +1505,6 @@ namespace TacticalSoccer.Core
 
             foreach (PlayerRoute route in FindObjectsByType<PlayerRoute>())
             {
-                // Asked before cancelling: CancelRoute is safe on a player who
-                // was doing nothing, but counting them all would report every
-                // restart as having wiped twenty routes.
                 bool wasActive = route.IsFollowingRoute;
 
                 route.CancelRoute();
@@ -2062,53 +1521,13 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Backs the defending side off the ball before a restart.
-        ///
-        /// This is the ten yards a referee paces out, and it is enforced for
-        /// BOTH sides: the reported case was a human player standing on top of
-        /// the AI's throw-in and taking it straight back, but the same thing
-        /// happens the other way and neither is a restart. The filter is the
-        /// TEAM, never who is controlling it.
-        ///
-        /// Each offender is pushed straight out along the line from the ball
-        /// through where they are standing, which is the shortest way out and
-        /// keeps whatever shape the side had. Their drawn route is cancelled
-        /// too, or a human who had ordered a run would simply jog back onto the
-        /// ball while the taker was still picking it up.
-        ///
-        /// The goalkeeper is left alone. He is the one player whose position is
-        /// not a choice — dragged off his line for a throw-in near the box he
-        /// would leave an open goal, which is a worse outcome than standing a
-        /// little close.
-        /// </summary>
+        // Aparta a los jugadores del equipo que no saca de la zona del balón antes del reinicio.
         private void ClearExclusionZone(Vector3 ballSpot, PlayerBallHandler taker)
         {
             AI.SetPiecePositioning.ClearExclusionZone(ballSpot, taker, restartExclusionRadius);
         }
 
-        /// <summary>
-        /// Walks the taker's team-mates into somewhere worth passing to.
-        ///
-        /// Without this a throw-in or a corner is taken into an empty half of
-        /// the pitch: everybody else is standing on their formation slot, which
-        /// is where the shape says they belong and not where a restart needs
-        /// them. Each line offers itself by a different amount, for the same
-        /// reason the off-the-ball drift does:
-        ///
-        ///  - forwards come to the ball, because they are the pass;
-        ///  - midfielders come half way, because they are the outlet if the
-        ///    first ball is not on;
-        ///  - defenders stay where they are. A defender who followed the ball
-        ///    into the corner is a defender who is not behind it when the
-        ///    restart is lost, and losing a throw-in should not be the same
-        ///    thing as conceding a counter-attack.
-        ///
-        /// Positions are written directly. The brief suggested NavMeshAgent.Warp
-        /// but this project has no NavMesh at all — the players move by
-        /// coroutine along drawn routes and by the drift, neither of which is
-        /// agent-based — so there is no agent to warp.
-        /// </summary>
+        // Reubica a los compañeros del que saca para ofrecer opciones de pase en el reinicio.
         private void OfferForRestart(PlayerBallHandler taker, Vector3 ballSpot)
         {
             AI.SetPiecePositioning.OfferForRestart(taker, ballSpot, RestartSupportClearance);
@@ -2122,22 +1541,13 @@ namespace TacticalSoccer.Core
         private static float RestartSupportClearance =>
             Instance != null ? Instance.restartSupportClearance : 4f;
 
-        /// <summary>
-        /// Pulls a restart mark just inside the painted lines, so the ball
-        /// placed on it is unambiguously in play.
-        /// </summary>
+        // Ajusta un punto de reinicio para que quede dentro de las líneas del campo.
         private static Vector3 ClampToRestartArea(Vector3 spot)
         {
             return AI.SetPiecePositioning.ClampToRestartArea(spot);
         }
 
-        /// <summary>
-        /// Puts the view back on the ball for a restart. Every set piece calls
-        /// it: the ball has just been moved to a mark somewhere else on the
-        /// pitch, and a camera still staging the tackle or the shot that put it
-        /// out would be pointing at an empty patch of grass while play resumed
-        /// off screen.
-        /// </summary>
+        // Vuelve a centrar la cámara sobre el balón para el reinicio.
         private static void CenterCameraOnPlay()
         {
             if (CameraSystem.TacticalCamera.Instance != null)
@@ -2146,12 +1556,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// The AI has nobody to press its buttons. Without this its restarts sit
-        /// there forever: the ball is dead, every other system is standing down
-        /// waiting for a pass, and the human cannot take it because it is not
-        /// their ball.
-        /// </summary>
+        // Si el reinicio es de la IA, programa que lo saque ella sola tras una pequeña espera.
         private void ScheduleAiRestart(TeamId takingTeam, PlayerBallHandler taker, Vector3 target)
         {
             if (takingTeam == humanTeam)
@@ -2167,27 +1572,19 @@ namespace TacticalSoccer.Core
             aiSetPieceRoutine = StartCoroutine(DelayedAISetPiece(taker, target));
         }
 
+        // Espera un momento y hace que la IA saque el reinicio hacia un compañero.
         private IEnumerator DelayedAISetPiece(PlayerBallHandler taker, Vector3 target)
         {
-            // Realtime: a route drawn during the pause drops timeScale to 0.1,
-            // which would stretch this into fifteen real seconds.
             yield return new WaitForSecondsRealtime(aiSetPieceDelay);
 
             aiSetPieceRoutine = null;
 
             if (taker == null || !taker.HasBall)
             {
-                // Something already put the ball back in play.
                 EndKickoff();
                 yield break;
             }
 
-            // Aimed at a TEAM-MATE, not at the patch of grass the restart was
-            // pointed towards. The fixed target is a direction — "upfield from
-            // the corner flag" — and hitting it put the ball into space every
-            // time, which from the outside looks exactly like the AI hoofing it
-            // away for no reason. The support players have already walked into
-            // position by now, so there is somebody real to aim at.
             TeamMember receiver = FindRestartReceiver(taker);
 
             Vector3 aim = receiver != null ? receiver.transform.position : target;
@@ -2196,22 +1593,10 @@ namespace TacticalSoccer.Core
                 ? $"[IA] {taker.name} saca hacia {receiver.name} ({receiver.role})."
                 : $"[IA] {taker.name} no tiene a nadie: saca hacia {target}.");
 
-            // PassTo clears the set-piece flags itself, through EndKickoff.
             taker.PassTo(aim);
         }
 
-        /// <summary>
-        /// Who the AI restarts to: the nearest team-mate who is far enough away
-        /// for the pass to be worth making.
-        ///
-        /// The minimum distance is the point. Without it the answer is whichever
-        /// support player was pushed to the edge of the clearance radius, and a
-        /// four-metre pass from a corner flag achieves nothing except giving the
-        /// ball straight back to the defence.
-        ///
-        /// The keeper is excluded. He is often the closest available player at a
-        /// goal kick, and passing to him restarts the same set piece.
-        /// </summary>
+        // Busca el compañero más cercano al que merece la pena pasarle en el reinicio.
         private TeamMember FindRestartReceiver(PlayerBallHandler taker)
         {
             return AI.SetPiecePositioning.FindRestartReceiver(taker, restartPassMinDistance);
@@ -2221,16 +1606,7 @@ namespace TacticalSoccer.Core
                  "this is a pass that gains nothing and hands the ball back.")]
         [SerializeField] private float restartPassMinDistance = 6f;
 
-        /// <summary>
-        /// Puts a finished match back to minute zero. Clearing isMatchOver comes
-        /// before the reset is announced, because the kickoff refuses to run on a
-        /// match that is still over.
-        ///
-        /// The reset goes through the ball rather than raising OnMatchReset by
-        /// hand. The ball is not a listener — it is the thing that raises the
-        /// event — so announcing it alone would leave a possessed ball kinematic
-        /// and glued to a socket that nobody owns any more.
-        /// </summary>
+        // Reinicia el partido desde cero: reloj, plantillas, estadísticas y tensión.
         public void RestartMatch()
         {
             currentTime = matchDuration;
@@ -2245,14 +1621,8 @@ namespace TacticalSoccer.Core
             Time.timeScale = NormalTimeScale;
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
 
-            // Stamina no longer comes back on its own, so a squad that finished
-            // the last match on its knees would start this one there too — and
-            // the substitutions made to cope with that have to be undone with
-            // it, or the second match kicks off with the first one's team sheet.
             RestoreInitialSquads();
 
-            // The one place momentum is wiped. It deliberately survives goals,
-            // halves and substitutions — this is a whole new match.
             if (TensionManager.Instance != null)
             {
                 TensionManager.Instance.ResetAll();
@@ -2264,7 +1634,6 @@ namespace TacticalSoccer.Core
 
             if (ball != null)
             {
-                // Releases possession, re-centres the ball AND raises OnMatchReset.
                 ball.ResetToKickoff();
             }
             else
@@ -2275,20 +1644,7 @@ namespace TacticalSoccer.Core
             Debug.Log("Partido reiniciado.");
         }
 
-        /// <summary>
-        /// Walks every player on the pitch back onto the station they hold off
-        /// the ball.
-        ///
-        /// The station is READ rather than recomputed: re-applying the formation
-        /// would re-sort each side by depth and hand players roles they did not
-        /// have a moment ago, which after a substitution reads as the game
-        /// undoing the change you just made. This only moves people to the slot
-        /// they already own.
-        ///
-        /// Substitutes are left in the dugout and the keeper is left on his
-        /// line — his positioning component switches itself off, so his slot is
-        /// simply wherever he is standing.
-        /// </summary>
+        // Devuelve a cada titular a su puesto de formación fuera del balón.
         private static void RestoreFormationPositions()
         {
             int moved = 0;
@@ -2302,8 +1658,6 @@ namespace TacticalSoccer.Core
 
                 Vector3 slot = ResolveFormationSlot(member);
 
-                // A run left over from the first half would drag the player
-                // straight back off the slot he has just been put on.
                 if (member.TryGetComponent(out PlayerRoute route))
                 {
                     route.CancelRoute();
@@ -2316,26 +1670,7 @@ namespace TacticalSoccer.Core
             Debug.Log($"Formaciones restablecidas para la 2ª parte: {moved} jugadores.");
         }
 
-        /// <summary>
-        /// Puts both squads back to how they started the first match: the right
-        /// eleven on the pitch, everybody in their original place, full tanks.
-        ///
-        /// Refilling stamina alone used to be the whole of this, and it left the
-        /// previous match's substitutions standing — the men who came on stayed
-        /// on, the men taken off stayed in the dugout, and the "fresh" squad was
-        /// the wrong one. Every system that remembers a station is rewritten
-        /// too, or the drift would walk everybody back to where the last match
-        /// left them.
-        /// </summary>
-        /// <summary>
-        /// Takes the match all the way back to before it began, for a player who
-        /// wants the title screen rather than another game of the same one.
-        ///
-        /// Everything RestartMatch does, and then one more thing: isMatchStarted
-        /// goes back to false. That flag is what IsWaitingForSetPiece consults to
-        /// hold the AI, the drift and the input still behind a menu, so without
-        /// it the pitch would carry on playing underneath the title.
-        /// </summary>
+        // Vuelve a la pantalla de título: reinicia el partido y marca que aún no ha empezado.
         public void ReturnToTitle()
         {
             RestartMatch();
@@ -2346,6 +1681,7 @@ namespace TacticalSoccer.Core
             Debug.Log("Vuelta a la pantalla de título.");
         }
 
+        // Pone a ambos equipos como al empezar el partido: titulares, posiciones y energía completa.
         private static void RestoreInitialSquads()
         {
             foreach (TeamMember member in FindObjectsByType<TeamMember>())
@@ -2356,21 +1692,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Trades two players between the pitch and the bench: their places in
-        /// the world, the station the off-the-ball drift walks them back to, the
-        /// slot a restart sends them to, and which of them counts as playing.
-        ///
-        /// All four move together on purpose. Position alone lasts about a
-        /// second — the drift would walk the substitute straight back to the
-        /// dugout — and the next restart would snap both of them onto the places
-        /// they started the match in.
-        ///
-        /// It lives here rather than on the substitutions board because there
-        /// are now two callers: the human's team sheet, and the AI's own
-        /// changes at the interval. The board is a way of choosing a
-        /// substitution, not the definition of one.
-        /// </summary>
+        // Intercambia a dos jugadores entre el campo y el banquillo: posición, puesto y estado de titular.
         public void SwapPlayers(TeamMember p1, TeamMember p2)
         {
             if (p1 == null || p2 == null || p1 == p2)
@@ -2396,16 +1718,7 @@ namespace TacticalSoccer.Core
             Debug.Log($"CAMBIO ({p1.team}): sale el {p1.jerseyNumber}, entra el {p2.jerseyNumber}.");
         }
 
-        /// <summary>
-        /// Where a player holds station. The drift's own slot is the authority;
-        /// falling back to the live position matters for the keeper, whose
-        /// positioning component switches itself off — but only after recording
-        /// where he stands.
-        ///
-        /// Public because the substitutions board draws its formation preview
-        /// from exactly this, and a second copy of the fallback rule was already
-        /// sitting in it.
-        /// </summary>
+        // Devuelve el puesto de formación de un jugador, o su posición actual si no tiene IA táctica.
         public static Vector3 ResolveFormationSlot(TeamMember member)
         {
             return member.TryGetComponent(out AI.TacticalPositioning positioning)
@@ -2413,11 +1726,7 @@ namespace TacticalSoccer.Core
                 : member.transform.position;
         }
 
-        /// <summary>
-        /// Writes one station into every system that remembers one. The route is
-        /// cancelled first: a run still in progress would drag the player
-        /// straight back off the place he has just been given.
-        /// </summary>
+        // Actualiza el puesto de un jugador en ruta e IA táctica.
         private static void AssignSlot(TeamMember member, Vector3 slot)
         {
             if (member.TryGetComponent(out PlayerRoute route))
@@ -2432,11 +1741,13 @@ namespace TacticalSoccer.Core
             }
         }
 
+        // Arranca el saque de centro tras un reinicio del partido.
         private void HandleMatchReset()
         {
             BeginKickoff();
         }
 
+        // Prepara el saque de centro: para rutinas anteriores, pita y centra la cámara.
         private void BeginKickoff()
         {
             if (isMatchOver)
@@ -2444,8 +1755,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // A goal conceded straight from a restart could raise OnMatchReset
-            // again while the previous routine is still on its wait frame.
             if (kickoffRoutine != null)
             {
                 StopCoroutine(kickoffRoutine);
@@ -2457,36 +1766,20 @@ namespace TacticalSoccer.Core
                 aiSetPieceRoutine = null;
             }
 
-            // Raised here, not inside the coroutine. The coroutine waits a frame
-            // before handing the ball out, and during that frame the ball would
-            // otherwise count as live and the clock would tick — a small leak,
-            // but one that happens on every goal and every restart.
             ClearSetPieceFlags();
             isWaitingForKickoff = true;
 
-            // One whistle for every restart from the centre, because there is
-            // one code path for them: the opening kickoff, the second half and
-            // every goal all arrive here.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.PlayWhistle(isLong: false);
             }
 
-            // Play restarts from the centre spot. A view the player had dragged
-            // out to a corner during the last passage would hide the kickoff
-            // itself, so the manual pan is dropped for every restart — a duel
-            // or a shot in open play still leaves it alone.
             CenterCameraOnPlay();
 
             kickoffRoutine = StartCoroutine(SetupKickoffRoutine());
         }
 
-        /// <summary>
-        /// Waits one frame before handing the ball out. OnMatchReset is raised
-        /// from inside BallController.ResetToKickoff, so at that instant every
-        /// handler is still mid-drop and the ball is still being repositioned;
-        /// assigning possession there would be undone the same frame.
-        /// </summary>
+        // Espera un frame a que el balón se reposicione y luego se lo entrega al que saca.
         private IEnumerator SetupKickoffRoutine()
         {
             yield return null;
@@ -2502,9 +1795,6 @@ namespace TacticalSoccer.Core
                 yield break;
             }
 
-            // Walk the taker onto the centre mark. The kickoff is taken from the
-            // halfway line, not from wherever in their own half that player
-            // happened to be standing when the whistle went.
             float ownSide = kickoffTeam == TeamId.Blue ? -1f : 1f;
 
             if (!PlaceTaker(taker, new Vector3(0f, taker.transform.position.y, ownSide * kickoffTakerOffset),
@@ -2516,17 +1806,6 @@ namespace TacticalSoccer.Core
 
             Debug.Log($"SAQUE DE CENTRO para {kickoffTeam}: saca {taker.name} desde el centro.");
 
-            // The AI has to be told to take its own kickoff, exactly like any
-            // other restart. Without this, conceding a goal to the human would
-            // leave the ball sitting on the centre spot on an opposition boot
-            // for the rest of the match — every other system is standing down
-            // waiting for a pass that nobody would ever play.
-            //
-            // Aimed at a TEAM-MATE, not at a point up the pitch. A kickoff
-            // played into empty space is a free ball handed to whoever is
-            // closest, which at the centre spot is usually the side that just
-            // scored — so conceding was quietly rewarded. Falling back to the
-            // old fixed point keeps a lone taker able to restart at all.
             PlayerBallHandler receiver = FindNearestFieldPlayer(
                 kickoffTeam, taker.transform.position, exclude: taker);
 
@@ -2534,9 +1813,6 @@ namespace TacticalSoccer.Core
                 ? receiver.transform.position
                 : new Vector3(0f, 0f, -ownSide * kickoffPassDistance);
 
-            // Only worth saying when the AI is the one about to take it: the
-            // human's kickoff target is computed and then discarded, because
-            // ScheduleAiRestart stands down for the human's own side.
             if (receiver != null && kickoffTeam != humanTeam)
             {
                 Debug.Log($"[IA] El saque de centro va hacia {receiver.name}.");
@@ -2545,63 +1821,27 @@ namespace TacticalSoccer.Core
             ScheduleAiRestart(kickoffTeam, taker, kickoffTarget);
         }
 
-        /// <summary>
-        /// Nearest outfield player of a side to a point. Keepers are excluded:
-        /// one would drag a kickoff back into his own area, and leave his goal
-        /// empty to take a corner. So are substitutes, who would otherwise be
-        /// walked out of the dugout to take a throw-in.
-        ///
-        /// <paramref name="exclude"/> is for the kickoff, which has to find
-        /// somebody to pass TO: the taker is standing on the ball and would win
-        /// any nearest-player search against himself at zero distance.
-        /// </summary>
+        // Jugador de campo más cercano a un punto, sin contar porteros ni suplentes.
         private PlayerBallHandler FindNearestFieldPlayer(TeamId team, Vector3 point,
             PlayerBallHandler exclude = null)
         {
             return AI.SetPiecePositioning.FindNearestFieldPlayer(team, point, exclude);
         }
 
-        /// <summary>
-        /// Same, restricted to one line when <paramref name="onlyRole"/> is set.
-        /// The basis of the taker preference below.
-        /// </summary>
+        // Igual, pero limitado a un rol concreto.
         private PlayerBallHandler FindNearestFieldPlayer(TeamId team, Vector3 point,
             PlayerBallHandler exclude, PlayerRole? onlyRole)
         {
             return AI.SetPiecePositioning.FindNearestFieldPlayer(team, point, exclude, onlyRole);
         }
 
-        /// <summary>
-        /// Who takes a restart: a midfielder if there is one, then a defender,
-        /// and a forward only if nobody else can.
-        ///
-        /// By line rather than by distance, which is what it used to be. The
-        /// nearest player to a corner flag is very often a forward — they are the
-        /// ones camped in that third — and sending the forward to fetch the ball
-        /// empties the box of the exact player the cross is meant to find. A
-        /// midfielder walking twenty metres to take it is not a cost: the ball is
-        /// dead and the clock is stopped.
-        ///
-        /// Within each line it is still the nearest, so the shortest walk of the
-        /// right kind of player wins.
-        /// </summary>
+        // Elige quién saca un reinicio: prioriza a los centrocampistas, luego defensas y por último delanteros.
         private PlayerBallHandler FindRestartTaker(TeamId team, Vector3 point)
         {
             return AI.SetPiecePositioning.FindRestartTaker(team, point);
         }
 
-        /// <summary>
-        /// The HUD announcement is optional dressing: a scene generated before
-        /// the announcer existed must still restart play, not throw.
-        /// </summary>
-        /// <summary>
-        /// Shouts one of the match's moments over the pitch.
-        ///
-        /// Takes a localisation KEY rather than the words: these nine calls are
-        /// scattered through a two-thousand-line file, and passing the Spanish
-        /// through was what kept the announcer speaking Spanish in every other
-        /// language.
-        /// </summary>
+        // Muestra un anuncio del locutor en pantalla, si el controlador existe.
         private static void Announce(string messageKey)
         {
             if (UI.AnnouncerUIController.Instance != null)
@@ -2611,6 +1851,7 @@ namespace TacticalSoccer.Core
             }
         }
 
+        // Busca al portero titular de un equipo.
         private PlayerBallHandler FindGoalkeeper(TeamId team)
         {
             foreach (TeamMember member in FindObjectsByType<TeamMember>())

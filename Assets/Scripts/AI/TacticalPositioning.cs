@@ -5,26 +5,7 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.AI
 {
-    /// <summary>
-    /// Keeps an outfield player alive when they have nothing else to do. Two
-    /// behaviours, in priority order:
-    ///
-    ///   1. If this is the closest player on the side to a LOOSE ball and it is
-    ///      within reach, walk at it. Wandering off while the ball rolls past
-    ///      your feet is the single most robotic thing a player can do.
-    ///   2. Otherwise hold the formation slot, shifted up and down with the
-    ///      ball and wandering slightly, so the shape breathes.
-    ///
-    /// How far the slot shifts is what separates the lines. Forwards camp high
-    /// and lean hard with the ball, midfielders track it evenly, and defenders
-    /// barely move and are hard-capped short of the halfway line — so the shape
-    /// stretches and compresses instead of the whole team sliding as one block.
-    ///
-    /// It is the lowest-priority mover on the pitch. Anything with an actual
-    /// intention — a drawn route, possession, a duel, a restart — takes the
-    /// Transform and this stands down, because two systems writing the same
-    /// Transform on the same frame is a fight, not a blend.
-    /// </summary>
+    // Mueve al jugador cuando no tiene nada más que hacer: va a por un balón suelto cercano o mantiene su puesto de formación.
     [RequireComponent(typeof(PlayerRoute))]
     public class TacticalPositioning : MonoBehaviour
     {
@@ -80,40 +61,20 @@ namespace TacticalSoccer.AI
 
         private Vector3 baseFormationPos;
 
-        /// <summary>
-        /// Where this player holds station. Exposed so a substitution can trade
-        /// two players' slots: the incoming man has to inherit the outgoing
-        /// man's station, or the drift would spend the rest of the match walking
-        /// him back to the bench he came off.
-        /// </summary>
+        // Puesto de formación de este jugador.
         public Vector3 FormationSlot => baseFormationPos;
 
-        /// <summary>
-        /// This side's outfield players. The roster is fixed for a match, so it
-        /// is resolved once instead of scanned every frame by every player.
-        ///
-        /// Held as TeamMember rather than Transform because who is actually ON
-        /// the pitch is not fixed: a substitution flips isStarter without
-        /// changing the roster, and a chase decision that counted a man sitting
-        /// in the dugout as the nearest would talk every player on the side out
-        /// of going for the ball.
-        /// </summary>
+        // Compañeros de campo de este equipo, para comparar distancias al ir a por el balón.
         private readonly List<TeamMember> teamMates = new List<TeamMember>();
 
-        /// <summary>
-        /// Per-player offset into the noise field. Without it every player reads
-        /// the same curve and the whole team drifts in unison, which looks far
-        /// more robotic than standing still.
-        /// </summary>
+        // Offset individual en el ruido de deriva, para que no todos los jugadores se muevan igual.
         private float noiseSeed;
 
-        // Derived from the formation slot rather than the instance id: it is
-        // unique per player, stable across runs, and stays in a range where
-        // Perlin noise still has resolution — raw instance ids do not.
         private const float NoiseSeedX = 7.31f;
         private const float NoiseSeedZ = 2.17f;
         private const float NoiseSeedBase = 500f;
 
+        // Cachea componentes y desactiva el script para los porteros, que se mueven con su propia lógica.
         private void Awake()
         {
             member = GetComponent<TeamMember>();
@@ -122,24 +83,13 @@ namespace TacticalSoccer.AI
 
             SetFormationSlot(transform.position);
 
-            // Keepers run their own tracking loop along the goal line. Two
-            // movers on one Transform would tear the keeper off his line.
             if (member != null && member.isGoalkeeper)
             {
                 enabled = false;
             }
         }
 
-        /// <summary>
-        /// Moves the slot this player drifts around. Called when the shape is
-        /// changed from the formation menu: without it the drift would spend the
-        /// whole match walking everyone back to the positions they were spawned
-        /// in, whatever the player picked.
-        ///
-        /// The noise seed is re-derived here rather than left alone, because it
-        /// comes from the slot itself — two players sent to the same line would
-        /// otherwise keep reading the same curve and drift in lockstep.
-        /// </summary>
+        // Cambia el puesto de formación y recalcula la semilla de ruido para este jugador.
         public void SetFormationSlot(Vector3 slot)
         {
             baseFormationPos = slot;
@@ -154,6 +104,7 @@ namespace TacticalSoccer.AI
             CacheTeamMates();
         }
 
+        // Persigue el balón suelto más cercano o mantiene el puesto de formación.
         private void Update()
         {
             if (!ShouldReposition())
@@ -175,22 +126,14 @@ namespace TacticalSoccer.AI
                 (chasing ? chaseSpeed : repositionSpeed) * Time.deltaTime);
         }
 
-        /// <summary>
-        /// Every reason to stand down, cheapest first.
-        /// </summary>
+        // Comprueba si el jugador debe moverse ahora mismo o dejar el control a otro sistema.
         private bool ShouldReposition()
         {
-            // Checked here as well as switched off in Awake: a keeper has his
-            // own tracking loop, and if anything ever re-enables this component
-            // the two would tear him off his line between them.
             if (member != null && member.isGoalkeeper)
             {
                 return false;
             }
 
-            // A substitute holds his seat. Without this the drift would walk him
-            // straight out of the dugout and onto the pitch, because his
-            // formation slot is the bench and the ball influence is not.
             if (member != null && !member.isStarter)
             {
                 return false;
@@ -219,14 +162,7 @@ namespace TacticalSoccer.AI
             return BallController.Instance != null;
         }
 
-        /// <summary>
-        /// True when this is the nearest of the side to a ball that nobody owns,
-        /// and it is close enough to be worth going for.
-        ///
-        /// Only a LOOSE ball is chased. Walking at an opponent who is carrying
-        /// would start duels the player never chose, and on the human's side
-        /// that would be the team playing itself.
-        /// </summary>
+        // Indica si este jugador es el más cercano de su equipo a un balón suelto y está a distancia de ir a por él.
         private bool ShouldChaseLooseBall()
         {
             BallController ball = BallController.Instance;
@@ -260,6 +196,7 @@ namespace TacticalSoccer.AI
             return true;
         }
 
+        // Distancia entre dos puntos ignorando la altura.
         private static float FlatDistance(Vector3 a, Vector3 b)
         {
             a.y = 0f;
@@ -268,21 +205,7 @@ namespace TacticalSoccer.AI
             return Vector3.Distance(a, b);
         }
 
-        /// <summary>
-        /// Rebuilds the cached team-mate list from the roster as it stands
-        /// right now.
-        ///
-        /// Public beyond Start(): the list is filtered by isGoalkeeper at the
-        /// moment it is built, and a goalkeeper swap (SquadRoles.Write) changes
-        /// that flag on two players well after every other player's Start() has
-        /// already run. Without a way to rebuild, every OTHER player's chase
-        /// check would keep comparing distances against whichever XI was on the
-        /// pitch when the scene first loaded — still counting the newly-made
-        /// keeper as a chase rival, and never counting the newly-demoted one at
-        /// all. SquadRoles.Write calls this for every member of the affected
-        /// team, not just the two who swapped, since it is everyone ELSE's
-        /// cache that goes stale.
-        /// </summary>
+        // Reconstruye la lista de compañeros de campo a partir de la plantilla actual.
         public void CacheTeamMates()
         {
             teamMates.Clear();
@@ -299,24 +222,19 @@ namespace TacticalSoccer.AI
                     continue;
                 }
 
-                // Substitutes are kept in the list on purpose: they can come on
-                // mid-match, and the chase check filters on isStarter at the
-                // moment it asks rather than trusting a roster cached at Start.
                 teamMates.Add(other);
             }
         }
 
+        // Calcula el punto donde el jugador debe estar según su formación, deriva y posición del balón.
         private Vector3 CalculateFormationPosition()
         {
-            // Two separate slices of the noise field, so X and Z wander
-            // independently instead of the player sliding along one diagonal.
             float driftX = SampleDrift(0.13f);
             float driftZ = SampleDrift(4.71f);
 
             PlayerRole role = member != null ? member.role : PlayerRole.Midfielder;
 
-            // Which way is forward for this side. Blue starts south and attacks
-            // north; Red does the opposite.
+            // Dirección de ataque de este equipo: Azul hacia el norte, Rojo hacia el sur.
             float attackDirection = member != null && member.team == TeamId.Red ? -1f : 1f;
 
             float zShift = BallController.Instance.transform.position.z * ResolveBallInfluence(role);
@@ -330,9 +248,7 @@ namespace TacticalSoccer.AI
 
             if (role == PlayerRole.Defender)
             {
-                // Measured as ground gained towards the opposition goal, so one
-                // cap covers both sides regardless of which sign of Z they
-                // attack.
+                // Distancia avanzada hacia la portería rival, para aplicar el mismo límite a ambos equipos.
                 float advance = target.z * attackDirection;
 
                 if (advance > defenderMaxAdvance)
@@ -344,23 +260,20 @@ namespace TacticalSoccer.AI
             return Core.PitchBounds.ClampPlayer(target);
         }
 
+        // Devuelve cuánto influye la posición del balón según el rol del jugador.
         private float ResolveBallInfluence(PlayerRole role)
         {
             switch (role)
             {
                 case PlayerRole.Forward: return forwardBallInfluence;
                 case PlayerRole.Defender: return defenderBallInfluence;
-
-                // Keepers never reach this — the component switches itself off
-                // for them — so a keeper role falls in with the midfielders.
                 default: return ballInfluence;
             }
         }
 
+        // Calcula el desplazamiento de deriva en un canal de ruido, centrado en cero.
         private float SampleDrift(float channel)
         {
-            // PerlinNoise returns 0..1; recentre it so the drift is symmetric
-            // about the formation slot rather than always pushing one way.
             float noise = Mathf.PerlinNoise((Time.time * driftSpeed) + noiseSeed, channel);
 
             return (noise - 0.5f) * 2f * driftRange;

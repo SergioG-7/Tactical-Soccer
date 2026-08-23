@@ -2,24 +2,7 @@ using UnityEngine;
 
 namespace TacticalSoccer.Gameplay
 {
-    /// <summary>
-    /// Momentum, as a bar each side fills by winning things.
-    ///
-    /// The bar is earned in duels and interceptions rather than by holding the
-    /// ball or by time on the pitch: those reward the side already on top, and
-    /// the point of momentum is that a side under pressure can build it by
-    /// standing up to that pressure. Winning a tackle is worth more than the
-    /// consolation a losing side gets, but the loser gets something — otherwise
-    /// a team being overrun can never climb out.
-    ///
-    /// Once full it burns: <see cref="BurnDuration"/> seconds of a flat duel
-    /// bonus and a real turn of pace, then the bar is spent and has to be
-    /// rebuilt from nothing.
-    ///
-    /// Held per side in two plain fields rather than in a dictionary keyed by
-    /// TeamId: there are exactly two teams, this is read every frame by the
-    /// movement code, and an enum-keyed lookup would box the key on every call.
-    /// </summary>
+    // Gestiona la barra de tensión de cada equipo y la zona de ardor que se activa al llenarla.
     public class TensionManager : MonoBehaviour
     {
         [Header("Carga")]
@@ -71,30 +54,25 @@ namespace TacticalSoccer.Gameplay
 
         public static TensionManager Instance { get; private set; }
 
-        /// <summary>Seconds a burn lasts. Read by the UI so the bar can drain in step.</summary>
+        // Duración del ardor en segundos, la usa la UI para animar la barra.
         public float BurnDuration => burnDuration;
 
         public float MaxTension => maxTension;
 
+        // Inicializa el singleton y pone las barras a cero.
         private void Awake()
         {
             Instance = this;
 
-            // Statics survive a domain reload when fast enter-play mode is on,
-            // which would otherwise open a match mid-burn.
             blueTension = 0f;
             redTension = 0f;
             blueBurnRemaining = 0f;
             redBurnRemaining = 0f;
         }
 
-        // Deliberately NOT subscribed to OnMatchReset. That event fires on every
-        // restart from the centre — which means every goal — and wiping the bars
-        // there threw away momentum at the exact moment a side had earned the
-        // most of it: score, and lose your zone as the reward. The bars now
-        // survive goals, halves and substitutions, and are only cleared when a
-        // whole new match begins, through ResetAll from MatchManager.RestartMatch.
+        // Las barras no se resetean en cada reinicio de jugada, solo al empezar un partido nuevo (ver ResetAll).
 
+        // Limpia la referencia al singleton al desactivarse.
         private void OnDisable()
         {
             if (Instance == this)
@@ -103,18 +81,7 @@ namespace TacticalSoccer.Gameplay
             }
         }
 
-        /// <summary>
-        /// Drains an active burn, but only while the ball is actually in play.
-        ///
-        /// IsWaitingForSetPiece covers both cases that matter here: the states
-        /// where timeScale is 0 (a duel, the interval, a penalty), where
-        /// Time.deltaTime is zero anyway, AND the states where the match runs
-        /// at full speed but nobody may act — a goal celebration, a corner
-        /// being lined up, the wait before a kickoff. The zone lasts ten
-        /// seconds, so two seconds of it burning away while the players stand
-        /// still waiting for a restart is a fifth of the reward gone for
-        /// nothing.
-        /// </summary>
+        // Descuenta el tiempo de ardor de cada equipo mientras el balón está en juego.
         private void Update()
         {
             if (Core.MatchManager.Instance != null && Core.MatchManager.Instance.IsWaitingForSetPiece)
@@ -147,15 +114,7 @@ namespace TacticalSoccer.Gameplay
             RefreshTensionAudio();
         }
 
-        /// <summary>
-        /// Keeps the burn fanfare in step with the zone.
-        ///
-        /// Driven off "is ANYBODY burning" rather than off either side's own
-        /// timer, because both can be in the zone at once and stopping the loop
-        /// when the first one drops out would cut the second one's music off
-        /// halfway through. Both calls are idempotent, so running this every
-        /// frame costs a bool check and never restarts a loop mid-phrase.
-        /// </summary>
+        // Arranca o para el loop de audio de tensión según si algún equipo está ardiendo.
         private void RefreshTensionAudio()
         {
             Audio.AudioManager audio = Audio.AudioManager.Instance;
@@ -174,7 +133,7 @@ namespace TacticalSoccer.Gameplay
             audio.StopTensionLoop();
         }
 
-        /// <summary>How full this side's bar is, 0..1. For anything drawing it.</summary>
+        // Devuelve cuánto tiene llena la barra este equipo, entre 0 y 1.
         public float Fraction(TeamId team)
         {
             if (maxTension <= 0f)
@@ -182,9 +141,7 @@ namespace TacticalSoccer.Gameplay
                 return 0f;
             }
 
-            // While burning the bar shows what is LEFT of the burn rather than
-            // the charge that bought it: the charge is spent, and a bar sitting
-            // full through the whole zone would give no sense of it running out.
+            // Mientras arde, la barra muestra lo que queda de ardor en vez de la carga.
             if (IsBurning(team))
             {
                 return Mathf.Clamp01(Remaining(team) / burnDuration);
@@ -193,61 +150,61 @@ namespace TacticalSoccer.Gameplay
             return Mathf.Clamp01(Current(team) / maxTension);
         }
 
+        // Tensión acumulada actual de este equipo.
         public float Current(TeamId team)
         {
             return team == TeamId.Blue ? blueTension : redTension;
         }
 
+        // Segundos de ardor que le quedan a este equipo.
         public float Remaining(TeamId team)
         {
             return team == TeamId.Blue ? blueBurnRemaining : redBurnRemaining;
         }
 
-        /// <summary>True while this side is in the zone.</summary>
+        // Indica si este equipo está en la zona de ardor.
         public bool IsBurning(TeamId team)
         {
             return Remaining(team) > 0f;
         }
 
-        /// <summary>Duel stat bonus this side is carrying right now.</summary>
+        // Bonus de duelo que tiene este equipo ahora mismo.
         public int DuelBonus(TeamId team)
         {
             return IsBurning(team) ? burnDuelBonus : 0;
         }
 
-        /// <summary>Speed multiplier this side is carrying right now.</summary>
+        // Multiplicador de velocidad que tiene este equipo ahora mismo.
         public float SpeedMultiplier(TeamId team)
         {
             return IsBurning(team) ? burnSpeedMultiplier : 1f;
         }
 
+        // Suma tensión por ganar un duelo.
         public void AddDuelWon(TeamId team)
         {
             Add(team, duelWonTension);
         }
 
+        // Suma tensión por perder un duelo.
         public void AddDuelLost(TeamId team)
         {
             Add(team, duelLostTension);
         }
 
+        // Suma tensión por interceptar un pase.
         public void AddIntercept(TeamId team)
         {
             Add(team, interceptTension);
         }
 
+        // Suma tensión por completar un pase.
         public void AddPassCompleted(TeamId team)
         {
             Add(team, passCompletedTension);
         }
 
-        /// <summary>
-        /// Charges a side's bar, and lights it if that fills it.
-        ///
-        /// A side already burning gains nothing. Letting it bank charge mid-burn
-        /// would let a team that wins two duels in the zone come straight out of
-        /// one burn and into another, which is not momentum, it is a lock.
-        /// </summary>
+        // Carga la barra de un equipo y activa el ardor si se llena. Si ya está ardiendo no gana nada.
         public void Add(TeamId team, float amount)
         {
             if (amount <= 0f || IsBurning(team))
@@ -274,11 +231,7 @@ namespace TacticalSoccer.Gameplay
             Ignite(team);
         }
 
-        /// <summary>
-        /// Spends a full bar and starts the burn. The charge is zeroed here, not
-        /// when the burn ends: the bar is showing the burn's own countdown by
-        /// then, and leaving it full would refill instantly on the next duel.
-        /// </summary>
+        // Gasta la barra llena y arranca el ardor del equipo.
         private void Ignite(TeamId team)
         {
             if (team == TeamId.Blue)
@@ -295,10 +248,6 @@ namespace TacticalSoccer.Gameplay
             Debug.Log($"[Tensión] ¡{team} entra en ZONA DE ARDOR! " +
                       $"+{burnDuelBonus} en duelos y x{burnSpeedMultiplier:F2} de velocidad durante {burnDuration:F0} s.");
 
-            // Started here rather than left to the next Update, so the fanfare
-            // lands on the moment the bar fills instead of a frame later — and
-            // so it still starts if the zone is lit during a set piece, which
-            // Update stands down for.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.StartTensionLoop();
@@ -307,10 +256,7 @@ namespace TacticalSoccer.Gameplay
             Core.TacticalEvents.OnTensionIgnited?.Invoke(team);
         }
 
-        /// <summary>
-        /// Wipes both bars. Hooked to the match reset so a new match — or a new
-        /// half — never opens with somebody mid-burn from the last one.
-        /// </summary>
+        // Resetea las barras y el ardor de ambos equipos al empezar un partido nuevo.
         public void ResetAll()
         {
             blueTension = 0f;
@@ -318,9 +264,6 @@ namespace TacticalSoccer.Gameplay
             blueBurnRemaining = 0f;
             redBurnRemaining = 0f;
 
-            // Cut rather than left to the next Update: a new match can begin
-            // from a menu, where Update has stood down, and the fanfare would
-            // otherwise carry over from the last one.
             if (Audio.AudioManager.Instance != null)
             {
                 Audio.AudioManager.Instance.StopTensionLoop();

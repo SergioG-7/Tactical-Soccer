@@ -5,27 +5,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// Developer menu: the levers needed to reach a state that would otherwise
-    /// take a full match to arrive at.
-    ///
-    /// Every button here reaches a state the game can genuinely be in, through
-    /// the same public methods the game itself uses — a full tension bar, full
-    /// tanks, the end of a half. None of them invents a state that normal play
-    /// cannot produce, because a cheat that does is a cheat that finds bugs
-    /// nobody can hit.
-    ///
-    /// Opened with a single click/tap on a small gear icon. Visible rather than
-    /// hidden on purpose — this is a portfolio piece, and the point is that a
-    /// visitor CAN find the developer menu — but shown only during a real
-    /// passage of play (see IsReachable) rather than always, so a non-functional
-    /// icon never sits on the title or a setup screen looking like a dead
-    /// button.
-    ///
-    /// Lives on the canvas rather than on the panel it owns. A component on a
-    /// deactivated GameObject never receives Start, so a controller parked on its
-    /// own hidden panel would never wire up the buttons that close it.
-    /// </summary>
+    // Menú de desarrollador para forzar estados del partido (tensión al máximo, curar stamina, terminar la parte, etc).
     public class DebugMenuUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -56,19 +36,12 @@ namespace TacticalSoccer.UI
         private const float NormalTimeScale = 1f;
         private const float FixedDeltaTimeAtNormalScale = 0.02f;
 
-        /// <summary>
-        /// The timeScale the match was running at when the menu opened, so
-        /// closing it restores what was there rather than assuming 1.
-        ///
-        /// It matters: the menu can be opened during a duel or behind the
-        /// interval, both of which are legitimately frozen and must stay frozen
-        /// when it closes.
-        /// </summary>
+        // TimeScale que había antes de abrir el menú, para restaurarlo al cerrar.
         private float restoreTimeScale = NormalTimeScale;
 
         public static DebugMenuUIController Instance { get; private set; }
 
-        /// <summary>True while the menu is up. Consulted by the input layer.</summary>
+        // True mientras el menú está abierto.
         public static bool IsOpen { get; private set; }
 
         private void Awake()
@@ -81,9 +54,7 @@ namespace TacticalSoccer.UI
                 uiPanel.SetActive(false);
             }
 
-            // Starts hidden rather than waiting for the first Update(): without
-            // this the icon flashes visible for a frame on the title screen
-            // before IsReachable ever gets checked.
+            // Empieza oculto para no mostrar el icono un frame antes de comprobar IsReachable.
             if (openTrigger != null)
             {
                 openTrigger.gameObject.SetActive(false);
@@ -100,25 +71,7 @@ namespace TacticalSoccer.UI
             IsOpen = false;
         }
 
-        /// <summary>
-        /// Whether the hidden corner is live at all.
-        ///
-        /// Only during a real passage of play. Everything this menu offers acts
-        /// on a match in progress — filling a tension bar, healing tanks, ending
-        /// a half — so outside one it has nothing to do, and the corner is doing
-        /// nothing but stealing taps.
-        ///
-        /// And it really was stealing them: the trigger is a 180-square anchored
-        /// into the top-left corner and it is a LATER sibling than every setup
-        /// screen, so it sat on top of the back button on the settings and team
-        /// sheet screens. Taps on the left of that button went to this instead —
-        /// which is why "back" seemed to work only sometimes, and why mashing it
-        /// opened the developer menu.
-        ///
-        /// isMatchStarted alone is not enough: it stays true after a match, so a
-        /// player back at the title would still count as playing. The screens are
-        /// asked directly.
-        /// </summary>
+        // True solo si hay un partido en curso y no hay ninguna pantalla de menú abierta encima.
         private static bool IsReachable => MatchManager.Instance != null
             && MatchManager.IsStarted
             && MatchManager.IsPlayable
@@ -126,19 +79,7 @@ namespace TacticalSoccer.UI
             && !MatchConfigUIController.IsOpen
             && !FormationUIController.IsOpen;
 
-        /// <summary>
-        /// Shows and hides the trigger icon with the match state.
-        ///
-        /// Full active toggle now rather than the old raycastTarget-only switch:
-        /// the trigger used to stay invisibly present the whole time (the point
-        /// WAS that it could never be seen), but a visible icon that sat there
-        /// looking clickable while doing nothing on the title or a setup screen
-        /// would read as a broken button, not as a hidden one. Deactivating it
-        /// is safe here because its only listener is IPointerClickHandler on
-        /// ButtonClickSound plus this controller's own Bind() below — neither is
-        /// lost by SetActive(false), unlike a listener that had to survive being
-        /// wired only once in Start().
-        /// </summary>
+        // Muestra u oculta el icono del menú según si el partido está en un estado alcanzable.
         private void Update()
         {
             if (openTrigger == null)
@@ -154,10 +95,10 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Engancha los listeners de todos los botones del menú.
         private void Start()
         {
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would fire each action twice on one press.
+            // Se limpian antes por si ya había listeners de una carga anterior.
             Bind(openTrigger, Open);
             Bind(maxTensionButton, MaxTension);
             Bind(healStaminaButton, HealStamina);
@@ -167,11 +108,7 @@ namespace TacticalSoccer.UI
             Bind(closeButton, Close);
         }
 
-        /// <summary>
-        /// Hands over to the shared audio options panel. The developer menu
-        /// stays open behind it, so closing the options lands back here rather
-        /// than on the pitch.
-        /// </summary>
+        // Abre el panel de opciones de audio por encima del menú de desarrollador.
         public void OpenAudioOptions()
         {
             if (AudioSettingsUI.Instance != null)
@@ -183,6 +120,7 @@ namespace TacticalSoccer.UI
             Debug.LogWarning("No hay panel de opciones de audio en la escena.");
         }
 
+        // Engancha una acción a un botón, quitando antes cualquier listener previo.
         private static void Bind(Button button, UnityEngine.Events.UnityAction action)
         {
             if (button == null)
@@ -194,6 +132,7 @@ namespace TacticalSoccer.UI
             button.onClick.AddListener(action);
         }
 
+        // Abre el menú de desarrollador y congela el partido.
         public void Open()
         {
             if (IsOpen)
@@ -214,6 +153,7 @@ namespace TacticalSoccer.UI
             Report(Core.LocalizationManager.GetText("debug.opened"));
         }
 
+        // Cierra el menú y devuelve el timeScale al valor que tenía antes de abrirlo.
         public void Close()
         {
             if (uiPanel != null)
@@ -223,8 +163,6 @@ namespace TacticalSoccer.UI
 
             IsOpen = false;
 
-            // Back to whatever was running before, not blindly to 1: opening this
-            // over a duel or the interval must not thaw them on the way out.
             Time.timeScale = restoreTimeScale;
 
             if (restoreTimeScale > 0f)
@@ -233,6 +171,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Llena la barra de tensión del equipo humano al máximo.
         private void MaxTension()
         {
             if (TensionManager.Instance == null)
@@ -243,8 +182,6 @@ namespace TacticalSoccer.UI
 
             TeamId team = MatchManager.Instance != null ? MatchManager.Instance.HumanTeam : TeamId.Blue;
 
-            // Through the ordinary charge path, so it ignites exactly as it would
-            // in a match — including everything that happens on ignition.
             TensionManager.Instance.Add(team, TensionManager.Instance.MaxTension);
 
             Report(Core.LocalizationManager.Format(
@@ -252,6 +189,7 @@ namespace TacticalSoccer.UI
                 Fouls.DescribeTeam(team)));
         }
 
+        // Rellena la stamina de todos los titulares del equipo humano.
         private void HealStamina()
         {
             TeamId team = MatchManager.Instance != null ? MatchManager.Instance.HumanTeam : TeamId.Blue;
@@ -273,6 +211,7 @@ namespace TacticalSoccer.UI
                 healed, Fouls.DescribeTeam(team)));
         }
 
+        // Fuerza el final de la parte actual.
         private void ForceEndOfHalf()
         {
             if (MatchManager.Instance == null)
@@ -281,22 +220,13 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // The half ends on a timer the menu is currently holding at zero, so
-            // the freeze has to be lifted for the closing routine to run at all.
+            // Hay que descongelar el partido para que la rutina de cierre pueda ejecutarse.
             Close();
 
             MatchManager.Instance.ForceEndOfHalf();
         }
 
-        /// <summary>
-        /// Empties the saved squad edits.
-        ///
-        /// Says out loud that it does NOT undo them on the players standing on
-        /// the pitch: their numbers were written onto the TeamMember when the
-        /// edit was made and the original values are the stat assets', not
-        /// something this has kept a copy of. What it guarantees is that the
-        /// next load starts from the squad the generator makes.
-        /// </summary>
+        // Borra las ediciones guardadas de la plantilla; no afecta a los jugadores ya en el partido actual.
         private void ResetSquad()
         {
             int cleared = Core.SaveManager.Data.squad.Count;
@@ -308,6 +238,7 @@ namespace TacticalSoccer.UI
                 : Core.LocalizationManager.GetText("debug.squadEmpty"));
         }
 
+        // Muestra un mensaje de feedback en el panel y en la consola.
         private void Report(string message)
         {
             Debug.Log($"[Debug] {message}");

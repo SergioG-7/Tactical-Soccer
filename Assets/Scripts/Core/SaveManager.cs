@@ -5,18 +5,7 @@ using UnityEngine;
 
 namespace TacticalSoccer.Core
 {
-    /// <summary>
-    /// One edited player, as saved.
-    ///
-    /// Identified by side and shirt number rather than by GameObject name: the
-    /// number is the only stable name a player has — the name carries the role
-    /// they were GENERATED with, and roles are reassigned by every formation
-    /// change, so "Team Red Forward 1" is routinely a midfielder.
-    ///
-    /// Enums are stored as ints so a value renamed in code does not silently
-    /// stop matching a file written by an older build. int is what the enum has
-    /// always been; the name is just how it is spelled.
-    /// </summary>
+    // Datos guardados de un jugador editado, identificado por equipo y dorsal.
     [Serializable]
     public class PlayerRecord
     {
@@ -35,24 +24,10 @@ namespace TacticalSoccer.Core
         public float maxStamina;
     }
 
-    /// <summary>
-    /// Everything that outlives a session.
-    ///
-    /// Settings and squad, together in one file, because they are saved by the
-    /// same event as often as not (the options screen writes a language, the
-    /// squad board writes a player) and two files would mean two ways for the
-    /// same save to half-happen.
-    ///
-    /// Every field has a default that is a working game: a fresh install with no
-    /// file reads exactly like this object, and no caller has to distinguish
-    /// "not saved yet" from "saved as zero".
-    /// </summary>
+    // Todo lo que se guarda entre sesiones: ajustes y plantilla editada.
     [Serializable]
     public class GameData
     {
-        // Matching the values the audio manager was serialised with, so a fresh
-        // install sounds the way it always did: the crowd bed sits under
-        // everything else, the effects play at full.
         public const float DefaultMusicVolume = 0.35f;
         public const float DefaultSfxVolume = 1f;
         public const float DefaultWhistleVolume = 1f;
@@ -62,10 +37,6 @@ namespace TacticalSoccer.Core
         public float musicVolume = DefaultMusicVolume;
         public float sfxVolume = DefaultSfxVolume;
 
-        // No legacy PlayerPrefs key to migrate here — this channel did not
-        // exist before, so a fresh field with its own default (matching what
-        // whistles sounded like when they were still on the classic SFX
-        // volume) is all a pre-existing save needs.
         public float whistleVolume = DefaultWhistleVolume;
 
         public int tournamentStage;
@@ -76,38 +47,15 @@ namespace TacticalSoccer.Core
         public List<PlayerRecord> squad = new List<PlayerRecord>();
     }
 
-    /// <summary>
-    /// The save file: one JSON document in the platform's own save folder.
-    ///
-    /// Static, and loaded on first read, for the same reason the localisation is:
-    /// the language is needed before any menu exists, and a manager that has to
-    /// be found in the scene first would be found too late. Nothing here needs a
-    /// GameObject.
-    ///
-    /// Writing is DEFERRED by default. A volume slider calls in on every frame
-    /// of a drag — forty writes over one sweep of the handle — so
-    /// <see cref="Save"/> only marks the data dirty and a small runtime host
-    /// flushes it a moment later, on losing focus, and on quit. Decisions the
-    /// player makes once (a language, an edited player) use
-    /// <see cref="SaveNow"/> and hit the disk immediately.
-    ///
-    /// This replaces the PlayerPrefs scattered across the audio manager and the
-    /// tournament. Their values are migrated the first time this runs, so an
-    /// existing player keeps their levels and their run.
-    /// </summary>
+    // Guarda y carga la partida en un archivo JSON. Los cambios frecuentes (sliders) se aplazan; los importantes se escriben al momento.
     public static class SaveManager
     {
         public const string FileName = "save_data.json";
 
-        // How long a deferred save waits before it is written. Long enough that
-        // a slider drag coalesces into one write, short enough that a player who
-        // closes the options and pulls the plug keeps their change.
+        // Tiempo que espera un guardado aplazado antes de escribirse.
         private const float FlushDelaySeconds = 1f;
 
-        // The old PlayerPrefs keys, read once to migrate and never written
-        // again. Named here rather than referenced from the two classes that
-        // used to own them: this is a fact about last version's format, and it
-        // should not keep those constants alive.
+        // Claves antiguas de PlayerPrefs, solo para migrar datos de versiones previas.
         private const string LegacyMusicKey = "MusicVolume";
         private const string LegacySfxKey = "SFXVolume";
         private const string LegacyStageKey = "TournamentStage";
@@ -116,14 +64,10 @@ namespace TacticalSoccer.Core
         private static bool dirty;
         private static float flushDueAt;
 
-        /// <summary>Where the file lives. Useful in a log when somebody asks where their settings went.</summary>
+        // Ruta del archivo de guardado en disco.
         public static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
-        /// <summary>
-        /// The saved game. Loads from disk on first use and never returns null —
-        /// a missing or corrupt file yields defaults rather than an exception, so
-        /// no caller has to check.
-        /// </summary>
+        // Datos de la partida guardada. Se cargan del disco la primera vez que se piden; nunca es null.
         public static GameData Data
         {
             get
@@ -137,21 +81,14 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Marks the data as needing a write, without doing one. For values that
-        /// change continuously — the two volume sliders — where writing on every
-        /// change would be a file write per frame.
-        /// </summary>
+        // Marca los datos como pendientes de guardar, sin escribir todavía.
         public static void Save()
         {
             dirty = true;
             flushDueAt = Time.unscaledTime + FlushDelaySeconds;
         }
 
-        /// <summary>
-        /// Writes immediately. For the changes a player would be annoyed to lose:
-        /// the language, an edited player, the tournament advancing a round.
-        /// </summary>
+        // Escribe el archivo de guardado inmediatamente.
         public static void SaveNow()
         {
             dirty = false;
@@ -162,16 +99,11 @@ namespace TacticalSoccer.Core
             }
             catch (Exception error)
             {
-                // A save that cannot be written is not worth taking the game
-                // down for: the session carries on with the values in memory.
                 Debug.LogWarning($"[Guardado] No se ha podido escribir {FilePath}: {error.Message}");
             }
         }
 
-        /// <summary>
-        /// Writes only if something is pending. Called by the host on its timer
-        /// and at every exit point.
-        /// </summary>
+        // Escribe el archivo solo si hay cambios pendientes.
         public static void Flush()
         {
             if (dirty)
@@ -180,12 +112,10 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>Whether a deferred save is due. Read by the host so the timer lives in one place.</summary>
+        // Indica si toca escribir un guardado aplazado.
         internal static bool IsFlushDue => dirty && Time.unscaledTime >= flushDueAt;
 
-        /// <summary>
-        /// The saved record for a player, or null if nobody has edited him.
-        /// </summary>
+        // Busca el registro guardado de un jugador, o null si nadie lo ha editado.
         public static PlayerRecord FindPlayer(int team, int jerseyNumber)
         {
             foreach (PlayerRecord record in Data.squad)
@@ -199,9 +129,7 @@ namespace TacticalSoccer.Core
             return null;
         }
 
-        /// <summary>
-        /// The record for a player, created and added if this is the first edit.
-        /// </summary>
+        // Devuelve el registro de un jugador, creándolo si es la primera edición.
         public static PlayerRecord GetOrCreatePlayer(int team, int jerseyNumber)
         {
             PlayerRecord existing = FindPlayer(team, jerseyNumber);
@@ -222,28 +150,25 @@ namespace TacticalSoccer.Core
             return record;
         }
 
-        /// <summary>
-        /// Throws the squad edits away, leaving the settings alone. The developer
-        /// menu's way of getting back to the players the generator made.
-        /// </summary>
+        // Borra los jugadores editados, dejando el resto de ajustes intactos.
         public static void ClearSquad()
         {
             Data.squad.Clear();
             SaveNow();
         }
 
+        // Carga los datos desde disco o los migra de PlayerPrefs si no hay archivo.
         private static void Load()
         {
             data = ReadFile() ?? MigrateFromPlayerPrefs();
 
-            // A file written by hand, or by an older build, can be missing the
-            // list entirely — JsonUtility leaves it null rather than defaulting.
             if (data.squad == null)
             {
                 data.squad = new List<PlayerRecord>();
             }
         }
 
+        // Lee y deserializa el archivo de guardado, o null si no existe o está corrupto.
         private static GameData ReadFile()
         {
             try
@@ -257,8 +182,6 @@ namespace TacticalSoccer.Core
             }
             catch (Exception error)
             {
-                // Corrupt file: start clean rather than refuse to run. The file
-                // is left where it is so it can still be looked at.
                 Debug.LogWarning($"[Guardado] {FileName} no se ha podido leer ({error.Message}). " +
                                  "Se empieza con la configuración por defecto.");
 
@@ -266,14 +189,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// First run of this system: builds the save from the PlayerPrefs the
-        /// previous version wrote, so nobody's volume levels or tournament
-        /// progress are reset by the upgrade.
-        ///
-        /// The old keys are left in place rather than deleted. They cost nothing,
-        /// and deleting them would make a downgrade lose everything twice.
-        /// </summary>
+        // Construye los datos iniciales a partir de las PlayerPrefs de una versión anterior.
         private static GameData MigrateFromPlayerPrefs()
         {
             GameData fresh = new GameData();
@@ -307,22 +223,12 @@ namespace TacticalSoccer.Core
             return fresh;
         }
 
-        /// <summary>
-        /// Installs the host that flushes deferred saves.
-        ///
-        /// Done from a runtime hook rather than from the scene generator: saving
-        /// is not a thing the scene should have to be wired for, and a save that
-        /// only worked in the generated scene would be a trap for any scene
-        /// added later.
-        /// </summary>
+        // Crea el GameObject que se encarga de volcar los guardados aplazados.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InstallHost()
         {
             GameObject host = new GameObject("SaveManager")
             {
-                // Not saved into any scene and not shown in the hierarchy: it is
-                // plumbing, and a stray copy serialised into a scene would be a
-                // second one flushing the same data.
                 hideFlags = HideFlags.HideAndDontSave
             };
 
@@ -332,16 +238,10 @@ namespace TacticalSoccer.Core
         }
     }
 
-    /// <summary>
-    /// Writes pending saves: on its timer, when the app loses focus, when it is
-    /// paused, and when it quits.
-    ///
-    /// The last three are what matter on a phone, where quitting is not an event
-    /// an app is guaranteed to see: a player who swipes the game away has already
-    /// been paused, and that is the last moment anything can be written.
-    /// </summary>
+    // Vuelca los guardados pendientes: por temporizador, al perder el foco, al pausarse o al cerrar la app.
     public class SaveFlushHost : MonoBehaviour
     {
+        // Comprueba cada frame si toca escribir un guardado aplazado.
         private void Update()
         {
             if (SaveManager.IsFlushDue)
@@ -350,6 +250,7 @@ namespace TacticalSoccer.Core
             }
         }
 
+        // Guarda al perder el foco la aplicación.
         private void OnApplicationFocus(bool hasFocus)
         {
             if (!hasFocus)
@@ -358,6 +259,7 @@ namespace TacticalSoccer.Core
             }
         }
 
+        // Guarda al pausarse la aplicación.
         private void OnApplicationPause(bool isPaused)
         {
             if (isPaused)
@@ -366,6 +268,7 @@ namespace TacticalSoccer.Core
             }
         }
 
+        // Guarda al cerrar la aplicación.
         private void OnApplicationQuit()
         {
             SaveManager.Flush();

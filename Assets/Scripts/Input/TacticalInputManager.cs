@@ -5,17 +5,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.Input
 {
-    /// <summary>
-    /// Detects touch/click input, resolves it against players and the field,
-    /// and forwards the resulting drag events to the targeted PlayerRoute.
-    /// This class owns no gameplay state itself; it only routes input.
-    ///
-    /// A drag means two different things depending on the phase. During normal
-    /// play it draws a route the player then runs. During a kickoff it places
-    /// the player outright — you are setting a formation, not ordering a run,
-    /// and making somebody jog into position while the clock is stopped would
-    /// be busywork.
-    /// </summary>
+    // Detecta el input táctil/ratón y lo convierte en órdenes: dibujar rutas, pasar, chutar o colocar jugadores en el saque.
     public class TacticalInputManager : MonoBehaviour
     {
         [Header("References")]
@@ -51,63 +41,38 @@ namespace TacticalSoccer.Input
         private Player.PlayerRoute selectedPlayerRoute;
         private Player.PlayerBallHandler selectedPlayerHandler;
 
-        /// <summary>
-        /// True when the drag under way is placing a player rather than drawing
-        /// a route. Latched at the start of the gesture so the kickoff ending
-        /// mid-drag cannot switch modes half way through it.
-        /// </summary>
+        // Si el arrastre actual está colocando un jugador (saque) en vez de dibujando una ruta.
         private bool isPlacingPlayer;
 
-        /// <summary>
-        /// True when the drag started on empty grass and is therefore moving the
-        /// view rather than commanding anybody.
-        /// </summary>
+        // Si el arrastre actual mueve la cámara en vez de dar una orden.
         private bool isPanningCamera;
 
-        /// <summary>Where the pointer last met the pitch plane, in world space.</summary>
+        // Última posición del puntero sobre el plano del campo, en coordenadas de mundo.
         private Vector3 lastPanWorldPoint;
 
-        /// <summary>
-        /// False until the gesture has travelled far enough to stop being a tap.
-        /// Without it every tap would nudge the camera by its own few pixels of
-        /// jitter before passing the ball.
-        /// </summary>
+        // Si el gesto ya se ha movido lo suficiente para dejar de considerarse un toque.
         private bool hasPanEngaged;
 
-        /// <summary>
-        /// The pitch surface as pure maths. Used instead of a ground raycast so
-        /// the pan keeps working when the pointer leaves the turf — which is
-        /// exactly where a drag towards the touchline ends up.
-        /// </summary>
+        // Plano matemático del campo, usado para el paneo de cámara aunque el puntero salga del césped.
         private static readonly Plane GroundPlane = new Plane(Vector3.up, Vector3.zero);
 
         private float pointerDownTime;
         private Vector2 pointerDownPosition;
         private bool isDragging;
 
-        /// <summary>True while two fingers are on the screen driving the zoom.</summary>
+        // Si hay dos dedos en pantalla haciendo zoom.
         private bool isPinching;
 
-        /// <summary>Distance between the two fingers last frame, in screen pixels.</summary>
+        // Distancia entre los dos dedos en el frame anterior, en píxeles.
         private float lastPinchDistance;
 
-        /// <summary>
-        /// Set while a pinch is being unwound. Lifting one finger of a pinch
-        /// leaves the other one down, and without this the frame after would be
-        /// read as the START of an ordinary drag from wherever that finger
-        /// happened to be — which is exactly the jump this flag exists to
-        /// prevent. Input stays swallowed until the screen is clear.
-        /// </summary>
+        // Activo mientras se levantan los dedos de un pinch, para no confundirlo con un arrastre nuevo.
         private bool isUnwindingPinch;
 
-        /// <summary>
-        /// The disc on the grass marking who the next order goes to. Built from
-        /// a primitive rather than a sprite so it lies in the world and is
-        /// occluded by the players standing over it, which is what makes it read
-        /// as paint on the pitch instead of an overlay.
-        /// </summary>
+        // Disco en el césped que marca a qué jugador van dirigidas las órdenes.
         private GameObject selectionRing;
 
+        // Toma la cámara principal si no se ha asignado ninguna.
         private void Awake()
         {
             if (mainCamera == null)
@@ -116,16 +81,16 @@ namespace TacticalSoccer.Input
             }
         }
 
+        // Prepara la plantilla humana y crea el marcador de selección.
         private void Start()
         {
             CacheHumanSquad();
             CreateSelectionRing();
         }
 
+        // Destruye el marcador de selección al eliminar este componente.
         private void OnDestroy()
         {
-            // An independent root object: nothing else would ever clean it up,
-            // and it would simply be left lying on the grass.
             if (selectionRing != null)
             {
                 Destroy(selectionRing);
@@ -133,13 +98,12 @@ namespace TacticalSoccer.Input
             }
         }
 
+        // Crea el disco visual que marca al jugador seleccionado, sin collider para no estorbar los raycasts.
         private void CreateSelectionRing()
         {
             selectionRing = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             selectionRing.name = "Selection Ring";
 
-            // A collider here would be an invisible bollard on the pitch: route
-            // raycasts would hit it, and so would the ball.
             Collider ringCollider = selectionRing.GetComponent<Collider>();
 
             if (ringCollider != null)
@@ -147,8 +111,6 @@ namespace TacticalSoccer.Input
                 Destroy(ringCollider);
             }
 
-            // A Unity cylinder is 2 units tall at scale 1, so the Y scale is a
-            // half-height: 0.05 gives a disc a tenth of a unit thick.
             selectionRing.transform.localScale =
                 new Vector3(selectionRingDiameter, 0.05f, selectionRingDiameter);
 
@@ -164,13 +126,7 @@ namespace TacticalSoccer.Input
             selectionRing.SetActive(false);
         }
 
-        /// <summary>
-        /// URP ships its shaders opaque, so the alpha on the colour is ignored
-        /// unless the material is explicitly flipped to alpha blending — without
-        /// this the marker comes out as a solid green plate under the player.
-        /// If the pipeline shader cannot be found at all, the ring falls back to
-        /// opaque, which is ugly but still tells you who is selected.
-        /// </summary>
+        // Crea el material transparente del anillo de selección, con alternativa opaca si no hay shader URP.
         private Material BuildSelectionRingMaterial()
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
@@ -197,16 +153,7 @@ namespace TacticalSoccer.Input
             return material;
         }
 
-        /// <summary>
-        /// Who the marker belongs to right now: the player being dragged if a
-        /// gesture is under way, and otherwise whoever on your side is carrying
-        /// the ball.
-        ///
-        /// The carrier half is the useful one. A tap always acts through the
-        /// carrier — that is the whole input model — so without it the marker
-        /// would only ever appear mid-drag, under the finger already drawing the
-        /// line, and answer a question nobody was asking.
-        /// </summary>
+        // Devuelve a qué jugador pertenece el marcador: el que se está arrastrando, o si no el que lleva el balón.
         private Transform ResolveMarkedPlayer()
         {
             if (isDragging && selectedPlayerRoute != null)
@@ -219,12 +166,7 @@ namespace TacticalSoccer.Input
             return carrier != null ? carrier.transform : null;
         }
 
-        /// <summary>
-        /// Parks the marker on the ground under whoever is selected. Late, not
-        /// in Update: the player may have been moved this frame by a route, a
-        /// restart or a substitution, and a marker written first would trail a
-        /// frame behind the man it belongs to.
-        /// </summary>
+        // Actualiza cada frame la posición del anillo de selección bajo el jugador marcado.
         private void LateUpdate()
         {
             if (selectionRing == null)
@@ -234,8 +176,6 @@ namespace TacticalSoccer.Input
 
             Transform marked = ResolveMarkedPlayer();
 
-            // Nothing to mark, or nothing to mark it during: the title screen,
-            // the interval and full time are all menus, not play.
             bool visible = marked != null
                 && Core.MatchManager.IsStarted
                 && Core.MatchManager.IsPlayable
@@ -257,14 +197,12 @@ namespace TacticalSoccer.Input
                 selectionRing.SetActive(true);
             }
 
-            // On the TURF, not at the player's origin. A capsule's transform
-            // sits at its centre, a unit above the grass, so following the
-            // position directly would hang the disc at chest height.
             Vector3 at = marked.position;
 
             selectionRing.transform.position = new Vector3(at.x, selectionRingGroundY, at.z);
         }
 
+        // Asigna las capas de raycast usadas para jugadores, suelo y portería.
         public void ConfigureLayers(LayerMask playerMask, LayerMask groundMask, LayerMask goalMask)
         {
             playerLayerMask = playerMask;
@@ -272,54 +210,36 @@ namespace TacticalSoccer.Input
             goalLayerMask = goalMask;
         }
 
+        // Lee el input cada frame: bloquea durante duelos y menús, gestiona el pinch de zoom y procesa toques y arrastres.
         private void Update()
         {
-            // Update is not gated by timeScale, so without this the player could
-            // draw a route during a frozen duel — and TimeController would then
-            // set timeScale to 0.1, thawing the clash through the back door.
             if (ClashManager.IsClashActive)
             {
                 return;
             }
 
-            // Same reasoning once the whistle has gone: the match is frozen at
-            // timeScale 0 for good, and drawing a route would hand TimeController
-            // an excuse to set 0.1 and restart a finished match.
             if (!Core.MatchManager.IsPlayable)
             {
                 return;
             }
 
-            // Same reasoning before the whistle: the title screen freezes the
-            // match at timeScale 0, and a route drawn behind it would have
-            // TimeController set 0.1 and start the game without the button.
             if (!Core.MatchManager.IsStarted)
             {
                 return;
             }
 
-            // And again behind the interval and the substitutions board, which
-            // freeze the match exactly as those do: a route drawn through either
-            // would have TimeController set 0.1 and run the game on under the
-            // menu.
             if (Core.MatchManager.IsHalftime || UI.SubstitutionUIController.IsOpen)
             {
                 return;
             }
 
-            // And behind the penalty and the developer menu, for the same reason
-            // again. Every modal screen in this game freezes the pitch with
-            // timeScale, and timeScale does not govern input.
             if (UI.PenaltyUIController.IsOpen || UI.DebugMenuUIController.IsOpen
                 || UI.AudioSettingsUI.IsOpen || UI.PlayerEditUIController.IsOpen)
             {
                 return;
             }
 
-            // Two fingers own the frame. Checked BEFORE the pointer, because
-            // Pointer.current still reports a press while pinching — the drag
-            // logic below would happily keep drawing a route with one hand while
-            // the other zoomed.
+            // Se comprueba el pinch antes que el puntero para que no se interprete como un arrastre normal.
             if (UpdatePinch())
             {
                 return;
@@ -334,8 +254,6 @@ namespace TacticalSoccer.Input
             {
                 pointerDownPosition = Pointer.current.position.ReadValue();
 
-                // Unscaled on purpose: drawing a route drops timeScale to 0.1,
-                // so Time.time would stretch this window to ~3 real seconds.
                 pointerDownTime = Time.unscaledTime;
 
                 TryBeginDrag();
@@ -361,10 +279,7 @@ namespace TacticalSoccer.Input
             }
         }
 
-        /// <summary>
-        /// The human roster is fixed for a match, so it is resolved once rather
-        /// than scanned on every tap.
-        /// </summary>
+        // Guarda en caché la lista de jugadores del equipo humano.
         private void CacheHumanSquad()
         {
             humanSquad.Clear();
@@ -383,13 +298,7 @@ namespace TacticalSoccer.Input
             }
         }
 
-        /// <summary>
-        /// Whoever on the human side is actually holding the ball right now.
-        ///
-        /// This replaces the old "last tapped player" memory: that made you
-        /// select the carrier before every single pass, and silently did nothing
-        /// if you had last tapped anybody else.
-        /// </summary>
+        // Devuelve el jugador del equipo humano que lleva el balón, si hay alguno.
         private Player.PlayerBallHandler ResolveCarrier()
         {
             foreach (Player.PlayerBallHandler handler in humanSquad)
@@ -403,24 +312,25 @@ namespace TacticalSoccer.Input
             return null;
         }
 
+        // Indica si el partido está esperando el saque de centro.
         private static bool IsWaitingForKickoff()
         {
             return Core.MatchManager.Instance != null && Core.MatchManager.Instance.isWaitingForKickoff;
         }
 
+        // Indica si el partido está esperando un saque de falta, banda, córner, etc.
         private static bool IsAwaitingRestart()
         {
             return Core.MatchManager.Instance != null && Core.MatchManager.Instance.IsWaitingForSetPiece;
         }
 
+        // Resuelve el inicio de un arrastre: selecciona jugador o inicia el paneo de cámara.
         private void TryBeginDrag()
         {
             Ray ray = mainCamera.ScreenPointToRay(Pointer.current.position.ReadValue());
 
             if (!Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, playerLayerMask))
             {
-                // Nothing to command under the finger, so the gesture is about
-                // the view rather than about a player.
                 BeginCameraPan();
                 return;
             }
@@ -431,31 +341,21 @@ namespace TacticalSoccer.Input
                 return;
             }
 
-            // You command your own side and nobody else's. The player layer does
-            // not distinguish teams, so without this the human could draw routes
-            // for the opposition — and, during a kickoff, drag their whole shape
-            // out of the way before taking it.
+            // Solo se pueden dar órdenes a jugadores del equipo humano que estén en el campo.
             TeamMember member = hit.collider.GetComponent<TeamMember>();
 
-            // A substitute is not orderable either. He is a real collider sitting
-            // in the dugout, so without this you could draw a run for a man on
-            // the bench and walk him onto the pitch without a substitution.
             if (member == null || member.team != HumanTeam || !member.isStarter)
             {
                 selectedPlayerRoute = null;
                 selectedPlayerHandler = null;
 
-                // You cannot order the opposition about, but you can still drag
-                // the view: nothing was selected, so the gesture is a pan.
                 BeginCameraPan();
                 return;
             }
 
             hit.collider.TryGetComponent(out Player.PlayerBallHandler handler);
 
-            // The player holding the ball at a restart is taking it. Letting you
-            // draw them a run would carry the ball off the centre mark, or off
-            // the touchline the throw has to be taken from.
+            // El jugador que va a sacar una falta o saque de banda no se puede mover con una ruta.
             if (handler != null && handler.HasBall && IsAwaitingRestart())
             {
                 selectedPlayerRoute = null;
@@ -473,9 +373,6 @@ namespace TacticalSoccer.Input
 
             if (isPlacingPlayer)
             {
-                // No route is being drawn, so no route visuals and no slow
-                // motion: dropping timeScale here would only stretch the clock
-                // out while the formation is being set.
                 selectedPlayerRoute.CancelRoute();
                 return;
             }
@@ -484,24 +381,13 @@ namespace TacticalSoccer.Input
             Core.TacticalEvents.OnRouteDrawStarted?.Invoke();
         }
 
-        /// <summary>
-        /// Reads a two-finger pinch and turns it into camera zoom.
-        /// </summary>
-        /// <returns>
-        /// True while the touch screen is being used for something other than a
-        /// single-pointer gesture, and the rest of Update must keep its hands
-        /// off: during the pinch itself, and afterwards until every finger has
-        /// been lifted.
-        /// </returns>
+        // Lee un pinch de dos dedos y lo convierte en zoom de cámara. Devuelve true mientras la pantalla está ocupada por el gesto.
         private bool UpdatePinch()
         {
             Touchscreen screen = Touchscreen.current;
 
             if (screen == null)
             {
-                // No touch screen at all — a desktop build, or the editor
-                // without device simulation. Nothing to do, and nothing to
-                // block.
                 return false;
             }
 
@@ -534,13 +420,9 @@ namespace TacticalSoccer.Input
 
                 if (!isPinching)
                 {
-                    // The first frame only ADOPTS the distance. Zooming on it
-                    // would mean measuring against a distance of zero and
-                    // snapping the camera the whole way out on contact.
+                    // El primer frame solo adopta la distancia inicial, sin aplicar zoom todavía.
                     isPinching = true;
 
-                    // Whatever one finger had begun is abandoned: the player is
-                    // reaching for a gesture, not ordering a run.
                     AbortGesture();
                 }
                 else if (CameraSystem.TacticalCamera.Instance != null)
@@ -561,9 +443,7 @@ namespace TacticalSoccer.Input
                 return false;
             }
 
-            // One finger of the pinch is still down. Keep swallowing until the
-            // screen is clear, so the leftover finger cannot be read as the
-            // beginning of a drag.
+            // Todavía queda un dedo del pinch en pantalla; se sigue ignorando el input hasta que se levante.
             if (pressed > 0)
             {
                 return true;
@@ -574,29 +454,13 @@ namespace TacticalSoccer.Input
             return false;
         }
 
-        /// <summary>
-        /// Drops whatever the finger was in the middle of, from outside.
-        ///
-        /// Called when the whistle goes. Without it a route being drawn AT that
-        /// moment keeps taking points — the pointer is still down, and this
-        /// manager has no idea a foul has just been given — so the line the
-        /// referee was supposed to have cut carries on growing under the
-        /// player's thumb.
-        /// </summary>
+        // Cancela desde fuera el gesto que esté en curso, por ejemplo cuando pita el árbitro.
         public void CancelActiveGesture()
         {
             AbortGesture();
         }
 
-        /// <summary>
-        /// Throws away the gesture in progress without committing it.
-        ///
-        /// Not EndDrag: that one COMMITS — it closes the route and sends the
-        /// player running it. A drag interrupted by a second finger was never an
-        /// order, so the route is cancelled instead. The draw-ended event still
-        /// has to be raised if the matching started event was, or the time
-        /// controller would leave the match in slow motion for good.
-        /// </summary>
+        // Descarta el gesto en curso sin confirmarlo, a diferencia de EndDrag que sí lo confirma.
         private void AbortGesture()
         {
             if (!isDragging)
@@ -613,11 +477,7 @@ namespace TacticalSoccer.Input
             ReleaseDrag();
         }
 
-        /// <summary>
-        /// Arms a camera pan. No route is begun and no slow motion is triggered:
-        /// moving the view is not a tactical order, and charging the player time
-        /// for looking around would be a strange thing to do.
-        /// </summary>
+        // Inicia el paneo de cámara sin dibujar ninguna ruta.
         private void BeginCameraPan()
         {
             selectedPlayerRoute = null;
@@ -629,6 +489,7 @@ namespace TacticalSoccer.Input
             hasPanEngaged = false;
         }
 
+        // Continúa el arrastre en curso: mueve la cámara, coloca al jugador o añade un punto a la ruta.
         private void ContinueDrag()
         {
             if (isPanningCamera)
@@ -653,15 +514,7 @@ namespace TacticalSoccer.Input
             selectedPlayerRoute.AddRoutePoint(hit.point);
         }
 
-        /// <summary>
-        /// Drags the view by however far the ground under the pointer has moved
-        /// since the last frame.
-        ///
-        /// The world point is sampled fresh every frame against the live camera,
-        /// so the pitch tracks the finger instead of sliding away from it as the
-        /// view moves — the same reason a tap has to be resolved at the instant
-        /// it happens rather than from a position cached earlier.
-        /// </summary>
+        // Mueve la cámara según lo que se ha desplazado el punto del suelo bajo el puntero desde el frame anterior.
         private void ContinueCameraPan()
         {
             Vector2 screenPosition = Pointer.current.position.ReadValue();
@@ -671,8 +524,7 @@ namespace TacticalSoccer.Input
                 return;
             }
 
-            // Below the tap threshold the gesture is still a tap. Panning here
-            // would drag the view by the few pixels of wobble in every tap.
+            // Por debajo del umbral el gesto sigue siendo un toque, no un paneo.
             if (!hasPanEngaged)
             {
                 if (Vector2.Distance(pointerDownPosition, screenPosition) <= tapThreshold)
@@ -694,12 +546,7 @@ namespace TacticalSoccer.Input
             lastPanWorldPoint = worldPoint;
         }
 
-        /// <summary>
-        /// Where a screen point meets the pitch surface. A maths plane rather
-        /// than a collider raycast: a drag heading for the touchline runs off
-        /// the turf long before it finishes, and a pan that died there would
-        /// feel broken exactly when it was most needed.
-        /// </summary>
+        // Calcula dónde toca el plano del campo un punto de pantalla.
         private bool TryGetGroundPoint(Vector2 screenPosition, out Vector3 worldPoint)
         {
             Ray ray = mainCamera.ScreenPointToRay(screenPosition);
@@ -714,18 +561,7 @@ namespace TacticalSoccer.Input
             return false;
         }
 
-        /// <summary>
-        /// Teleports the dragged player onto the pointer during a kickoff.
-        ///
-        /// The kickoff taker is deliberately immovable: the ball is glued to
-        /// their socket, so dragging them would drag the ball off the centre
-        /// spot with them. The team check is not repeated here — TryBeginDrag
-        /// already refuses to select anybody but Blue.
-        ///
-        /// The drop point is clamped to your own half, and a keeper to his own
-        /// goal: setting up a kickoff is arranging your shape, not walking your
-        /// forwards into the opposition box before the whistle.
-        /// </summary>
+        // Coloca al jugador arrastrado en el punto del campo indicado, durante la colocación previa al saque.
         private void PlacePlayerAt(Vector3 groundPoint)
         {
             if (selectedPlayerHandler == null || selectedPlayerHandler.HasBall)
@@ -747,20 +583,17 @@ namespace TacticalSoccer.Input
                 : Core.PitchBounds.ClampPlayer(desired);
         }
 
+        // Confirma el arrastre en curso: cierra la ruta dibujada, o simplemente libera el gesto si era un paneo o colocación.
         private void EndDrag()
         {
             if (isPanningCamera)
             {
-                // The pan has already been applied frame by frame; there is
-                // nothing to commit and no route to close.
                 ReleaseDrag();
                 return;
             }
 
             if (isPlacingPlayer)
             {
-                // Nothing to commit: the player is already standing where they
-                // were dropped, and no route was ever started.
                 ReleaseDrag();
                 return;
             }
@@ -770,6 +603,7 @@ namespace TacticalSoccer.Input
             ReleaseDrag();
         }
 
+        // Cancela un arrastre pendiente cuando el gesto termina siendo un toque simple.
         private void CancelPendingDrag()
         {
             if (!isDragging)
@@ -777,8 +611,6 @@ namespace TacticalSoccer.Input
                 return;
             }
 
-            // A pan draws no route, so there is nothing to cancel and no slow
-            // motion to lift.
             if (!isPlacingPlayer && !isPanningCamera)
             {
                 selectedPlayerRoute.CancelRoute();
@@ -788,6 +620,7 @@ namespace TacticalSoccer.Input
             ReleaseDrag();
         }
 
+        // Reinicia todo el estado relacionado con el gesto en curso.
         private void ReleaseDrag()
         {
             selectedPlayerRoute = null;
@@ -798,11 +631,7 @@ namespace TacticalSoccer.Input
             isDragging = false;
         }
 
-        /// <summary>
-        /// A tap always acts through whoever currently has the ball: tapping the
-        /// goal shoots, tapping anywhere else passes towards that point. No
-        /// selection step, because there is only ever one carrier to act with.
-        /// </summary>
+        // Resuelve un toque simple: chuta si apunta a la portería rival, o pasa el balón hacia ese punto.
         private void HandleTap()
         {
             CancelPendingDrag();
@@ -824,9 +653,6 @@ namespace TacticalSoccer.Input
                 return;
             }
 
-            // Whose side of the pitch the finger landed on decides everything
-            // below, so it is resolved once from the carrier rather than from
-            // whichever collider the ray happened to meet.
             carrier.TryGetComponent(out TeamMember member);
 
             bool towardsOwnGoal = member != null
@@ -834,8 +660,6 @@ namespace TacticalSoccer.Input
 
             if (hit.collider.CompareTag("Goal") && !towardsOwnGoal)
             {
-                // From close in this opens the shot duel and the ball only flies
-                // if the shooter wins; from distance it is struck straight away.
                 carrier.InitiateShot(hit.point);
                 return;
             }
@@ -846,15 +670,7 @@ namespace TacticalSoccer.Input
                 return;
             }
 
-            // Aimed at their own net. Never a shot — whatever the role, and
-            // whichever collider was hit — and the destination is pulled out in
-            // front of the line as well.
-            //
-            // Refusing to SHOOT was not enough on its own: a pass carries real
-            // force, so a keeper playing the ball "back" from his six-yard box
-            // simply passed it into his own goal instead of shooting it there.
-            // The tap is honoured as a ball played in that direction, stopping
-            // short of the one place it must not end up.
+            // Nunca se dispara hacia la propia portería: se juega como un pase, alejando el destino de la línea de gol.
             Vector3 safeTarget = Core.PitchBounds.PushOutOfOwnGoal(hit.point, member.team);
 
             Debug.Log($"[Tap] {carrier.name} apunta cerca de su propia portería: " +

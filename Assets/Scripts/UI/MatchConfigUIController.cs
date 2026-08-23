@@ -5,24 +5,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The pre-match screen: how hard the opposition plays, what shape it lines
-    /// up in, and how long a half lasts.
-    ///
-    /// Sits between the title and the team sheet on purpose. Everything on it is
-    /// a decision about the MATCH — the rules of the thing you are about to
-    /// play — while the team sheet is about YOUR side, and mixing the two on one
-    /// screen made picking a captain look like it might affect the opposition.
-    ///
-    /// Nothing here touches the pitch. The settings are written into
-    /// MatchManager, which owns them, and the rival's shape is not laid out
-    /// until the opening whistle — so "Aleatoria" cannot be read off the pitch
-    /// behind the next menu.
-    ///
-    /// Lives on the canvas rather than on the panel it owns: a component on a
-    /// deactivated GameObject never receives Start, and Start is where the
-    /// buttons are wired.
-    /// </summary>
+    // Pantalla previa al partido: dificultad rival, formación rival, duración y equipación.
     public class MatchConfigUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -78,23 +61,23 @@ namespace TacticalSoccer.UI
 
         public static MatchConfigUIController Instance { get; private set; }
 
-        /// <summary>True while the settings screen is up. Read off the panel itself.</summary>
+        // Cierto mientras la pantalla de configuración está abierta.
         public static bool IsOpen => Instance != null
             && Instance.uiPanel != null
             && Instance.uiPanel.activeSelf;
 
+        // Inicializa el singleton y oculta el panel.
         private void Awake()
         {
             Instance = this;
 
-            // Awake only runs in play mode, so this is what keeps the screen off
-            // the pitch in the editor.
             if (uiPanel != null)
             {
                 uiPanel.SetActive(false);
             }
         }
 
+        // Limpia la referencia al singleton al desactivarse.
         private void OnDisable()
         {
             if (Instance == this)
@@ -103,10 +86,9 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Conecta todos los botones de la pantalla con sus acciones.
         private void Start()
         {
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would hand over to the team sheet twice.
             Bind(easyButton, () => SetDifficulty(AIDifficulty.Facil));
             Bind(normalButton, () => SetDifficulty(AIDifficulty.Normal));
             Bind(hardButton, () => SetDifficulty(AIDifficulty.Dificil));
@@ -142,10 +124,7 @@ namespace TacticalSoccer.UI
             RefreshFeedback();
         }
 
-        /// <summary>
-        /// Opens the screen. Called by the title, which has already frozen the
-        /// match; it stays frozen through here and through the team sheet.
-        /// </summary>
+        // Abre la pantalla de configuración con el partido congelado.
         public void ShowMenu()
         {
             UIAnimator.Show(uiPanel);
@@ -155,24 +134,28 @@ namespace TacticalSoccer.UI
             RefreshFeedback();
         }
 
+        // Selecciona la dificultad del rival.
         public void SetDifficulty(AIDifficulty value)
         {
             difficulty = value;
             RefreshFeedback();
         }
 
+        // Selecciona la duración de la parte.
         public void SetDuration(float seconds)
         {
             halfDuration = seconds;
             RefreshFeedback();
         }
 
+        // Deja la formación del rival en aleatorio.
         public void SetRandomRivalShape()
         {
             randomRivalShape = true;
             RefreshFeedback();
         }
 
+        // Fija una formación concreta para el rival.
         public void SetRivalShape(FormationType shape)
         {
             randomRivalShape = false;
@@ -180,17 +163,14 @@ namespace TacticalSoccer.UI
             RefreshFeedback();
         }
 
+        // Selecciona la equipación del jugador humano.
         public void SetKit(TeamKit value)
         {
             kit = value;
             RefreshFeedback();
         }
 
-        /// <summary>
-        /// Writes the settings and hands over to the team sheet. Deliberately
-        /// does NOT restore timeScale: the next screen is still a menu, and
-        /// thawing between the two would run the pitch behind it.
-        /// </summary>
+        // Aplica la configuración elegida y pasa a la pantalla de formaciones.
         public void Continue()
         {
             if (MatchManager.Instance != null)
@@ -217,17 +197,7 @@ namespace TacticalSoccer.UI
             menu.ShowMenu();
         }
 
-        /// <summary>
-        /// Back to the main menu, cancelling the match being set up.
-        ///
-        /// Nothing chosen on this screen has been written anywhere yet — the
-        /// settings only reach MatchManager in Continue — so backing out really
-        /// does cancel, and there is nothing to undo.
-        ///
-        /// The pitch stays frozen on the way out: the title is a modal like this
-        /// one and freezes it again immediately, and thawing between the two
-        /// would run a few frames of a match nobody has started.
-        /// </summary>
+        // Vuelve al menú principal, cancelando la configuración del partido.
         public void GoBack()
         {
             UIAnimator.Hide(uiPanel);
@@ -241,16 +211,7 @@ namespace TacticalSoccer.UI
             Debug.LogWarning("No hay pantalla de título a la que volver.");
         }
 
-        /// <summary>
-        /// Puts a control last among its siblings, so nothing drawn afterwards
-        /// can sit on top of it and swallow its taps.
-        ///
-        /// Only protects against siblings — a later sibling of the PANEL still
-        /// draws over everything inside it, which is exactly how the developer
-        /// menu's hidden corner used to eat the left half of this button. That
-        /// one is fixed at its own end, by the corner standing down outside a
-        /// match. This is the cheap half of the belt and braces.
-        /// </summary>
+        // Pone un botón el último entre sus hermanos, para que nada se dibuje encima y bloquee sus toques.
         internal static void LiftAboveSiblings(Button button)
         {
             if (button != null)
@@ -259,6 +220,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Conecta un botón a una acción, evitando listeners duplicados.
         private static void Bind(Button button, UnityEngine.Events.UnityAction action)
         {
             if (button == null)
@@ -270,6 +232,7 @@ namespace TacticalSoccer.UI
             button.onClick.AddListener(action);
         }
 
+        // Actualiza el color de todos los botones y el texto resumen según la elección actual.
         private void RefreshFeedback()
         {
             Tint(easyButton, difficulty == AIDifficulty.Facil);
@@ -304,6 +267,7 @@ namespace TacticalSoccer.UI
                 TeamKits.GetLabel(kit));
         }
 
+        // Nombre de la dificultad en el idioma actual.
         private static string DescribeDifficulty(AIDifficulty value)
         {
             switch (value)
@@ -314,12 +278,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Written onto the button's own image rather than through its ColorBlock:
-        /// the block's normalColor is a multiplier over this image, so leaving the
-        /// image white and tinting the block would fight every hover and press
-        /// transition the Button applies on top.
-        /// </summary>
+        // Colorea un botón según si su opción está seleccionada.
         private void Tint(Button button, bool isSelected)
         {
             if (button == null || button.targetGraphic == null)
@@ -330,15 +289,7 @@ namespace TacticalSoccer.UI
             button.targetGraphic.color = isSelected ? selectedColor : unselectedColor;
         }
 
-        /// <summary>
-        /// The kit buttons wear their own strip rather than the blue-or-grey
-        /// tint the rest of the screen uses: "Verde" as a word tells you nothing
-        /// about whether you will be able to pick your own players out at a
-        /// glance, and the swatch is the entire decision being made.
-        ///
-        /// Selection is shown by dimming the others instead, so all four stay
-        /// readable as colours while only one reads as chosen.
-        /// </summary>
+        // Pinta un botón de equipación con su propio color, atenuando los que no están elegidos.
         private void TintKit(Button button, TeamKit buttonKit)
         {
             if (button == null || button.targetGraphic == null)

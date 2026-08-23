@@ -4,22 +4,7 @@ using TacticalSoccer.Core;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The interval. Comes up when the first half runs out, holds the match at
-    /// timeScale 0, and offers the only two things a manager does at half time:
-    /// change his team, or send it back out.
-    ///
-    /// This is now the ONLY way into the substitutions board. Stamina no longer
-    /// comes back on its own, so a change is a decision with consequences for
-    /// the rest of the match rather than something to be done on a whim while
-    /// the ball is in the air — which is also why the board no longer hangs off
-    /// the match HUD.
-    ///
-    /// Lives on the canvas, not on the panel it owns: a component on a
-    /// deactivated GameObject never receives OnEnable, so a controller parked on
-    /// its own hidden panel would never hear the half-time whistle it exists to
-    /// answer.
-    /// </summary>
+    // Pantalla de descanso: aparece al final de la primera parte y permite hacer cambios o continuar el partido.
     public class HalftimeUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -40,8 +25,6 @@ namespace TacticalSoccer.UI
         {
             Instance = this;
 
-            // Awake only runs in play mode, so this is what keeps the interval
-            // screen off the pitch in the editor.
             if (uiPanel != null)
             {
                 uiPanel.SetActive(false);
@@ -52,11 +35,6 @@ namespace TacticalSoccer.UI
         {
             TacticalEvents.OnHalftime += ShowInterval;
             TacticalEvents.OnMatchOver += HandleMatchOver;
-
-            // The summary carries the score, so it is composed here rather than
-            // being a key a LocalizedText could follow on its own — which means
-            // this controller has to hear the language change itself, or the one
-            // paragraph on the screen would stay in the old language.
             LocalizationManager.OnLanguageChanged += WriteSummary;
         }
 
@@ -72,10 +50,9 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Engancha los botones de cambios y de segunda parte.
         private void Start()
         {
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would start the second half twice on one press.
             if (substitutionsButton != null)
             {
                 substitutionsButton.onClick.RemoveAllListeners();
@@ -94,11 +71,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Opens the team talk. The match is already frozen by the manager
-        /// before this is raised, so there is no timeScale to set here — and
-        /// setting it anyway would be a second owner of the freeze.
-        /// </summary>
+        // Muestra la pantalla de descanso con el resumen del partido.
         public void ShowInterval()
         {
             if (uiPanel != null)
@@ -109,11 +82,7 @@ namespace TacticalSoccer.UI
             WriteSummary();
         }
 
-        /// <summary>
-        /// Hands over to the substitutions board, passing this panel as the way
-        /// back. The board closes into the team talk rather than into the match:
-        /// making changes is not the same as being ready to restart.
-        /// </summary>
+        // Abre la pantalla de cambios, guardando este panel como pantalla de vuelta.
         public void OpenSubstitutions()
         {
             if (SubstitutionUIController.Instance == null)
@@ -130,10 +99,7 @@ namespace TacticalSoccer.UI
             SubstitutionUIController.Instance.ShowBoard(uiPanel);
         }
 
-        /// <summary>
-        /// Sends the teams back out. The manager owns the clock, the half number
-        /// and the thaw; this only closes the screen and asks.
-        /// </summary>
+        // Cierra el descanso y pide al MatchManager que empiece la segunda parte.
         public void StartSecondHalf()
         {
             if (uiPanel != null)
@@ -150,11 +116,7 @@ namespace TacticalSoccer.UI
             MatchManager.Instance.StartSecondHalf();
         }
 
-        /// <summary>
-        /// Full time can only be reached from the second half, so this screen
-        /// should never be up when it arrives — but if it somehow is, it has to
-        /// go, and without thawing anything.
-        /// </summary>
+        // Oculta el panel de descanso si el partido termina.
         private void HandleMatchOver()
         {
             if (uiPanel != null)
@@ -163,6 +125,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Escribe el título y el resumen del marcador en el panel de descanso.
         private void WriteSummary()
         {
             LocalizedText.Write(headingText, "halftime.heading");
@@ -178,10 +141,6 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Written straight rather than through LocalizedText: this one
-            // carries the score, so it is not a key on its own and could not be
-            // re-derived from one. Both sides of the colon are in the
-            // translation, including where the two numbers fall.
             LocalizationManager.WriteFormatted(summaryText, "halftime.summary",
                 ScoreManager.Instance.BlueScore, ScoreManager.Instance.RedScore);
         }

@@ -8,24 +8,7 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The substitutions board: a modal screen showing one side's whole squad —
-    /// the seven on the pitch laid out in their actual shape, the three on the
-    /// bench underneath — and the stat block of whoever is selected.
-    ///
-    /// Tap a starter, then a substitute, and the two trade places.
-    ///
-    /// The slots are built at runtime rather than wired in the scene. There are
-    /// ten of them and the roster is fixed, so ten serialized buttons would have
-    /// worked — right up until the first substitution, when the man standing in
-    /// a slot changes and every label, position and stat block behind it has to
-    /// follow. Rebuilding from the live squad is the only version of this that
-    /// cannot go stale.
-    ///
-    /// Lives on the canvas, not on the panel it owns: a component on a
-    /// deactivated GameObject never receives Start, and Start is where the HUD
-    /// button that opens this is wired.
-    /// </summary>
+    // Panel de sustituciones: muestra la plantilla completa de un equipo y permite intercambiar titulares por suplentes.
     public class SubstitutionUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -65,9 +48,7 @@ namespace TacticalSoccer.UI
         [SerializeField] private Vector2 slotSize = new Vector2(150f, 76f);
         [SerializeField] private int slotFontSize = 24;
 
-        // The pitch, as the mapping below needs to know it. Mirrors the geometry
-        // the scene generator builds: a Unity Plane at scale (3, 1, 5) spans
-        // 30 x 50 units.
+        // Dimensiones del campo, usadas para ubicar los slots del mini-campo.
         private const float PitchHalfWidth = 15f;
         private const float PitchHalfLength = 25f;
 
@@ -78,73 +59,45 @@ namespace TacticalSoccer.UI
         private readonly List<TeamMember> squad = new List<TeamMember>();
         private readonly List<GameObject> slotObjects = new List<GameObject>();
 
-        /// <summary>Whoever was tapped first, waiting for a partner to swap with.</summary>
+        // Jugador tocado primero, a la espera de un compañero con quien intercambiarse.
         private TeamMember selected;
 
-        /// <summary>
-        /// The player the readout is currently describing.
-        ///
-        /// Not the same as <see cref="selected"/>: that one is half of a swap in
-        /// progress and is cleared the moment the swap completes, whereas this
-        /// stays on whoever the board last talked about — which is who the EDIT
-        /// button should open.
-        /// </summary>
+        // Jugador que se está mostrando actualmente en el panel de estadísticas.
         private TeamMember inspected;
 
-        /// <summary>
-        /// The screen to hand back to when this closes. Set when the board is
-        /// opened from the interval, which is the only way in now: closing has
-        /// to return to the team talk, NOT resume the match, or pressing the
-        /// substitutions button would start the second half by itself.
-        /// </summary>
+        // Pantalla a la que volver al cerrar este panel.
         private GameObject returnPanel;
 
-        /// <summary>Last refusal, shown under the stat block until something else happens.</summary>
+        // Último mensaje de aviso, mostrado bajo las estadísticas.
         private string notice = string.Empty;
 
         public static SubstitutionUIController Instance { get; private set; }
 
-        /// <summary>
-        /// True while the board is up. The input layer is not governed by
-        /// timeScale, so without this the player could draw a route through the
-        /// panel — and drawing a route sets timeScale to 0.1, thawing the match
-        /// behind a menu that is supposed to be holding it still. Exactly the
-        /// hole the title screen already had to plug.
-        /// </summary>
+        // Si el panel de sustituciones está abierto actualmente.
         public static bool IsOpen { get; private set; }
 
+        // Inicializa la instancia y oculta el panel.
         private void Awake()
         {
             Instance = this;
 
             IsOpen = false;
 
-            // Awake only runs in play mode, so this is what keeps the board off
-            // the pitch in the editor.
             if (uiPanel != null)
             {
                 uiPanel.SetActive(false);
             }
         }
 
+        // Suscribe los eventos que este panel necesita escuchar.
         private void OnEnable()
         {
             TacticalEvents.OnMatchOver += HandleMatchOver;
             PlayerEditUIController.OnPlayerEdited += HandlePlayerEdited;
-
-            // The side panel is a paragraph composed from a dozen keys, so no
-            // LocalizedText can follow the language on its own — this screen has
-            // to repaint it. Without this it kept the old language until the
-            // player was deselected and tapped again, which reads as the change
-            // not having worked.
             Core.LocalizationManager.OnLanguageChanged += RepaintForLanguage;
         }
 
-        /// <summary>
-        /// Redraws everything this screen composes by hand after a language
-        /// change: the side panel for whoever is selected — or the placeholder
-        /// if nobody is — plus every slot caption on the pitch and the bench.
-        /// </summary>
+        // Redibuja el panel al cambiar de idioma.
         private void RepaintForLanguage()
         {
             if (uiPanel == null || !uiPanel.activeSelf)
@@ -152,14 +105,12 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Rebuilt rather than rewritten: each slot's caption carries a role
-            // tag and a stamina figure, and the board already knows how to make
-            // them from the live squad.
             RebuildBoard();
 
             WriteStats(inspected);
         }
 
+        // Desuscribe los eventos y limpia el estado al desactivarse.
         private void OnDisable()
         {
             TacticalEvents.OnMatchOver -= HandleMatchOver;
@@ -174,10 +125,9 @@ namespace TacticalSoccer.UI
             IsOpen = false;
         }
 
+        // Conecta los botones de cerrar y editar.
         private void Start()
         {
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would close the board twice on one press.
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveAllListeners();
@@ -192,25 +142,13 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Opens the board and stops the match dead.
-        ///
-        /// Refuses while a duel is frozen on screen or before the whistle: both
-        /// already hold timeScale at 0 for their own reasons, and closing this
-        /// would hand the match back at normal speed with a duel still open.
-        /// </summary>
+        // Abre el panel de sustituciones y congela el partido.
         public void ShowBoard()
         {
             ShowBoard(null);
         }
 
-        /// <summary>
-        /// Opens the board and remembers where to go back to.
-        /// </summary>
-        /// <param name="returnTo">
-        /// Panel to re-open when this closes. Null means closing goes back to
-        /// the match itself, which is what thaws the pitch.
-        /// </param>
+        // Abre el panel de sustituciones, recordando a qué pantalla volver al cerrarlo.
         public void ShowBoard(GameObject returnTo)
         {
             if (uiPanel == null)
@@ -224,11 +162,6 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // A live match is required only when nothing is expecting the board
-            // back. That guard exists to stop the HUD opening it before kickoff;
-            // a returnTo panel means a MENU sent it here deliberately — the team
-            // sheet before the match, or the team talk at the interval — and
-            // both of those are exactly when a squad should be arranged.
             if (returnTo == null && (!MatchManager.IsStarted || !MatchManager.IsPlayable))
             {
                 return;
@@ -253,11 +186,7 @@ namespace TacticalSoccer.UI
             Time.timeScale = FrozenTimeScale;
         }
 
-        /// <summary>
-        /// Closes the board and lets the match run again — but only if there is
-        /// still a match to run. The whistle freezes the pitch for good, and
-        /// nothing may thaw it back out afterwards.
-        /// </summary>
+        // Cierra el panel y reanuda el partido, o vuelve a la pantalla anterior si venía de una.
         public void CloseBoard()
         {
             if (uiPanel != null)
@@ -268,9 +197,6 @@ namespace TacticalSoccer.UI
             IsOpen = false;
             selected = null;
 
-            // Opened from the interval: hand back to the team talk, still
-            // frozen. Only the screen that sent the teams out may thaw the
-            // pitch, and that is not this one.
             if (returnPanel != null)
             {
                 returnPanel.SetActive(true);
@@ -287,10 +213,7 @@ namespace TacticalSoccer.UI
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
         }
 
-        /// <summary>
-        /// Full time with the board open: it has to go, but the pitch must stay
-        /// frozen, so this deliberately does not go through CloseBoard's thaw.
-        /// </summary>
+        // Cierra el panel al terminar el partido sin reanudar el tiempo.
         private void HandleMatchOver()
         {
             if (uiPanel != null)
@@ -303,38 +226,7 @@ namespace TacticalSoccer.UI
             returnPanel = null;
         }
 
-        /// <summary>
-        /// Trades two players between the pitch and the bench.
-        ///
-        /// The work itself belongs to <see cref="MatchManager"/>: the AI makes
-        /// its own changes at the interval without ever opening this screen, and
-        /// two copies of "what a substitution actually does" would be two things
-        /// to keep in step. This is the board's way of asking for one.
-        /// </summary>
-        /// <summary>
-        /// Opens the editor on the player the board is currently showing.
-        ///
-        /// One button acting on the current selection rather than an EDIT on
-        /// every card: the board already has a selection model — tapping a
-        /// player writes their numbers into the readout — and twenty extra
-        /// buttons on a board whose whole job is tapping players would make
-        /// every swap a game of hitting the right half of a card.
-        ///
-        /// The board hides itself and the editor puts it back, so a save lands
-        /// the player straight back on the squad they were editing from.
-        /// </summary>
-        /// <summary>
-        /// Redraws the board after one of its players has been edited.
-        ///
-        /// Both halves are needed and they answer different things. The CARDS
-        /// carry the shirt number and the role, and a role change moves a player
-        /// between the pitch and the bench in the layout — so the board is
-        /// rebuilt. The READOUT down the left carries the numbers that were just
-        /// changed, so it is rewritten for whoever it was already describing.
-        ///
-        /// Guarded on the panel being open: this is a static event, so it
-        /// arrives whether or not the board is the screen the edit came from.
-        /// </summary>
+        // Redibuja el panel tras editar a un jugador desde su ficha.
         private void HandlePlayerEdited(TeamMember edited)
         {
             if (uiPanel == null || !uiPanel.activeSelf)
@@ -345,12 +237,10 @@ namespace TacticalSoccer.UI
             CollectSquad();
             RebuildBoard();
 
-            // The edit may have been the reason the player is now on the other
-            // side of the board, so the readout follows the edited player rather
-            // than whoever happened to be inspected before.
             WriteStats(edited != null ? edited : inspected);
         }
 
+        // Abre el editor sobre el jugador que se está mostrando actualmente.
         public void EditInspected()
         {
             if (inspected == null || PlayerEditUIController.Instance == null)
@@ -361,6 +251,7 @@ namespace TacticalSoccer.UI
             PlayerEditUIController.Instance.ShowEditor(inspected, uiPanel);
         }
 
+        // Pide al MatchManager que intercambie a dos jugadores entre el campo y el banquillo.
         public void SwapPlayers(TeamMember p1, TeamMember p2)
         {
             if (MatchManager.Instance == null)
@@ -372,11 +263,13 @@ namespace TacticalSoccer.UI
             MatchManager.Instance.SwapPlayers(p1, p2);
         }
 
+        // Devuelve la posición de formación de un jugador.
         private static Vector3 ResolveFormationSlot(TeamMember member)
         {
             return MatchManager.ResolveFormationSlot(member);
         }
 
+        // Recoge y ordena por dorsal a todos los jugadores del equipo.
         private void CollectSquad()
         {
             squad.Clear();
@@ -391,11 +284,10 @@ namespace TacticalSoccer.UI
                 squad.Add(member);
             }
 
-            // By shirt number, so the bench is always in the same order and a
-            // substitution does not shuffle the board under the player's finger.
             squad.Sort((a, b) => a.jerseyNumber.CompareTo(b.jerseyNumber));
         }
 
+        // Destruye los slots actuales y crea de nuevo uno por cada jugador de la plantilla.
         private void RebuildBoard()
         {
             foreach (GameObject slot in slotObjects)
@@ -405,10 +297,6 @@ namespace TacticalSoccer.UI
                     continue;
                 }
 
-                // Deactivated as well as destroyed: Destroy does not take effect
-                // until the end of the frame, so a slot that was merely marked
-                // would still be sitting under the new one — clickable, and
-                // pointing at the player who used to be in that place.
                 slot.SetActive(false);
                 Destroy(slot);
             }
@@ -431,6 +319,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Cuenta cuántos jugadores hay en el banquillo.
         private int CountBench()
         {
             int count = 0;
@@ -446,12 +335,7 @@ namespace TacticalSoccer.UI
             return count;
         }
 
-        /// <summary>
-        /// Where a starter sits on the mini-pitch: across from his formation
-        /// slot's X, and down the panel by how deep he plays in his OWN half —
-        /// so the top of the box is the halfway line and the bottom is his own
-        /// goal, whichever end of the world that happens to be.
-        /// </summary>
+        // Calcula la posición de un titular en el mini-campo según su formación.
         private Vector2 MapToPitch(TeamMember member)
         {
             if (pitchArea == null)
@@ -474,7 +358,7 @@ namespace TacticalSoccer.UI
             return new Vector2(across * halfWidth, halfHeight - (depth * 2f * halfHeight));
         }
 
-        /// <summary>Evenly spaced across the bench row, centred.</summary>
+        // Calcula la posición de un suplente, repartidos de forma uniforme en la fila del banquillo.
         private Vector2 MapToBench(int index, int count)
         {
             if (benchArea == null || count <= 0)
@@ -490,6 +374,7 @@ namespace TacticalSoccer.UI
             return new Vector2(x, 0f);
         }
 
+        // Crea el botón visual de un jugador en la posición indicada.
         private void CreateSlot(TeamMember member, RectTransform parent, Vector2 anchoredPosition)
         {
             if (parent == null)
@@ -497,8 +382,6 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Captured into a local first: the loop variable would otherwise be
-            // shared by every listener and all ten would select the last player.
             TeamMember captured = member;
 
             GameObject slotObject = UiSlotFactory.CreateSlot(
@@ -515,6 +398,7 @@ namespace TacticalSoccer.UI
             slotObjects.Add(slotObject);
         }
 
+        // Usa la fuente del panel de estadísticas, o la fuente por defecto si no hay ninguna.
         private Font ResolveFont()
         {
             if (statsText != null && statsText.font != null)
@@ -525,6 +409,7 @@ namespace TacticalSoccer.UI
             return LocalizationManager.BuiltInFont;
         }
 
+        // Elige el color del slot según si está seleccionado, agotado, o es titular o suplente.
         private Color ResolveSlotColor(TeamMember member)
         {
             if (member == selected)
@@ -532,9 +417,6 @@ namespace TacticalSoccer.UI
                 return selectedColor;
             }
 
-            // Read before the starter/bench tint, not after: a blown player is
-            // the whole reason to be looking at this screen, and it has to be
-            // visible without tapping anybody.
             if (member.IsExhausted)
             {
                 return exhaustedColor;
@@ -543,6 +425,7 @@ namespace TacticalSoccer.UI
             return member.isStarter ? starterColor : benchColor;
         }
 
+        // Construye el texto de un slot: dorsal, rol, brazalete y estamina.
         private static string DescribeSlot(TeamMember member)
         {
             int stamina = Mathf.RoundToInt(member.StaminaFraction * 100f);
@@ -554,17 +437,9 @@ namespace TacticalSoccer.UI
                 PlayerRoles.Abbreviate(member.role), armband, stamina);
         }
 
-        /// <summary>
-        /// First tap selects; the second either swaps, if the two are on
-        /// opposite sides of the touchline, or simply moves the selection.
-        /// Tapping the selected player again clears it, so a mis-tap costs
-        /// nothing.
-        /// </summary>
+        // Gestiona el toque en un slot: selecciona un jugador o, si ya había uno seleccionado, hace el cambio.
         private void HandleSlotClicked(TeamMember member)
         {
-            // Cleared first, written last. Whatever the last tap had to say has
-            // been read by now, and leaving it up under a different player's
-            // stat block would attach the message to the wrong man.
             notice = string.Empty;
 
             if (selected == member)
@@ -590,9 +465,6 @@ namespace TacticalSoccer.UI
 
             if (!TrySubstitute(outgoing, incoming))
             {
-                // The refusal is the useful information here, so the selection
-                // is dropped and the reason goes onto the readout — which is
-                // why the stats are written AFTER the attempt, not before it.
                 RefreshSlotVisuals();
                 WriteStats(member);
                 return;
@@ -604,17 +476,7 @@ namespace TacticalSoccer.UI
             WriteStats(incoming);
         }
 
-        /// <summary>
-        /// The two substitutions that cannot be made, and why.
-        ///
-        /// Neither is in the brief; both are holes the brief leaves open. A
-        /// keeper swapped for an outfield substitute would take the isGoalkeeper
-        /// flag, the wingspan collider and the goal-line AI off the pitch with
-        /// him and leave the goal genuinely undefended — there is no keeper on
-        /// this bench to put in his place. And substituting the player who is
-        /// holding the ball would carry the ball into the dugout with him: it is
-        /// glued to his socket, and the swap is a teleport.
-        /// </summary>
+        // Comprueba si el cambio es válido: no se puede sustituir al portero ni a quien lleva el balón.
         private bool TrySubstitute(TeamMember outgoing, TeamMember incoming)
         {
             if (outgoing.isGoalkeeper || incoming.isGoalkeeper)
@@ -634,15 +496,15 @@ namespace TacticalSoccer.UI
             return true;
         }
 
+        // Indica si un jugador lleva actualmente el balón.
         private static bool IsHoldingBall(TeamMember member)
         {
             return member.TryGetComponent(out PlayerBallHandler handler) && handler.HasBall;
         }
 
+        // Actualiza el color de los slots sin reconstruirlos, cuando solo cambia la selección.
         private void RefreshSlotVisuals()
         {
-            // Cheaper than rebuilding: nobody has moved between the pitch and
-            // the bench, only the highlight has changed.
             int index = 0;
 
             foreach (TeamMember member in squad)
@@ -664,16 +526,9 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// The left-hand readout. Rebuilt from the player every time rather than
-        /// written once, because stamina is exactly the number this screen
-        /// exists to show and it moves the whole match.
-        /// </summary>
+        // Rellena el panel de estadísticas con los datos del jugador indicado.
         private void WriteStats(TeamMember member)
         {
-            // Remembered even when the readout itself is missing: this is what
-            // the EDIT button acts on, and it is the player the board is
-            // currently ABOUT rather than the half of a swap still being chosen.
             inspected = member;
 
             if (editButton != null)
@@ -708,13 +563,6 @@ namespace TacticalSoccer.UI
                 ? Core.LocalizationManager.GetText("subs.captain")
                 : string.Empty;
 
-            // Read through the player, not off the stat asset. The numbers on
-            // the asset are the raw ones; what this screen has to show is what
-            // the player actually brings to a duel, captain's passive included.
-            // Padded to the longest label in the ACTIVE language rather than to
-            // a width measured against Spanish: "GOALKEEPING" and "キャッチ" are
-            // not the width of "PARADA", and a hard-coded pad left the numbers
-            // walking about as soon as the language changed.
             string block =
                 StatLine("stat.dribble", member.Dribble) +
                 StatLine("stat.power", member.Power) +
@@ -732,20 +580,14 @@ namespace TacticalSoccer.UI
                 notice;
         }
 
-        /// <summary>
-        /// One line of the stat block: the attribute's name and its value.
-        ///
-        /// Written as "NAME: value" rather than padded into columns. The panel
-        /// is drawn in the ordinary proportional UI font, where padding with
-        /// spaces never lined anything up — it only looked as though it did
-        /// because the Spanish names happened to be a similar length.
-        /// </summary>
+        // Formatea una línea de estadística con su nombre y valor.
         private static string StatLine(string key, int value)
         {
             return Core.LocalizationManager.Format("stat.line",
                 Core.LocalizationManager.GetText(key), value) + "\n";
         }
 
+        // Devuelve el nombre localizado de un equipo.
         private static string DescribeTeam(TeamId teamId)
         {
             return Core.LocalizationManager.GetText(teamId == TeamId.Blue ? "team.blue" : "team.red");

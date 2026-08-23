@@ -3,12 +3,7 @@ using UnityEngine.UI;
 
 namespace TacticalSoccer.Core
 {
-    /// <summary>
-    /// Keeps the match score and paints the scoreboard. Listens to the event bus
-    /// for goals, so it never needs a reference to the goals, the ball or the
-    /// players; the clock is the one thing it reads directly, because a
-    /// per-second event would be noise on the bus for a value the UI polls anyway.
-    /// </summary>
+    // Lleva el marcador del partido y pinta el marcador, el crono y el indicador de ronda.
     public class ScoreManager : MonoBehaviour
     {
         public const int BlueTeamId = 0;
@@ -43,10 +38,9 @@ namespace TacticalSoccer.Core
             Instance = this;
         }
 
+        // Pinta el marcador a 0-0 al empezar.
         private void Start()
         {
-            // Paints 0 - 0 rather than trusting whatever the prefab was authored
-            // with, so the board can never open a match showing a stale score.
             RefreshScoreboard();
         }
 
@@ -65,6 +59,7 @@ namespace TacticalSoccer.Core
             }
         }
 
+        // Actualiza el crono y el indicador de ronda del torneo.
         private void Update()
         {
             RefreshTournamentBadge();
@@ -74,8 +69,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // Ceil, not floor: with 0.4 s left the board should still read 1,
-            // and it must only show 0 when the match is genuinely over.
             int secondsLeft = Mathf.CeilToInt(MatchManager.Instance.currentTime);
 
             if (secondsLeft == lastPaintedSecond)
@@ -85,28 +78,11 @@ namespace TacticalSoccer.Core
 
             lastPaintedSecond = secondsLeft;
 
-            // The half is on the board because the clock restarts at 45 after
-            // the interval: without it the second half looks like the first one
-            // having been reset by something.
-            // Repainted every frame, so it needs no language subscription of
-            // its own: the very next frame is already in the new language.
             LocalizationManager.WriteFormatted(timerText, "hud.timer",
                 MatchManager.Instance.currentHalf, secondsLeft);
         }
 
-        /// <summary>
-        /// Names the round while a tournament match is being played, and hides
-        /// itself the rest of the time.
-        ///
-        /// Driven off IsRunning rather than off the result flags the full-time
-        /// screen uses: this label is about the match in progress, and the
-        /// moment it ends the badge should go — the result screen is what
-        /// carries the news from there.
-        ///
-        /// Repainted only when the caption actually changes, like the clock
-        /// above: this runs every frame and rebuilding a text mesh for an
-        /// unchanged string is pure waste.
-        /// </summary>
+        // Muestra el nombre de la ronda de torneo mientras hay una en curso, y lo oculta el resto del tiempo.
         private void RefreshTournamentBadge()
         {
             if (tournamentText == null)
@@ -132,10 +108,7 @@ namespace TacticalSoccer.Core
 
         private string lastPaintedBadge;
 
-        /// <summary>
-        /// Wipes the score back to nil. Called when a finished match is played
-        /// again, so the new one does not open carrying the last one's goals.
-        /// </summary>
+        // Pone el marcador a cero.
         public void ResetScores()
         {
             blueScore = 0;
@@ -144,6 +117,7 @@ namespace TacticalSoccer.Core
             RefreshScoreboard();
         }
 
+        // Suma un gol al equipo correspondiente y repinta el marcador.
         private void HandleGoalScored(int teamId)
         {
             switch (teamId)
@@ -166,6 +140,7 @@ namespace TacticalSoccer.Core
             Debug.Log($"¡GOL! Marcador — Azul {blueScore} - {redScore} Rojo");
         }
 
+        // Escribe el marcador actual en el texto del HUD.
         private void RefreshScoreboard()
         {
             if (scoreText != null)

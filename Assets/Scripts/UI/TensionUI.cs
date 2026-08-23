@@ -4,18 +4,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The momentum bars, one per side.
-    ///
-    /// Polled every frame rather than pushed to. The bar changes continuously
-    /// while a burn drains, so an event-driven version would need a tick event
-    /// anyway — and the one thing that genuinely happens once, the bar filling,
-    /// already has its own event for the shout.
-    ///
-    /// Both sides are shown, not just the human's. Knowing the opposition is one
-    /// duel away from the zone is exactly the information that should change how
-    /// you play the next duel.
-    /// </summary>
+    // Barras de tensión de cada equipo, se actualizan cada frame.
     public class TensionUI : MonoBehaviour
     {
         [Header("Barras")]
@@ -40,6 +29,7 @@ namespace TacticalSoccer.UI
         [Tooltip("How fast the burning bar pulses, in cycles per second.")]
         [SerializeField] private float burnPulseSpeed = 3f;
 
+        // Actualiza el relleno y la etiqueta de ambas barras cada frame.
         private void Update()
         {
             TensionManager tension = TensionManager.Instance;
@@ -53,6 +43,7 @@ namespace TacticalSoccer.UI
             Paint(tension, TeamId.Red, redFill, redLabel, redChargingColor);
         }
 
+        // Pinta la barra y la etiqueta de un equipo según su tensión actual.
         private void Paint(TensionManager tension, TeamId team, Image fill, Text label, Color chargingColor)
         {
             if (fill == null)
@@ -66,9 +57,7 @@ namespace TacticalSoccer.UI
 
             if (burning)
             {
-                // Unscaled: a duel freezes the match, and a bar that stopped
-                // pulsing behind the duel panel would read as the zone having
-                // ended just when the player is deciding what to do with it.
+                // Usa tiempo sin escalar para que el pulso siga aunque el partido esté congelado por un duelo.
                 float pulse = 0.75f + (0.25f * Mathf.Sin(Time.unscaledTime * burnPulseSpeed * Mathf.PI * 2f));
 
                 fill.color = burningColor * pulse;
@@ -83,11 +72,7 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // The colour the side is WEARING, not the slot it occupies: a
-            // player who picked the green kit was still being called AZUL, and
-            // in a tournament the opposition is orange or gold rather than red.
-            // Fouls.DescribeTeam resolves the live kit through the same colour
-            // names the foul shout uses.
+            // Nombre del color de la equipación actual del equipo.
             string side = Fouls.DescribeTeam(team);
 
             if (burning)

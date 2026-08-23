@@ -4,19 +4,7 @@ using TacticalSoccer.Core;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The front door. Holds the match frozen until the player asks for it, so
-    /// the game opens on a title instead of on a kickoff already in progress.
-    ///
-    /// It no longer starts the match itself: pressing Play hands over to the
-    /// formation menu, which is what eventually kicks off. The pitch stays
-    /// frozen across both screens — there is no moment between them where the
-    /// match is quietly running behind a menu.
-    ///
-    /// Lives on the canvas rather than on the panel it shows. A component on a
-    /// deactivated GameObject never receives Start, so a controller parked on
-    /// its own panel would never wire up the button that hides it.
-    /// </summary>
+    // Controla la pantalla de título: mantiene el partido congelado hasta que el jugador pulsa Jugar.
     public class TitleScreenUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -54,15 +42,7 @@ namespace TacticalSoccer.UI
 
         public static TitleScreenUIController Instance { get; private set; }
 
-        /// <summary>
-        /// True while the title is up.
-        ///
-        /// Read off the panel rather than tracked in a bool, so it cannot drift
-        /// from what is actually on screen. Needed because the obvious test —
-        /// "has the match started?" — is wrong here: isMatchStarted stays true
-        /// after a match, so a player who finished one and came back to the menu
-        /// still looks mid-match to anything asking.
-        /// </summary>
+        // True mientras la pantalla de título está visible.
         public static bool IsOpen => Instance != null
             && Instance.uiPanel != null
             && Instance.uiPanel.activeSelf;
@@ -80,14 +60,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Brings the title back, for a player who has finished a match and wants
-        /// different settings rather than the same one again.
-        ///
-        /// Freezing is this screen's job on the way in as well as at startup: the
-        /// caller has just reset the match, which thaws the pitch, and without
-        /// this the game would be running underneath the title.
-        /// </summary>
+        // Vuelve a mostrar la pantalla de título y congela el partido.
         public void ShowTitle()
         {
             UIAnimator.Show(uiPanel);
@@ -97,25 +70,13 @@ namespace TacticalSoccer.UI
             RefreshTournament();
         }
 
-        /// <summary>
-        /// Rewrites the tournament button for the round actually coming up, and
-        /// reports how the last one went.
-        ///
-        /// Done every time the title is shown rather than once in Start: the
-        /// player arrives back here having just won or lost a round, and a
-        /// caption written before the match would still be advertising it.
-        /// </summary>
+        // Actualiza el texto del botón de torneo y muestra el resultado de la última ronda jugada.
         private void RefreshTournament()
         {
             TournamentManager tournament = TournamentManager.Instance;
 
             if (tournamentLabel != null)
             {
-                // Through LocalizedText rather than straight onto the Text: the
-                // caption changes with the round AND with the language, and this
-                // leaves it able to follow both. The key is stored on the label,
-                // so a language switched from the options panel over this very
-                // screen rewrites it without coming back through here.
                 LocalizedText.Write(tournamentLabel, tournament != null
                     ? tournament.NextRoundKey()
                     : "tournament.next.quarters");
@@ -126,13 +87,13 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Consumed, not merely read: coming back to the title a second time
-            // must not announce the same victory again.
+            // Se consume para no volver a mostrar el mismo resultado si se regresa al título otra vez.
             string outcome = tournament != null ? tournament.ConsumeOutcome() : null;
 
             tournamentOutcomeText.text = outcome ?? string.Empty;
         }
 
+        // Muestra el panel de título y engancha los botones.
         private void Start()
         {
             if (uiPanel != null)
@@ -140,9 +101,6 @@ namespace TacticalSoccer.UI
                 uiPanel.SetActive(true);
             }
 
-            // Freezing alone is not enough to hold the match: input is not
-            // governed by timeScale. MatchManager stays un-started as well, and
-            // that is what actually keeps the AI, the drift and the input quiet.
             Time.timeScale = FrozenTimeScale;
 
             if (playButton == null)
@@ -151,8 +109,6 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // Cleared first: the listener is added from code on every load, and
-            // a duplicate would kick the match off twice on one click.
             playButton.onClick.RemoveAllListeners();
             playButton.onClick.AddListener(StartGame);
 
@@ -171,14 +127,7 @@ namespace TacticalSoccer.UI
             RefreshTournament();
         }
 
-        /// <summary>
-        /// Starts or continues a tournament round.
-        ///
-        /// Goes straight to the team sheet, skipping the settings screen: the
-        /// round has already dictated the difficulty, the opposition's shape,
-        /// its colour and the length of a half. Picking a formation and a
-        /// captain is still the player's, which is why the team sheet stays.
-        /// </summary>
+        // Empieza o continúa una ronda de torneo, yendo directo a la pantalla de alineación.
         public void StartTournament()
         {
             TournamentManager tournament = TournamentManager.Instance;
@@ -203,8 +152,7 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // No team sheet in this scene, so kick off directly rather than
-            // stranding the player on a title that has just hidden itself.
+            // No hay pantalla de alineación en la escena, se empieza directamente.
             Time.timeScale = NormalTimeScale;
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
 
@@ -214,11 +162,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Opens the audio options over the title, without hiding it: the
-        /// options are a detour, not a step in the flow, and the player has to
-        /// land back on the title when they close them.
-        /// </summary>
+        // Abre las opciones de audio encima de la pantalla de título.
         public void OpenOptions()
         {
             if (AudioSettingsUI.Instance != null)
@@ -230,12 +174,9 @@ namespace TacticalSoccer.UI
             Debug.LogWarning("No hay panel de opciones de audio en la escena.");
         }
 
+        // Empieza una partida rápida, abandonando cualquier ronda de torneo en curso.
         public void StartGame()
         {
-            // A quick match is not a round. Said out loud rather than relied on:
-            // without this, a player who opened a tournament round and backed out
-            // to play a friendly would have the friendly's result counted against
-            // their run.
             if (TournamentManager.Instance != null)
             {
                 TournamentManager.Instance.Abandon();
@@ -243,9 +184,6 @@ namespace TacticalSoccer.UI
 
             UIAnimator.Hide(uiPanel);
 
-            // Deliberately NOT restoring timeScale on either handover: the next
-            // screen is still a menu, and thawing between them would run the
-            // pitch behind it. The team sheet unfreezes when it starts play.
             MatchConfigUIController settings = configMenu != null
                 ? configMenu
                 : MatchConfigUIController.Instance;
@@ -266,8 +204,7 @@ namespace TacticalSoccer.UI
                 return;
             }
 
-            // No team sheet in this scene, so this screen is the last one and
-            // has to kick off itself.
+            // No hay más pantallas, así que se empieza el partido directamente.
             Time.timeScale = NormalTimeScale;
             Time.fixedDeltaTime = FixedDeltaTimeAtNormalScale;
 

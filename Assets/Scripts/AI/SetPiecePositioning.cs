@@ -5,29 +5,13 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.AI
 {
-    /// <summary>
-    /// The positioning math behind a dead-ball restart: who takes it, who is
-    /// pushed clear of the mark, and who walks in to support.
-    ///
-    /// Used to live as private methods on MatchManager, which is the match
-    /// clock and state machine, not a positioning system — this is pure
-    /// geometry/roster search with no state of its own, so it moved out
-    /// wholesale. MatchManager keeps thin wrapper methods with the original
-    /// names and signatures (so every call site — kickoff, throw-in, corner,
-    /// goal kick, free kick — is untouched) that just forward into here with
-    /// its own tunables.
-    /// </summary>
+    // Cálculo de posiciones para los saques a balón parado: quién lo saca, quién se aparta y quién se ofrece.
     public static class SetPiecePositioning
     {
-        // Pulled a restart mark just inside the painted lines, so the ball
-        // placed on it is unambiguously in play.
+        // Margen para meter la marca del saque dentro de las líneas del campo.
         private const float RestartBallInset = 0.2f;
 
-        /// <summary>
-        /// Walks every non-taking outfield player of the OTHER team back to
-        /// the exclusion radius, so a restart is never taken with an opponent
-        /// standing over the ball.
-        /// </summary>
+        // Aparta a los jugadores del equipo contrario que estén dentro del radio de exclusión del saque.
         public static void ClearExclusionZone(Vector3 ballSpot, PlayerBallHandler taker, float exclusionRadius)
         {
             TeamMember takerMember = taker != null ? taker.GetComponent<TeamMember>() : null;
@@ -48,8 +32,7 @@ namespace TacticalSoccer.AI
 
                 Vector3 position = member.transform.position;
 
-                // Flat distance: the ball's height at a restart is the socket's,
-                // and nobody is closer for standing on lower ground.
+                // Distancia en el plano horizontal, ignorando la altura.
                 Vector3 away = new Vector3(position.x - ballSpot.x, 0f, position.z - ballSpot.z);
                 float distance = away.magnitude;
 
@@ -58,9 +41,7 @@ namespace TacticalSoccer.AI
                     continue;
                 }
 
-                // Standing exactly on the ball leaves no line to push along, so
-                // the retreat is towards the player's own goal — which is where
-                // a defender backing off would go anyway.
+                // Si el jugador está justo sobre el balón, se retira hacia su propia portería.
                 Vector3 direction = distance > 0.01f
                     ? away / distance
                     : new Vector3(0f, 0f, member.team == TeamId.Blue ? -1f : 1f);
@@ -70,10 +51,7 @@ namespace TacticalSoccer.AI
                     position.y,
                     ballSpot.z + (direction.z * exclusionRadius)));
 
-                // The clamp can hand back a spot still inside the circle — a
-                // corner is the obvious case, where "straight out" is straight
-                // off the pitch. Then the retreat goes towards the middle
-                // instead, which is always somewhere there is room.
+                // Si el punto sigue dentro del radio (por ejemplo en una esquina), se retira hacia el centro del campo.
                 if (Vector3.Distance(new Vector3(pushed.x, 0f, pushed.z),
                         new Vector3(ballSpot.x, 0f, ballSpot.z)) < exclusionRadius - 0.05f)
                 {
@@ -109,28 +87,7 @@ namespace TacticalSoccer.AI
             }
         }
 
-        /// <summary>
-        /// Walks the taker's team-mates into somewhere worth passing to.
-        ///
-        /// Without this a throw-in or a corner is taken into an empty half of
-        /// the pitch: everybody else is standing on their formation slot, which
-        /// is where the shape says they belong and not where a restart needs
-        /// them. Each line offers itself by a different amount, for the same
-        /// reason the off-the-ball drift does:
-        ///
-        ///  - forwards come to the ball, because they are the pass;
-        ///  - midfielders come half way, because they are the outlet if the
-        ///    first ball is not on;
-        ///  - defenders stay where they are. A defender who followed the ball
-        ///    into the corner is a defender who is not behind it when the
-        ///    restart is lost, and losing a throw-in should not be the same
-        ///    thing as conceding a counter-attack.
-        ///
-        /// Positions are written directly. The brief suggested NavMeshAgent.Warp
-        /// but this project has no NavMesh at all — the players move by
-        /// coroutine along drawn routes and by the drift, neither of which is
-        /// agent-based — so there is no agent to warp.
-        /// </summary>
+        // Acerca a los compañeros del sacador hacia el balón para ofrecer una opción de pase, según su línea.
         public static void OfferForRestart(PlayerBallHandler taker, Vector3 ballSpot, float supportClearance)
         {
             if (!taker.TryGetComponent(out TeamMember takerMember))
@@ -153,15 +110,11 @@ namespace TacticalSoccer.AI
                     continue;
                 }
 
-                // Interpolated from the formation slot rather than from where the
-                // player happens to be standing, so a restart always produces the
-                // same shape instead of compounding wherever the last passage of
-                // play left everybody.
+                // Interpola entre el puesto de formación y el balón, para que el saque siempre tenga la misma forma.
                 Vector3 slot = positioning.FormationSlot;
                 Vector3 target = Vector3.Lerp(slot, ballSpot, pull);
 
-                // Never on top of the ball: a team-mate standing on the mark
-                // blocks the taker and, worse, can trip a duel on the restart.
+                // Evita que el compañero quede justo encima del balón.
                 Vector3 away = target - ballSpot;
                 away.y = 0f;
 
@@ -182,7 +135,7 @@ namespace TacticalSoccer.AI
             }
         }
 
-        /// <summary>How far each line travels from its slot towards the restart, 0..1.</summary>
+        // Cuánto se acerca cada línea de jugadores hacia el saque, entre 0 y 1.
         public static float RestartSupportPull(PlayerRole role)
         {
             switch (role)
@@ -193,10 +146,7 @@ namespace TacticalSoccer.AI
             }
         }
 
-        /// <summary>
-        /// Pulls a restart mark just inside the painted lines, so the ball
-        /// placed on it is unambiguously in play.
-        /// </summary>
+        // Ajusta la marca del saque para que quede dentro de las líneas del campo.
         public static Vector3 ClampToRestartArea(Vector3 spot)
         {
             float maxX = PitchBounds.SideLineX - RestartBallInset;
@@ -208,18 +158,7 @@ namespace TacticalSoccer.AI
                 Mathf.Clamp(spot.z, -maxZ, maxZ));
         }
 
-        /// <summary>
-        /// Who the AI restarts to: the nearest team-mate who is far enough away
-        /// for the pass to be worth making.
-        ///
-        /// The minimum distance is the point. Without it the answer is whichever
-        /// support player was pushed to the edge of the clearance radius, and a
-        /// four-metre pass from a corner flag achieves nothing except giving the
-        /// ball straight back to the defence.
-        ///
-        /// The keeper is excluded. He is often the closest available player at a
-        /// goal kick, and passing to him restarts the same set piece.
-        /// </summary>
+        // Busca el compañero más cercano a una distancia mínima para recibir el saque. Excluye al portero.
         public static TeamMember FindRestartReceiver(PlayerBallHandler taker, float passMinDistance)
         {
             if (!taker.TryGetComponent(out TeamMember takerMember))
@@ -254,25 +193,14 @@ namespace TacticalSoccer.AI
             return best;
         }
 
-        /// <summary>
-        /// The nearest eligible outfield player to a point. Goalkeepers never
-        /// come out to take a corner or an empty-net throw-in. So are
-        /// substitutes, who would otherwise be walked out of the dugout.
-        ///
-        /// <paramref name="exclude"/> is for the kickoff, which has to find
-        /// somebody to pass TO: the taker is standing on the ball and would win
-        /// any nearest-player search against himself at zero distance.
-        /// </summary>
+        // Jugador de campo titular más cercano a un punto, excluyendo porteros y opcionalmente a un jugador.
         public static PlayerBallHandler FindNearestFieldPlayer(TeamId team, Vector3 point,
             PlayerBallHandler exclude = null)
         {
             return FindNearestFieldPlayer(team, point, exclude, null);
         }
 
-        /// <summary>
-        /// Same, restricted to one line when <paramref name="onlyRole"/> is set.
-        /// The basis of the taker preference below.
-        /// </summary>
+        // Igual, pero restringido a un rol concreto si se indica.
         public static PlayerBallHandler FindNearestFieldPlayer(TeamId team, Vector3 point,
             PlayerBallHandler exclude, PlayerRole? onlyRole)
         {
@@ -308,20 +236,7 @@ namespace TacticalSoccer.AI
             return closest;
         }
 
-        /// <summary>
-        /// Who takes a restart: a midfielder if there is one, then a defender,
-        /// and a forward only if nobody else can.
-        ///
-        /// By line rather than by distance, which is what it used to be. The
-        /// nearest player to a corner flag is very often a forward — they are the
-        /// ones camped in that third — and sending the forward to fetch the ball
-        /// empties the box of the exact player the cross is meant to find. A
-        /// midfielder walking twenty metres to take it is not a cost: the ball is
-        /// dead and the clock is stopped.
-        ///
-        /// Within each line it is still the nearest, so the shortest walk of the
-        /// right kind of player wins.
-        /// </summary>
+        // Elige quién saca: prioriza un centrocampista, luego un defensa, y solo si no hay otro, un delantero.
         public static PlayerBallHandler FindRestartTaker(TeamId team, Vector3 point)
         {
             PlayerBallHandler midfielder = FindNearestFieldPlayer(team, point, null, PlayerRole.Midfielder);
@@ -338,8 +253,7 @@ namespace TacticalSoccer.AI
                 return defender;
             }
 
-            // Last resort, and it still has to work: a side reduced to forwards
-            // by substitutions must be able to take its own throw-in.
+            // Último recurso: cualquier jugador de campo disponible.
             return FindNearestFieldPlayer(team, point);
         }
     }

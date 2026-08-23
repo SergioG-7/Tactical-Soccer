@@ -4,32 +4,7 @@ using TacticalSoccer.Core;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The options: what language the game speaks, and how loud the crowd, the
-    /// referee's whistle, and everything else are, each on its own slider.
-    ///
-    /// The volumes apply as they are dragged rather than on closing. A volume
-    /// slider is the one setting nobody can judge from its number — the whole
-    /// point is to hear the result while you move it — so the crowd bed keeps
-    /// playing underneath this panel instead of being paused with the rest of
-    /// the match. Nothing here has an apply step and nothing is lost by closing
-    /// the panel: every change is written to the save file as it is made.
-    ///
-    /// The language row rewrites the screen it is on. That is deliberate and it
-    /// is the honest way to present the choice — a language you cannot see
-    /// applied until you back out is a language you have to take on trust — and
-    /// it is what <see cref="LocalizedText"/> is for. Each button is labelled in
-    /// its OWN language, with its own font, so 日本語 is readable while the game
-    /// is still in Spanish.
-    ///
-    /// Reachable from the title and from the developer menu, and it is the same
-    /// panel both times: a second copy of a settings screen is a second copy
-    /// that can disagree with the first.
-    ///
-    /// Lives on the canvas rather than on the panel it owns — a component on a
-    /// deactivated GameObject never receives Start, and Start is where the
-    /// controls are wired.
-    /// </summary>
+    // Pantalla de opciones: idioma del juego y volumen de música, silbato y efectos.
     public class AudioSettingsUI : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -56,9 +31,7 @@ namespace TacticalSoccer.UI
 
         public Color unselectedColor = new Color(0.88f, 0.88f, 0.88f, 1f);
 
-        // Unscaled timestamp the effects preview is due at, or 0 for "nothing
-        // pending". Long enough that a sweep of the handle produces one whistle
-        // at the end of it, short enough not to feel like a delay.
+        // Tiempo que debe estar quieto el slider antes de reproducir el sonido de previsualización.
         private const float PreviewSettleSeconds = 0.25f;
 
         private float musicPreviewDueAt;
@@ -67,31 +40,29 @@ namespace TacticalSoccer.UI
 
         public static AudioSettingsUI Instance { get; private set; }
 
-        /// <summary>True while the panel is up. Read by the input manager.</summary>
+        // Cierto mientras el panel de opciones está abierto.
         public static bool IsOpen => Instance != null
             && Instance.uiPanel != null
             && Instance.uiPanel.activeSelf;
 
+        // Inicializa el singleton y oculta el panel.
         private void Awake()
         {
             Instance = this;
 
-            // Awake only runs in play mode, so this is what keeps the panel off
-            // the screen in the editor.
             if (uiPanel != null)
             {
                 uiPanel.SetActive(false);
             }
         }
 
+        // Se suscribe al cambio de idioma para refrescar la pantalla.
         private void OnEnable()
         {
-            // This controller lives on the canvas and is never deactivated, so
-            // it hears every change — including one made from its own buttons,
-            // which is how the tints and the readout follow along.
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
         }
 
+        // Se desuscribe del cambio de idioma y limpia el singleton.
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
@@ -102,6 +73,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Conecta los sliders, los botones de idioma y el botón de cerrar.
         private void Start()
         {
             Bind(musicSlider, OnMusicChanged);
@@ -122,16 +94,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Wires each language button to the code at its own index, and labels
-        /// it in that language.
-        ///
-        /// The caption is written here rather than left to a LocalizedText: it
-        /// must NOT follow the active language. A row where every button reads
-        /// "Spanish, English, Japanese" in whatever is currently selected is a
-        /// row you have to already know the answer to use — the convention every
-        /// language picker follows is that each option names itself.
-        /// </summary>
+        // Conecta cada botón de idioma con su código y lo etiqueta en ese propio idioma.
         private void BindLanguageButtons()
         {
             if (languageButtons == null)
@@ -157,10 +120,6 @@ namespace TacticalSoccer.UI
                 if (label != null)
                 {
                     label.text = LocalizationManager.DisplayName(code);
-
-                    // That language's own font, not the active one's: this label
-                    // has to be legible before its language is chosen, which is
-                    // the entire job of a language button.
                     LocalizationManager.ApplyFontFor(label, code);
                 }
 
@@ -171,20 +130,13 @@ namespace TacticalSoccer.UI
             RefreshLanguageTints();
         }
 
-        /// <summary>
-        /// Opens the panel on the settings currently in force, rather than on
-        /// whatever the controls happened to be left at in the scene.
-        /// </summary>
+        // Abre el panel con los sliders puestos en los valores actuales.
         public void ShowMenu()
         {
             Audio.AudioManager audio = Audio.AudioManager.Instance;
 
             if (audio != null)
             {
-                // SetValueWithoutNotify, or seeding the handle would fire the
-                // callback and write the value straight back — harmless here,
-                // but it would also save on merely opening the panel, which is
-                // not what opening a panel should do.
                 if (musicSlider != null)
                 {
                     musicSlider.SetValueWithoutNotify(audio.MusicVolume);
@@ -207,21 +159,20 @@ namespace TacticalSoccer.UI
             RefreshReadout();
         }
 
+        // Cierra el panel de opciones.
         public void Close()
         {
             UIAnimator.Hide(uiPanel);
         }
 
+        // Refresca los tintes de los botones de idioma y el texto de lectura al cambiar el idioma.
         private void HandleLanguageChanged()
         {
             RefreshLanguageTints();
-
-            // The readout is a sentence with numbers in it, so it is composed
-            // here rather than being a key on its own — which means nothing else
-            // would rewrite it.
             RefreshReadout();
         }
 
+        // Colorea el botón del idioma activo.
         private void RefreshLanguageTints()
         {
             if (languageButtons == null)
@@ -244,6 +195,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Aplica el volumen de música y arma la previsualización.
         private void OnMusicChanged(float value)
         {
             if (Audio.AudioManager.Instance != null)
@@ -251,15 +203,12 @@ namespace TacticalSoccer.UI
                 Audio.AudioManager.Instance.SetMusicVolume(value);
             }
 
-            // Armed, not played. Same reason as the effects slider below: this
-            // fires on every frame of a drag, and starting a two-second crowd
-            // preview forty times over one sweep would be a stutter, not a
-            // preview.
             musicPreviewDueAt = Time.unscaledTime + PreviewSettleSeconds;
 
             RefreshReadout();
         }
 
+        // Aplica el volumen del silbato y arma la previsualización.
         private void OnWhistleChanged(float value)
         {
             if (Audio.AudioManager.Instance != null)
@@ -267,14 +216,12 @@ namespace TacticalSoccer.UI
                 Audio.AudioManager.Instance.SetWhistleVolume(value);
             }
 
-            // Only ARMS the preview. onValueChanged fires on every frame of a
-            // drag, so playing here directly would be a whistle per frame —
-            // forty of them over one sweep of the handle, each cutting the last.
             whistlePreviewDueAt = Time.unscaledTime + PreviewSettleSeconds;
 
             RefreshReadout();
         }
 
+        // Aplica el volumen de efectos y arma la previsualización.
         private void OnSfxChanged(float value)
         {
             if (Audio.AudioManager.Instance != null)
@@ -282,23 +229,12 @@ namespace TacticalSoccer.UI
                 Audio.AudioManager.Instance.SetSfxVolume(value);
             }
 
-            // Only ARMS the preview, same reasoning as the whistle slider above.
-            // The preview is a ball strike rather than a whistle now that the
-            // whistles have their own channel and their own slider to preview.
             sfxPreviewDueAt = Time.unscaledTime + PreviewSettleSeconds;
 
             RefreshReadout();
         }
 
-        /// <summary>
-        /// Plays each preview once its handle has been still for a moment, which
-        /// is the point at which the player is listening rather than still
-        /// moving.
-        ///
-        /// Unscaled time throughout: this panel is opened from the title and
-        /// from the developer menu, and both of those hold the match at
-        /// timeScale 0, where a scaled timer would never come due.
-        /// </summary>
+        // Reproduce cada previsualización de sonido cuando su slider lleva un momento quieto.
         private void Update()
         {
             Audio.AudioManager audio = Audio.AudioManager.Instance;
@@ -327,6 +263,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Escribe el texto con los porcentajes de volumen actuales.
         private void RefreshReadout()
         {
             if (readoutText == null)
@@ -345,6 +282,7 @@ namespace TacticalSoccer.UI
                 (sfx * 100f).ToString("F0"));
         }
 
+        // Configura el rango de un slider y lo conecta a su acción, evitando listeners duplicados.
         private static void Bind(Slider slider, UnityEngine.Events.UnityAction<float> action)
         {
             if (slider == null)
@@ -355,8 +293,6 @@ namespace TacticalSoccer.UI
             slider.minValue = 0f;
             slider.maxValue = 1f;
 
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would write the same value twice per drag frame.
             slider.onValueChanged.RemoveAllListeners();
             slider.onValueChanged.AddListener(action);
         }

@@ -3,10 +3,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.Core
 {
-    /// <summary>
-    /// One round of the tournament: everything about the side you are drawn
-    /// against, in one place.
-    /// </summary>
+    // Datos de una ronda del torneo: dificultad, formación y color del rival.
     public struct TournamentRound
     {
         public string Label;
@@ -16,73 +13,40 @@ namespace TacticalSoccer.Core
         public string RivalColorName;
     }
 
-    /// <summary>
-    /// Three matches, in order, with the progress remembered between sessions.
-    ///
-    /// The whole mode is a table and a counter. There is no bracket, no seeding
-    /// and no opponent roster: the three rounds differ by how hard the AI plays,
-    /// what shape it lines up in and what colour it wears, and that is enough to
-    /// make a run feel like it is escalating without inventing a second game
-    /// underneath the first.
-    ///
-    /// The counter lives in the save file rather than in the scene because the
-    /// point of a tournament is that closing the game does not lose it.
-    ///
-    /// Persistent across scene loads, unlike every other manager in this
-    /// project: this is the one piece of state that has to outlive a match, and
-    /// the guard in Awake is what stops the scene generator's copy doubling it.
-    /// </summary>
+    // Gestiona el modo torneo: tres rondas seguidas, con el progreso guardado entre sesiones.
     public class TournamentManager : MonoBehaviour
     {
         public const int RoundCount = 3;
 
-        /// <summary>Every tournament match is this long, whatever the quick-match screen says.</summary>
+        // Duración fija de cada partido de torneo.
         public const float RoundDurationSeconds = 60f;
 
         public static TournamentManager Instance { get; private set; }
 
-        /// <summary>Which round is next, 0..2. Reset to 0 by winning the final or losing anything.</summary>
+        // Ronda actual, de 0 a 2. Vuelve a 0 al ganar la final o al perder.
         public int Stage { get; private set; }
 
-        /// <summary>True between kickoff and full time of a tournament match.</summary>
+        // Cierto entre el saque inicial y el final de un partido de torneo.
         public bool IsRunning { get; private set; }
 
-        /// <summary>
-        /// True if the match that has just finished was a tournament round.
-        ///
-        /// Separate from <see cref="IsRunning"/> and NOT cleared by the result,
-        /// because the result screen is what reads it: the score is settled
-        /// before full time is announced, so by the time that screen opens
-        /// IsRunning is already false and would say the round never happened.
-        /// </summary>
+        // Cierto si el último partido jugado fue una ronda de torneo.
         public bool LastMatchWasTournament { get; private set; }
 
-        /// <summary>Whether that round was won. Only meaningful with the flag above.</summary>
+        // Cierto si esa ronda se ganó.
         public bool LastMatchWon { get; private set; }
 
-        /// <summary>
-        /// True when the run is over either way — the final won, or a round
-        /// lost. The difference between "next round" and "finish" on the result
-        /// screen.
-        /// </summary>
+        // Cierto cuando la racha ha terminado, ya sea ganando la final o perdiendo una ronda.
         public bool RunEnded { get; private set; }
 
-        /// <summary>What the brief calls IsTournamentActive: a run with rounds still to play.</summary>
+        // Indica si hay una racha de torneo en marcha con rondas pendientes.
         public bool IsTournamentActive => LastMatchWasTournament && !RunEnded;
 
-        /// <summary>
-        /// How the last tournament match ended, for the result screen to read.
-        /// Cleared once it has been shown, so returning to the title twice does
-        /// not announce the same victory again.
-        /// </summary>
+        // Mensaje de cómo terminó el último partido de torneo, para la pantalla de resultado.
         public string PendingOutcome { get; private set; }
 
+        // Recupera la instancia única y la etapa guardada.
         private void Awake()
         {
-            // The generator puts one of these in the scene, and the scene is
-            // reloaded by nothing in this project — but a second copy would
-            // still be possible through a restart, and two of them would each
-            // advance the stage on the same win.
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
@@ -95,6 +59,7 @@ namespace TacticalSoccer.Core
             Stage = Mathf.Clamp(SaveManager.Data.tournamentStage, 0, RoundCount - 1);
         }
 
+        // Limpia la referencia al singleton al destruirse.
         private void OnDestroy()
         {
             if (Instance == this)
@@ -103,12 +68,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// The three rounds. A method rather than a serialised array so the
-        /// table cannot be half-edited in the Inspector into a state the code
-        /// does not expect — a tournament with two rounds, or one with no
-        /// opponent colour.
-        /// </summary>
+        // Devuelve los datos de la ronda indicada (cuartos, semifinal o final).
         public static TournamentRound GetRound(int stage)
         {
             switch (Mathf.Clamp(stage, 0, RoundCount - 1))
@@ -129,11 +89,6 @@ namespace TacticalSoccer.Core
                         Label = "FINAL",
                         Difficulty = AIDifficulty.Dificil,
                         Shape = FormationType.Offensive_1_3_2,
-
-                        // Gold rather than the black the brief asked for. Black
-                        // is one of the strips the HUMAN side can pick, and two
-                        // sides in the same colour is the one thing a football
-                        // kit must never be — see NOTE below.
                         RivalColor = new Color(0.85f, 0.68f, 0.13f, 1f),
                         RivalColorName = "Dorado"
                     };
@@ -152,13 +107,7 @@ namespace TacticalSoccer.Core
 
         public TournamentRound CurrentRound => GetRound(Stage);
 
-        /// <summary>
-        /// The round's name in the player's language.
-        ///
-        /// Separate from <see cref="TournamentRound.Label"/>, which stays as it
-        /// is: that one only ever reaches the console, and a log that changes
-        /// language with the menu is a log nobody can search.
-        /// </summary>
+        // Nombre de la ronda en el idioma del jugador.
         public static string DescribeRound(int stage)
         {
             switch (Mathf.Clamp(stage, 0, RoundCount - 1))
@@ -169,10 +118,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// The compact form for the match HUD, where it sits under the clock and
-        /// has to stay out of the way: "TORNEO - SEMIS", not "SEMIFINAL".
-        /// </summary>
+        // Versión corta del nombre de ronda para el HUD del partido.
         public string DescribeCurrentRoundBadge()
         {
             switch (Stage)
@@ -183,21 +129,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Which caption the title screen's tournament button should show, as a
-        /// localisation key rather than as words.
-        ///
-        /// A key and not a string because the button is on the main menu, which
-        /// is where the language can be changed — handing back Spanish text would
-        /// make this the one caption on that screen that never followed the
-        /// choice.
-        ///
-        /// The three captions are kept to the width of the quick-match button on
-        /// purpose: the two are the same size, and a caption like "CONTINUAR
-        /// TORNEO — SEMIFINAL" would either wrap or shrink its own font and stop
-        /// matching the button beside it. A run already under way is signalled by
-        /// naming the round rather than by the word "continuar".
-        /// </summary>
+        // Clave de localización para el texto del botón de torneo en el menú principal.
         public string NextRoundKey()
         {
             switch (Stage)
@@ -208,11 +140,7 @@ namespace TacticalSoccer.Core
             }
         }
 
-        /// <summary>
-        /// Opens a tournament match. Called by the title instead of the
-        /// configuration screen, which this mode deliberately skips: the whole
-        /// point is that the tournament decides the terms, not the player.
-        /// </summary>
+        // Empieza un partido de torneo con los parámetros de la ronda actual.
         public void BeginRound()
         {
             IsRunning = true;
@@ -230,8 +158,6 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // The human keeps whatever strip they last chose; only the rival is
-            // dictated by the round.
             MatchManager.Instance.ConfigureTournamentMatch(
                 RoundDurationSeconds, round.Difficulty, round.Shape, round.RivalColor);
 
@@ -240,14 +166,7 @@ namespace TacticalSoccer.Core
                       $"{RoundDurationSeconds:F0} s por parte.");
         }
 
-        /// <summary>
-        /// Settles the round just played.
-        ///
-        /// A draw counts as elimination rather than a replay. There are no
-        /// penalty shoot-outs in this game and a replay would let a player who
-        /// cannot beat the final grind at it forever, which is the opposite of
-        /// what three escalating rounds are for.
-        /// </summary>
+        // Resuelve el resultado de la ronda jugada. Un empate cuenta como eliminación.
         public void ReportResult(int humanGoals, int rivalGoals)
         {
             if (!IsRunning)
@@ -261,9 +180,6 @@ namespace TacticalSoccer.Core
 
             LastMatchWon = won;
 
-            // A loss ends the run, and so does winning the last round. Both put
-            // the counter back to zero, but only one of them is a victory — the
-            // result screen tells them apart by LastMatchWon.
             RunEnded = !won || Stage >= RoundCount - 1;
 
             if (!won)
@@ -290,19 +206,13 @@ namespace TacticalSoccer.Core
 
             SetStage(Stage + 1);
 
-            // Names the round COMING UP rather than the one just won. "CUARTOS
-            // SUPERADOS" and "SEMIFINAL SUPERADOS" cannot both be written from
-            // one template — one is masculine plural and the other feminine
-            // singular — and where the player goes next is the more useful half
-            // of the news anyway. Both remaining rounds are feminine, so "A LA"
-            // holds for each.
             PendingOutcome = LocalizationManager.Format("tournament.advance", DescribeRound(Stage));
 
             Debug.Log($"[Torneo] Victoria {humanGoals}-{rivalGoals} en {clearedLabel}. " +
                       $"Siguiente ronda: {CurrentRound.Label}.");
         }
 
-        /// <summary>Read and cleared by the result screen, so a message is shown once.</summary>
+        // Devuelve el mensaje de resultado pendiente y lo borra, para que se muestre solo una vez.
         public string ConsumeOutcome()
         {
             string outcome = PendingOutcome;
@@ -311,7 +221,7 @@ namespace TacticalSoccer.Core
             return outcome;
         }
 
-        /// <summary>Abandons a run — for the developer menu and for leaving mid-tournament.</summary>
+        // Abandona la racha de torneo en curso.
         public void Abandon()
         {
             IsRunning = false;
@@ -322,12 +232,11 @@ namespace TacticalSoccer.Core
             RunEnded = false;
         }
 
+        // Actualiza la etapa del torneo y la guarda de inmediato.
         private void SetStage(int stage)
         {
             Stage = Mathf.Clamp(stage, 0, RoundCount - 1);
 
-            // Written through immediately: a round won is the thing a player
-            // would be most annoyed to find missing next time they open the game.
             SaveManager.Data.tournamentStage = Stage;
             SaveManager.SaveNow();
         }

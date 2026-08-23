@@ -3,19 +3,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.VFX
 {
-    /// <summary>
-    /// The glow under a player whose side is in the zone.
-    ///
-    /// One of these rides on every player and switches its own disc on and off.
-    /// The alternative — a manager that finds every player of a side the moment
-    /// the bar lights — would have to re-find them after every substitution and
-    /// would go wrong quietly when it did not.
-    ///
-    /// The disc is a child of the player rather than an unparented object that
-    /// follows: players never rotate in this game, so parenting cannot tip it on
-    /// edge, and a child costs nothing per frame while a follower costs a
-    /// position write for all fourteen of them.
-    /// </summary>
+    // Aura brillante bajo los pies de un jugador cuyo equipo está en tensión ("en racha").
     public class TensionAura : MonoBehaviour
     {
         [Tooltip("Assigned by the scene generator, which owns material assets. " +
@@ -32,15 +20,14 @@ namespace TacticalSoccer.VFX
         [Tooltip("How much the disc swells on each pulse, as a share of its size.")]
         [SerializeField] private float pulseAmount = 0.12f;
 
-        // Just clear of the pitch plane at y=0, so the two never z-fight. The
-        // player's transform sits at their CENTRE, a unit up, so the disc has to
-        // be pushed back down by that much in local space.
+        // Ligeramente por encima del suelo para evitar z-fighting con el césped.
         private const float GroundY = 0.02f;
 
         private TeamMember member;
         private GameObject disc;
         private Material ownedMaterial;
 
+        // Busca el TeamMember del jugador y crea el disco del aura.
         private void Awake()
         {
             member = GetComponent<TeamMember>();
@@ -48,16 +35,15 @@ namespace TacticalSoccer.VFX
             CreateDisc();
         }
 
-        /// <summary>Assigned by the scene generator, before Awake builds the disc.</summary>
+        // Asigna el material del aura antes de que Awake cree el disco.
         public void ConfigureMaterial(Material material)
         {
             auraMaterial = material;
         }
 
+        // Destruye el material creado en tiempo de ejecución, si lo hay.
         private void OnDestroy()
         {
-            // A material instanced at runtime is not collected with the object
-            // that used it.
             if (ownedMaterial != null)
             {
                 Destroy(ownedMaterial);
@@ -65,14 +51,13 @@ namespace TacticalSoccer.VFX
             }
         }
 
+        // Crea el disco plano del aura, hijo del jugador, sin collider.
         private void CreateDisc()
         {
             disc = GameObject.CreatePrimitive(PrimitiveType.Quad);
             disc.name = "Tension Aura";
             disc.transform.SetParent(transform, false);
 
-            // A collider here would be an invisible plate on the pitch: the ball
-            // would bounce off the glow.
             Collider quadCollider = disc.GetComponent<Collider>();
 
             if (quadCollider != null)
@@ -80,8 +65,6 @@ namespace TacticalSoccer.VFX
                 Destroy(quadCollider);
             }
 
-            // Flat on the grass, under the player's feet rather than at the
-            // capsule's centre.
             disc.transform.localPosition = new Vector3(0f, GroundY - transform.position.y, 0f);
             disc.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             disc.transform.localScale = new Vector3(diameter, diameter, diameter);
@@ -107,12 +90,7 @@ namespace TacticalSoccer.VFX
             disc.SetActive(false);
         }
 
-        /// <summary>
-        /// Only used when the scene was built without an aura material asset.
-        /// URP ships its shaders opaque, so the alpha below is ignored unless the
-        /// material is explicitly flipped to alpha blending — without this the
-        /// "glow" comes out as a solid orange plate.
-        /// </summary>
+        // Crea un material de reserva transparente cuando no hay ninguno asignado.
         private static Material BuildFallbackMaterial()
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
@@ -139,11 +117,7 @@ namespace TacticalSoccer.VFX
             return material;
         }
 
-        /// <summary>
-        /// Late, not Update: a substitution can change which side this player is
-        /// on partway through a frame, and the aura should answer for the state
-        /// the frame is actually being drawn in.
-        /// </summary>
+        // Muestra u oculta el aura según si el equipo del jugador está en tensión, y anima su pulso.
         private void LateUpdate()
         {
             if (disc == null || member == null)
@@ -153,8 +127,6 @@ namespace TacticalSoccer.VFX
 
             TensionManager tension = TensionManager.Instance;
 
-            // A substitute in the dugout is not part of the surge, however well
-            // his side is playing.
             bool burning = tension != null && member.isStarter && tension.IsBurning(member.team);
 
             if (disc.activeSelf != burning)
@@ -167,9 +139,6 @@ namespace TacticalSoccer.VFX
                 return;
             }
 
-            // Unscaled: a duel freezes the match, and an aura that froze with it
-            // would read as the zone having ended at the exact moment the player
-            // is deciding what to do with it.
             float pulse = 1f + (pulseAmount * Mathf.Sin(Time.unscaledTime * pulseSpeed * Mathf.PI * 2f));
             float size = diameter * pulse;
 

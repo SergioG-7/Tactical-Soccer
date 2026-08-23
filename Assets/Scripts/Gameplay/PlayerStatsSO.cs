@@ -2,14 +2,7 @@ using UnityEngine;
 
 namespace TacticalSoccer.Gameplay
 {
-    /// <summary>
-    /// A player's RPG attributes, held as an asset rather than as inspector
-    /// fields on the prefab: several players share one stat block, and tuning
-    /// the block retunes every player wearing it without touching the scene.
-    ///
-    /// The stats pair off by duel. Tackle duels: dribble/power against
-    /// tackle/block. Shot duels: shoot against goalkeeping.
-    /// </summary>
+    // Estadísticas de un jugador, guardadas como asset para poder compartirlas entre varios jugadores.
     [CreateAssetMenu(fileName = "NewPlayerStats", menuName = "Tactical Soccer/Player Stats")]
     public class PlayerStatsSO : ScriptableObject
     {

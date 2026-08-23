@@ -6,27 +6,7 @@ using TacticalSoccer.Gameplay;
 
 namespace TacticalSoccer.UI
 {
-    /// <summary>
-    /// The team sheet: the shape you play, and who wears the armband.
-    ///
-    /// The two belong on one screen because they are the same decision. The
-    /// captain's passive is decided by the LINE he ends up playing in, and the
-    /// shape is what decides that line — so picking a captain before the shape
-    /// would be picking a buff you had not chosen yet.
-    ///
-    /// That is why choosing a formation applies it immediately rather than at
-    /// kickoff: the squad is re-roled on the spot behind the menu, and the
-    /// captain list is rebuilt from the roles the players will actually take the
-    /// field in.
-    ///
-    /// Lives on the canvas rather than on the panel it owns. A component on a
-    /// deactivated GameObject never receives Start, so a controller parked on
-    /// its own hidden panel would never wire up the buttons that dismiss it.
-    ///
-    /// The pitch stays frozen at timeScale 0 for the whole menu, exactly as it
-    /// is behind the title. Thawing it is this screen's last act, because after
-    /// this there is no menu left to hold the match back.
-    /// </summary>
+    // Pantalla de la alineación: elegir formación y capitán antes de empezar el partido.
     public class FormationUIController : MonoBehaviour
     {
         public GameObject uiPanel;
@@ -78,23 +58,23 @@ namespace TacticalSoccer.UI
 
         public static FormationUIController Instance { get; private set; }
 
-        /// <summary>True while the team sheet is up. Read off the panel itself.</summary>
+        // Cierto mientras el panel de alineación está visible.
         public static bool IsOpen => Instance != null
             && Instance.uiPanel != null
             && Instance.uiPanel.activeSelf;
 
+        // Guarda la instancia y oculta el panel al iniciar.
         private void Awake()
         {
             Instance = this;
 
-            // Hidden until the title screen hands over. Awake runs before any of
-            // that, so this is what keeps the menu off the pitch in the editor.
             if (uiPanel != null)
             {
                 uiPanel.SetActive(false);
             }
         }
 
+        // Limpia la instancia al desactivarse.
         private void OnDisable()
         {
             if (Instance == this)
@@ -103,32 +83,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Back out of the team sheet to the main menu, abandoning the match
-        /// that was being set up.
-        ///
-        /// The pitch is NOT thawed on the way out: the title screen is a modal
-        /// like this one and freezes it again immediately, and unfreezing
-        /// between the two would run a couple of frames of a match nobody has
-        /// started yet.
-        ///
-        /// Any tournament round opened on the way in is abandoned with it. The
-        /// round has already written its settings into the match, but it has not
-        /// been played — leaving it armed would count the NEXT match, whatever
-        /// it was, as that round's result.
-        /// </summary>
-        /// <summary>
-        /// Hands over to the squad board, which comes back here when closed.
-        ///
-        /// The SAME board the interval uses, not a copy of it. Arranging an
-        /// eleven is one job whether it happens before kickoff or at half time,
-        /// and a second implementation would be a second set of rules about who
-        /// may be swapped for whom — which would drift from this one the first
-        /// time either was touched.
-        ///
-        /// This panel is hidden outright rather than faded: the board restores
-        /// it by SetActive when it closes, and a fade would be racing that.
-        /// </summary>
+        // Abre el tablero de plantilla, ocultando este panel mientras tanto.
         public void OpenSquadBoard()
         {
             if (SubstitutionUIController.Instance == null)
@@ -145,6 +100,7 @@ namespace TacticalSoccer.UI
             SubstitutionUIController.Instance.ShowBoard(uiPanel);
         }
 
+        // Vuelve al menú principal, abandonando la configuración del partido en curso.
         public void GoBack()
         {
             UIAnimator.Hide(uiPanel);
@@ -163,10 +119,9 @@ namespace TacticalSoccer.UI
             Debug.LogWarning("No hay pantalla de título a la que volver.");
         }
 
+        // Conecta los botones de formación y confirmación.
         private void Start()
         {
-            // Cleared first: these listeners are added from code on every load,
-            // and a duplicate would kick the match off twice on one press.
             BindFormation(btn222, FormationType.Balanced_2_2_2);
             BindFormation(btn321, FormationType.Defensive_3_2_1);
             BindFormation(btn132, FormationType.Offensive_1_3_2);
@@ -199,16 +154,11 @@ namespace TacticalSoccer.UI
             RefreshSelectionFeedback();
         }
 
-        /// <summary>
-        /// Opens the menu. Called by the title screen rather than from Start,
-        /// so the two screens hand over in a fixed order instead of both being
-        /// up at once.
-        /// </summary>
+        // Muestra el panel de alineación, con el partido congelado.
         public void ShowMenu()
         {
             UIAnimator.Show(uiPanel);
 
-            // The title screen froze the match; it stays frozen through here.
             Time.timeScale = FrozenTimeScale;
 
             WriteFormationCaptions();
@@ -217,11 +167,7 @@ namespace TacticalSoccer.UI
             RebuildCaptainOptions();
         }
 
-        /// <summary>
-        /// Locks the chosen shape and armband in, and starts the match. This is
-        /// the only place the pitch is allowed to thaw: nothing is holding it
-        /// back once the last menu is gone.
-        /// </summary>
+        // Aplica la formación y el capitán elegidos, y arranca el partido.
         public void StartMatch()
         {
             UIAnimator.Hide(uiPanel);
@@ -237,28 +183,18 @@ namespace TacticalSoccer.UI
 
             TeamId team = MatchManager.Instance.HumanTeam;
 
-            // Applied again even though picking a shape already did it: the
-            // player may never have touched a formation button, in which case
-            // this is the only time the default shape is ever laid out.
             MatchManager.Instance.ApplyFormation(team, selectedFormation);
 
-            // After the formation, never before. The captaincy's passive is
-            // chosen by the captain's ROLE, and the shape is what assigns it —
-            // reading it first would hand out the buff for a line the player is
-            // no longer playing in.
             MatchManager.Instance.SetCaptain(team, ResolveCaptain(team));
 
             MatchManager.Instance.StartInitialKickoff();
         }
 
+        // Cambia la formación seleccionada y la aplica al equipo del jugador.
         public void SelectFormation(FormationType formation)
         {
             selectedFormation = formation;
 
-            // Applied on the spot rather than at kickoff. The squad is behind an
-            // opaque menu with the match frozen, so nobody sees them move — and
-            // it is what lets the captain list below show the roles the players
-            // will actually line up in.
             if (MatchManager.Instance != null)
             {
                 MatchManager.Instance.ApplyFormation(MatchManager.Instance.HumanTeam, formation);
@@ -268,18 +204,7 @@ namespace TacticalSoccer.UI
             RebuildCaptainOptions();
         }
 
-        /// <summary>
-        /// Whoever the player picked, or an outfield starter if they picked
-        /// nobody. A side with no captain at all is a side quietly playing
-        /// without a passive the opposition always has.
-        ///
-        /// The keeper is skipped when falling back, for the same reason the
-        /// opposition's own random pick skips him: his line only ever hands out
-        /// the defensive passive, and he is the one player who never leaves his
-        /// box to make use of it. He stays selectable by hand — it is a legal
-        /// choice and the buff is real — but a player who never touched this row
-        /// should not be handed the dullest armband on the pitch by default.
-        /// </summary>
+        // Devuelve el capitán elegido, o un titular de campo por defecto si no se ha elegido ninguno.
         private TeamMember ResolveCaptain(TeamId team)
         {
             if (selectedCaptain != null && selectedCaptain.team == team && selectedCaptain.isStarter)
@@ -295,13 +220,12 @@ namespace TacticalSoccer.UI
                 }
             }
 
-            // An eleven of nothing but keepers is not a squad this game can
-            // produce, but handing back the keeper beats handing back nobody.
             List<TeamMember> starters = CollectStarters(team);
 
             return starters.Count > 0 ? starters[0] : null;
         }
 
+        // Conecta un botón de formación a la selección de esa formación.
         private void BindFormation(Button button, FormationType formation)
         {
             if (button == null)
@@ -313,10 +237,7 @@ namespace TacticalSoccer.UI
             button.onClick.AddListener(() => SelectFormation(formation));
         }
 
-        /// <summary>
-        /// Tints the chosen shape and returns the others to normal, so the menu
-        /// answers "what am I about to play" without being pressed again.
-        /// </summary>
+        // Resalta el botón de la formación seleccionada y deja los demás sin resaltar.
         private void RefreshSelectionFeedback()
         {
             Tint(btn222, selectedFormation == FormationType.Balanced_2_2_2);
@@ -324,12 +245,7 @@ namespace TacticalSoccer.UI
             Tint(btn132, selectedFormation == FormationType.Offensive_1_3_2);
         }
 
-        /// <summary>
-        /// Written onto the button's own image rather than through its ColorBlock:
-        /// the block's normalColor is a multiplier over this image, so leaving the
-        /// image white and tinting the block would fight every hover and press
-        /// transition the Button applies on top.
-        /// </summary>
+        // Cambia el color de la imagen del botón según si está seleccionado.
         private void Tint(Button button, bool isSelected)
         {
             if (button == null || button.targetGraphic == null)
@@ -340,12 +256,7 @@ namespace TacticalSoccer.UI
             button.targetGraphic.color = isSelected ? selectedColor : unselectedColor;
         }
 
-        /// <summary>
-        /// Rebuilds the row of candidates from the live squad. Torn down and
-        /// rebuilt rather than relabelled because the shape can change which
-        /// line each player holds, and a stale button would be offering a buff
-        /// that no longer matched the man on it.
-        /// </summary>
+        // Reconstruye la lista de candidatos a capitán a partir de los titulares actuales.
         private void RebuildCaptainOptions()
         {
             if (captainArea == null)
@@ -360,9 +271,6 @@ namespace TacticalSoccer.UI
                     continue;
                 }
 
-                // Deactivated as well as destroyed: Destroy only takes effect at
-                // the end of the frame, so a slot merely marked would still be
-                // sitting under the new one and still taking clicks.
                 slot.SetActive(false);
                 Destroy(slot);
             }
@@ -393,19 +301,10 @@ namespace TacticalSoccer.UI
 
             RefreshCaptainFeedback();
 
-            // The heading is rebuilt with the buttons, not just when one is
-            // pressed. Changing the shape re-roles the squad, so the captain
-            // the player chose a moment ago may now be playing a different line
-            // and carrying a different passive — and the heading, written once
-            // at selection time, would have gone on advertising the old one.
             RefreshCaptainHeading();
         }
 
-        /// <summary>
-        /// This side's starting seven, keeper included, in shirt order so the row
-        /// does not reshuffle itself under the player's finger every time the
-        /// shape changes.
-        /// </summary>
+        // Devuelve los titulares del equipo, ordenados por dorsal.
         private static List<TeamMember> CollectStarters(TeamId team)
         {
             List<TeamMember> starters = new List<TeamMember>();
@@ -423,10 +322,9 @@ namespace TacticalSoccer.UI
             return starters;
         }
 
+        // Crea el botón de un candidato a capitán en la fila.
         private void CreateCaptainSlot(TeamMember member, Vector2 anchoredPosition)
         {
-            // Captured into a local first: the loop variable would otherwise be
-            // shared by every listener and all seven would pick the last player.
             TeamMember captured = member;
 
             string labelText = Core.LocalizationManager.Format("formation.captainSlot",
@@ -446,11 +344,7 @@ namespace TacticalSoccer.UI
             captainSlots.Add(slotObject);
         }
 
-        /// <summary>
-        /// What this player's line would give the side. Printed on the button
-        /// because the captaincy is the one choice on this screen whose effect
-        /// is invisible on the pitch — you cannot see a stamina multiplier.
-        /// </summary>
+        // Describe la ventaja pasiva que da la línea de este jugador si es capitán.
         private static string DescribePassive(PlayerRole role)
         {
             switch (role)
@@ -461,14 +355,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        /// <summary>
-        /// Writes the three shape buttons: the shape itself, which is the same
-        /// in every language, over the word that describes it, which is not.
-        ///
-        /// Done here rather than by the generator because the two halves come
-        /// from different places — one from the formation table, one from the
-        /// dictionary — and a single key could only carry one of them.
-        /// </summary>
+        // Escribe el texto de los tres botones de formación en el idioma actual.
         private void WriteFormationCaptions()
         {
             Caption(btn222, FormationType.Balanced_2_2_2, "formation.balanced");
@@ -476,6 +363,7 @@ namespace TacticalSoccer.UI
             Caption(btn132, FormationType.Offensive_1_3_2, "formation.offensive");
         }
 
+        // Escribe la etiqueta de un botón de formación.
         private static void Caption(Button button, FormationType shape, string key)
         {
             if (button == null)
@@ -495,6 +383,7 @@ namespace TacticalSoccer.UI
             Core.LocalizationManager.ApplyFont(label);
         }
 
+        // Marca a un jugador como capitán elegido.
         public void SelectCaptain(TeamMember member)
         {
             selectedCaptain = member;
@@ -503,17 +392,7 @@ namespace TacticalSoccer.UI
             RefreshCaptainHeading();
         }
 
-        /// <summary>
-        /// Writes the heading from the armband that would actually be worn if
-        /// the match started now — the player's pick, or the fallback if there
-        /// is none.
-        ///
-        /// Showing the fallback rather than a blank is the point: the side gets
-        /// a captain either way, and a heading that stayed empty until pressed
-        /// would hide a passive that was already in effect. Reading it back out
-        /// of ResolveCaptain, rather than from the click, is what keeps it true
-        /// after a change of shape.
-        /// </summary>
+        // Actualiza el texto de cabecera con el capitán que se usaría ahora mismo.
         private void RefreshCaptainHeading()
         {
             if (captainHeading == null || MatchManager.Instance == null)
@@ -538,6 +417,7 @@ namespace TacticalSoccer.UI
                 DescribePassive(captain.role), suffix);
         }
 
+        // Resalta el botón del capitán seleccionado entre los candidatos.
         private void RefreshCaptainFeedback()
         {
             List<TeamMember> starters = MatchManager.Instance != null
@@ -555,6 +435,7 @@ namespace TacticalSoccer.UI
             }
         }
 
+        // Devuelve la fuente a usar en los botones de capitán.
         private Font ResolveFont()
         {
             if (captainHeading != null && captainHeading.font != null)

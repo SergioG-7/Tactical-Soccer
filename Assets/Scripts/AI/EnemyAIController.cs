@@ -5,14 +5,7 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.AI
 {
-    /// <summary>
-    /// Drives one whole team by reusing the same route system the human player
-    /// draws with: it picks a player and feeds PlayerRoute a destination, so the
-    /// AI is subject to exactly the same movement rules as everyone else.
-    ///
-    /// It re-decides on a fixed interval rather than every frame — cheaper, and
-    /// the lag between decisions reads as deliberation instead of twitchiness.
-    /// </summary>
+    // Controla a todo un equipo, usando el mismo sistema de rutas que dibuja el jugador humano.
     public class EnemyAIController : MonoBehaviour
     {
         [Header("Team")]
@@ -66,12 +59,7 @@ namespace TacticalSoccer.AI
         private BallController ball;
         private float thinkTimer;
 
-        /// <summary>
-        /// How long this side waits between decisions right now. Read from the
-        /// match settings every tick rather than cached at Start: the difficulty
-        /// is chosen on a screen that runs before the match, and on a restart it
-        /// can be chosen again.
-        /// </summary>
+        // Tiempo actual entre decisiones, según la dificultad elegida.
         private float CurrentThinkInterval
         {
             get
@@ -84,12 +72,14 @@ namespace TacticalSoccer.AI
             }
         }
 
+        // Busca el balón y prepara la plantilla de este equipo.
         private void Start()
         {
             ball = FindAnyObjectByType<BallController>();
             CacheSquad();
         }
 
+        // Cuenta el tiempo entre decisiones y llama a Think cuando toca, salvo en duelos o reinicios.
         private void Update()
         {
             if (ball == null || squad.Count == 0)
@@ -97,19 +87,11 @@ namespace TacticalSoccer.AI
                 return;
             }
 
-            // A duel is a decision point, not a moment to keep issuing orders:
-            // without this the carrier would re-shoot every think tick while its
-            // own shot duel sits frozen on screen.
             if (ClashManager.IsClashActive)
             {
                 return;
             }
 
-            // Restarts: the opposition holds its shape until the ball is put
-            // back into play, so the move off a kickoff or a throw is thought
-            // out rather than scrambled for. The timer is not advanced either —
-            // otherwise the AI would fire its first decision the instant play
-            // starts, however long the human took to decide.
             if (Core.MatchManager.Instance != null && Core.MatchManager.Instance.IsWaitingForSetPiece)
             {
                 return;
@@ -126,14 +108,7 @@ namespace TacticalSoccer.AI
             Think();
         }
 
-        /// <summary>
-        /// The roster is fixed for a match, so it is resolved once instead of
-        /// scanning every TeamMember in the scene on each decision.
-        ///
-        /// Substitutes are cached along with everyone else — they can come on
-        /// later — and filtered out at the point of use through IsOnPitch, so a
-        /// swap never has to reach in here and rebuild the list.
-        /// </summary>
+        // Guarda la lista de jugadores de este equipo (sin contar al portero).
         private void CacheSquad()
         {
             squad.Clear();
@@ -145,8 +120,6 @@ namespace TacticalSoccer.AI
                     continue;
                 }
 
-                // Keepers run their own tracking loop and must stay on their
-                // goal line, so the general AI never hands them a route.
                 if (member.isGoalkeeper)
                 {
                     continue;
@@ -159,6 +132,7 @@ namespace TacticalSoccer.AI
             }
         }
 
+        // Decide la siguiente acción: rematar, pasar, avanzar con el balón, presionar o ir a por el balón.
         private void Think()
         {
             PlayerBallHandler carrier = FindCarrier();
@@ -171,22 +145,15 @@ namespace TacticalSoccer.AI
                     return;
                 }
 
-                // Too far to shoot: look up before putting the head down. The
-                // roll happens first so the search is skipped entirely most of
-                // the time rather than run and thrown away.
                 if (Random.value < passChance && TryPass(carrier))
                 {
                     return;
                 }
 
-                // Nobody on, or not looking: push towards the opponent's goal.
                 SendTo(carrier, targetGoalPosition);
                 return;
             }
 
-            // Nobody on this side has it. If the opposition does, that is a
-            // player to be closed down, not a ball to be drifted around: send
-            // the nearest man straight at them.
             TeamMember opposingCarrier = FindOpposingCarrier();
 
             if (opposingCarrier != null)
@@ -203,12 +170,7 @@ namespace TacticalSoccer.AI
             }
         }
 
-        /// <summary>
-        /// Sends the closest man to the ball carrier, aiming just past them so
-        /// the run actually ends in contact — which is what raises the tackle
-        /// duel. Chasing the BALL instead would work too, right up until the
-        /// carrier turns and the presser jogs to where the ball used to be.
-        /// </summary>
+        // Envía al jugador más cercano a presionar al portador rival, apuntando un poco más allá de él.
         private void Press(TeamMember carrier)
         {
             Vector3 carrierPosition = carrier.transform.position;
@@ -232,10 +194,7 @@ namespace TacticalSoccer.AI
             SendTo(presser, target);
         }
 
-        /// <summary>
-        /// Whoever on the other side is carrying the ball, if anyone. Scanned
-        /// live rather than cached: possession is exactly the thing that changes.
-        /// </summary>
+        // Busca quién del equipo contrario lleva el balón, si alguien lo lleva.
         private TeamMember FindOpposingCarrier()
         {
             foreach (TeamMember member in FindObjectsByType<TeamMember>())
@@ -254,11 +213,7 @@ namespace TacticalSoccer.AI
             return null;
         }
 
-        /// <summary>
-        /// Flat distance only. The players stand a unit above the pitch and the
-        /// goal centre is at ground level, so a full 3D measure would report
-        /// every carrier as slightly further out than they really are.
-        /// </summary>
+        // Cierto si el portador está lo bastante cerca de la portería para rematar.
         private bool IsInShootingRange(PlayerBallHandler carrier)
         {
             Vector3 toGoal = shotTargetPosition - carrier.transform.position;
@@ -267,12 +222,7 @@ namespace TacticalSoccer.AI
             return toGoal.magnitude < shootingRange;
         }
 
-        /// <summary>
-        /// The run is cancelled before the shot, not after: leaving the route
-        /// alive would keep walking the shooter into the goal mouth while the
-        /// duel resolves, and a route that ends inside the net is exactly the
-        /// behaviour this replaces.
-        /// </summary>
+        // Cancela la ruta del jugador y le hace rematar a puerta.
         private void Shoot(PlayerBallHandler carrier)
         {
             if (carrier.TryGetComponent(out PlayerRoute route))
@@ -286,11 +236,7 @@ namespace TacticalSoccer.AI
             carrier.InitiateShot(shotTargetPosition);
         }
 
-        /// <summary>
-        /// Looks for a team-mate who is further up the pitch, unmarked, and
-        /// within range of a pass that will actually arrive. Returns false if
-        /// there is nobody on, so the caller can fall back to carrying.
-        /// </summary>
+        // Busca a un compañero libre y adelantado al que pasar; devuelve false si no hay ninguno.
         private bool TryPass(PlayerBallHandler carrier)
         {
             PlayerBallHandler target = FindPassTarget(carrier);
@@ -302,8 +248,6 @@ namespace TacticalSoccer.AI
 
             if (carrier.TryGetComponent(out PlayerRoute route))
             {
-                // A run still in progress would drag the passer forward after
-                // the ball has already left him.
                 route.CancelRoute();
             }
 
@@ -315,9 +259,9 @@ namespace TacticalSoccer.AI
             return true;
         }
 
+        // Elige al mejor compañero al que pasar: el más adelantado, libre y a distancia de pase.
         private PlayerBallHandler FindPassTarget(PlayerBallHandler carrier)
         {
-            // Which way is forward for this side: towards the goal it shoots at.
             float attackDirection = Mathf.Sign(shotTargetPosition.z);
             Vector3 carrierPosition = carrier.transform.position;
 
@@ -333,8 +277,6 @@ namespace TacticalSoccer.AI
 
                 Vector3 matePosition = mate.transform.position;
 
-                // Forward means closer to the goal being attacked, whichever
-                // sign of Z that happens to be.
                 float advance = (matePosition.z - carrierPosition.z) * attackDirection;
 
                 if (advance <= bestAdvance)
@@ -362,10 +304,7 @@ namespace TacticalSoccer.AI
             return best;
         }
 
-        /// <summary>
-        /// True if any opponent is close enough to the receiver to contest the
-        /// ball the moment it arrives.
-        /// </summary>
+        // Cierto si hay algún rival lo bastante cerca de esa posición para disputar el balón.
         private bool IsMarked(Vector3 position)
         {
             float markedSqr = markedRadius * markedRadius;
@@ -386,6 +325,7 @@ namespace TacticalSoccer.AI
             return false;
         }
 
+        // Busca quién de este equipo lleva el balón.
         private PlayerBallHandler FindCarrier()
         {
             foreach (PlayerBallHandler handler in squad)
@@ -399,11 +339,13 @@ namespace TacticalSoccer.AI
             return null;
         }
 
+        // Busca al jugador de este equipo más cercano al balón.
         private PlayerBallHandler FindClosestToBall()
         {
             return FindClosestTo(ball.transform.position);
         }
 
+        // Busca al jugador de este equipo más cercano a un punto dado.
         private PlayerBallHandler FindClosestTo(Vector3 point)
         {
             PlayerBallHandler closest = null;
@@ -429,6 +371,7 @@ namespace TacticalSoccer.AI
             return closest;
         }
 
+        // Traza una ruta directa de un jugador hasta un destino.
         private void SendTo(PlayerBallHandler handler, Vector3 destination)
         {
             if (!handler.TryGetComponent(out PlayerRoute route))

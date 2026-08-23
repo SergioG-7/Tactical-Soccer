@@ -4,15 +4,7 @@ using TacticalSoccer.Player;
 
 namespace TacticalSoccer.AI
 {
-    /// <summary>
-    /// Keeper brain: slides along the goal line tracking the ball's X, clamped
-    /// to the width of its own goal. Deliberately independent of the route
-    /// system — a keeper reacts continuously, whereas routes are discrete orders
-    /// re-issued on a think interval, which would read as jerky at this range.
-    ///
-    /// It still yields to an explicit drawn route, so the human can pull their
-    /// own keeper out of the area if they want to.
-    /// </summary>
+    // IA del portero: se desliza por su línea de gol siguiendo la X del balón, dentro del ancho de su portería.
     [RequireComponent(typeof(PlayerBallHandler))]
     public class GoalkeeperAI : MonoBehaviour
     {
@@ -44,6 +36,7 @@ namespace TacticalSoccer.AI
         private float holdStartTime;
         private bool wasHoldingBall;
 
+        // Guarda la posición inicial y busca el balón y los componentes necesarios.
         private void Start()
         {
             startPosition = transform.position;
@@ -58,6 +51,7 @@ namespace TacticalSoccer.AI
             }
         }
 
+        // Sigue el balón lateralmente, o lo despeja si lo tiene en sus manos.
         private void Update()
         {
             if (ballHandler != null && ballHandler.HasBall)
@@ -76,11 +70,7 @@ namespace TacticalSoccer.AI
             transform.position = Vector3.MoveTowards(transform.position, CalculateTargetPosition(), speed * Time.deltaTime);
         }
 
-        /// <summary>
-        /// A stunned keeper is frozen like anyone else, and an explicitly drawn
-        /// route wins over the automatic tracking — otherwise both would write
-        /// to the same Transform on the same frame and fight each other.
-        /// </summary>
+        // True si el portero puede moverse por su cuenta (no está aturdido ni siguiendo una ruta manual).
         private bool CanMove()
         {
             if (ball == null)
@@ -91,11 +81,7 @@ namespace TacticalSoccer.AI
             return route == null || (!route.IsStunned && !route.IsFollowingRoute);
         }
 
-        /// <summary>
-        /// Only X moves: the keeper stays glued to its own goal line, so Y and Z
-        /// come from the spawn slot and the lateral travel is capped to the goal
-        /// mouth rather than the whole pitch.
-        /// </summary>
+        // Calcula la posición objetivo del portero, moviéndose solo en X dentro de los límites de su portería.
         private Vector3 CalculateTargetPosition()
         {
             float clampedX = Mathf.Clamp(
@@ -106,11 +92,7 @@ namespace TacticalSoccer.AI
             return new Vector3(clampedX, startPosition.y, startPosition.z);
         }
 
-        /// <summary>
-        /// Without this the game deadlocks: the general AI skips keepers, so a
-        /// keeper who catches the ball would hold it forever and its own team
-        /// can never tackle it back off him.
-        /// </summary>
+        // Mientras el portero tiene el balón, espera el tiempo de espera y luego lo despeja hacia adelante.
         private void TrackHeldBall()
         {
             if (!autoClearance)
@@ -132,7 +114,7 @@ namespace TacticalSoccer.AI
 
             wasHoldingBall = false;
 
-            // Upfield is whichever way is away from the goal this keeper defends.
+            // Hacia adelante es la dirección contraria a la portería que defiende este portero.
             float upfield = startPosition.z > 0f ? -1f : 1f;
 
             ballHandler.PassTo(new Vector3(
