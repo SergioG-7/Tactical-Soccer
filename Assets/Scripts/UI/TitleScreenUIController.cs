@@ -10,30 +10,22 @@ namespace TacticalSoccer.UI
         public GameObject uiPanel;
         public Button playButton;
 
-        [Tooltip("Starts the tournament, or continues one already under way. " +
-                 "Skips the settings screen: the round dictates the terms.")]
+        [Tooltip("Inicia o continúa el modo torneo saltando la pantalla de ajustes.")]
         public Button tournamentButton;
 
-        [Tooltip("Caption on the tournament button, rewritten every time the " +
-                 "title is shown so it names the round actually coming up.")]
+        [Tooltip("Texto del botón de torneo que indica la ronda actual o siguiente.")]
         public Text tournamentLabel;
 
-        [Tooltip("Result of the last tournament match, shown under the title on " +
-                 "the way back from one.")]
+        [Tooltip("Texto que muestra el resultado del último partido disputado en el torneo.")]
         public Text tournamentOutcomeText;
 
-        [Tooltip("Opens the audio options. Optional: the title works without one, " +
-                 "the levels simply keep whatever they were last set to.")]
+        [Tooltip("Abre el menú de configuración de audio.")]
         public Button optionsButton;
 
-        [Tooltip("The match settings screen this title opens. Optional: without " +
-                 "one the title falls through to the team sheet, and without " +
-                 "that to the kickoff — a title with no exit is the one failure " +
-                 "this screen must never have.")]
+        [Tooltip("Referencia a la pantalla de configuración de partido.")]
         public MatchConfigUIController configMenu;
 
-        [Tooltip("The team sheet. Reached through the settings screen when there " +
-                 "is one, and directly when there is not.")]
+        [Tooltip("Referencia a la pantalla de selección de alineación y formación.")]
         public FormationUIController formationMenu;
 
         private const float FrozenTimeScale = 0f;

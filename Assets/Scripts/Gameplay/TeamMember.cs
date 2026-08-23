@@ -111,73 +111,43 @@ namespace TacticalSoccer.Gameplay
     {
         public TeamId team;
 
-        [Tooltip("Shared stat asset. Several players may point at the same one.")]
+        [Tooltip("Asset compartido de estadísticas base.")]
         public PlayerStatsSO stats;
 
-        [Header("Ficha")]
-        [Tooltip("Squad number. Unique within a side: 1 is the keeper, 2-7 the " +
-                 "rest of the starting seven, 8-10 the bench. It is the only " +
-                 "stable name a player has — the role changes with the shape and " +
-                 "the GameObject name is not something the UI should be reading.")]
+        [Tooltip("Dorsal único del jugador en el equipo.")]
         public int jerseyNumber;
 
-        [Tooltip("False while this player is sitting in the dugout. A substitute " +
-                 "is on the pitch as a GameObject but out of the match: no routes, " +
-                 "no duels, no drift, and no restarts taken. Everything that " +
-                 "picks a player out of the squad asks this first.")]
+        [Tooltip("Indica si el jugador forma parte del once inicial o está en el banquillo.")]
         public bool isStarter = true;
 
-        [Tooltip("Line this player holds off the ball.")]
+        [Tooltip("Rol táctico asignado en la formación.")]
         public PlayerRole role = PlayerRole.Midfielder;
 
-        [Tooltip("Marks the player who defends this team's goal.")]
+        [Tooltip("Indica si el jugador ocupa la posición de portero.")]
         public bool isGoalkeeper = false;
 
-        [Tooltip("Elemental affinity. Decides nothing but duels, where it is " +
-                 "worth a flat bonus against the element it beats.")]
+        [Tooltip("Afinidad elemental para bonificaciones en duelos.")]
         public Element element = Element.Fuego;
 
-        [Tooltip("Set by MatchManager, which owns the armband. Never write this " +
-                 "directly — the captaincy also has to push its passive onto " +
-                 "every team-mate, and a flag flipped by hand would light up the " +
-                 "label without buffing anybody.")]
+        [Tooltip("Indica si el jugador porta el brazalete de capitán (gestionado por MatchManager).")]
         public bool isCaptain;
 
-        [Header("Estamina")]
-        [Tooltip("A full tank, and it is the only one a player gets. At the " +
-                 "running drain below this is about thirty seconds of continuous " +
-                 "movement — most of a 45-second half — so a player who runs " +
-                 "everything down is spent by the interval and has to be taken " +
-                 "off rather than waited out.")]
+        [Tooltip("Reserva máxima total de energía del jugador.")]
         public float maxStamina = 300f;
 
-        [Tooltip("Written every frame while the player runs. Seeded from " +
-                 "maxStamina in Awake, so the serialized value is only what the " +
-                 "inspector shows before play begins.")]
+        [Tooltip("Energía actual restante.")]
         public float currentStamina;
 
-        [Tooltip("Drain per second while running WITH the ball. Carrying is the " +
-                 "expensive thing to do: at 20 a fresh player is blown in five " +
-                 "seconds of solo dribbling, which is the whole point — you are " +
-                 "meant to pass.")]
+        [Tooltip("Consumo de energía por segundo al correr conduciendo el balón.")]
         [SerializeField] private float carryingDrainPerSecond = 20f;
 
-        [Tooltip("Drain per second while running without the ball. Half the " +
-                 "carrying cost: making a run should be affordable.")]
+        [Tooltip("Consumo de energía por segundo al correr sin balón.")]
         [SerializeField] private float runningDrainPerSecond = 10f;
 
-        [Tooltip("At or below this, the player is blown: half pace and a penalty " +
-                 "in every duel. A fifth of the tank — the share it was always " +
-                 "meant to be. At 20 against a 300 tank it was 6.7%, which made " +
-                 "being blown a state a player reached in the last seconds of a " +
-                 "match if at all, and left the AI's interval substitutions " +
-                 "almost never firing: IsExhausted is what selects who comes off.")]
+        [Tooltip("Umbral de energía por debajo del cual el jugador entra en estado de agotamiento.")]
         public float exhaustedThreshold = 60f;
 
-        // Pushed in by MatchManager whenever the armband changes hands. Held as
-        // three plain numbers rather than as "who the captain is" so that reading
-        // a stat stays a field access: every duel reads six of these, and none of
-        // them should be walking the squad to find out who is wearing it.
+        // Bonificaciones de capitán asignadas por MatchManager para acceso rápido durante los duelos.
         [SerializeField] private int captainAttackBonus;
         [SerializeField] private int captainDefenceBonus;
         [SerializeField] private float staminaDrainMultiplier = 1f;
@@ -205,9 +175,7 @@ namespace TacticalSoccer.Gameplay
         // Ajustes por jugador sobre el asset de estadísticas compartido, que en sí no se puede tocar.
         private const int NoOverride = -1;
 
-        [Header("Ajustes por jugador")]
-        [Tooltip("-1 means 'use the shared stat asset'. Anything else replaces " +
-                 "it for this player only.")]
+        [Tooltip("Modificador específico de regate (-1 para usar el valor del asset base).")]
         [SerializeField] private int dribbleOverride = NoOverride;
         [SerializeField] private int powerOverride = NoOverride;
         [SerializeField] private int shootOverride = NoOverride;

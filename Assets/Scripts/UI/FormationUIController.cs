@@ -11,37 +11,27 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Header("Formaciones")]
         public Button btn222;
         public Button btn321;
         public Button btn132;
 
-        [Header("Capitán")]
-        [Tooltip("Row the starters are listed in, one button each. The buttons " +
-                 "are built at runtime: which players are available and what " +
-                 "they play both change with the shape chosen above.")]
+        [Tooltip("Contenedor donde se generan dinámicamente los botones de selección de capitán.")]
         public RectTransform captainArea;
 
         public Text captainHeading;
 
-        [Header("Confirmación")]
         public Button btnStartMatch;
 
-        [Tooltip("Back to the main menu, abandoning the match being set up. " +
-                 "Optional: without one this screen still works, it just has no " +
-                 "way out except forwards.")]
+        [Tooltip("Botón para volver al menú principal cancelando la configuración del partido.")]
         public Button backButton;
 
-        [Tooltip("Opens the squad board — the SAME one the interval uses — so " +
-                 "the eleven can be arranged before kickoff rather than only " +
-                 "after forty-five seconds of finding out it is wrong.")]
+        [Tooltip("Abre el panel de gestión de plantilla antes del partido.")]
         public Button squadButton;
 
-        [Header("Feedback")]
-        [Tooltip("Fill of the shape currently chosen.")]
+        [Tooltip("Color de resaltado para la formación seleccionada.")]
         [SerializeField] private Color selectedColor = new Color(0.20f, 0.65f, 0.95f, 1f);
 
-        [Tooltip("Fill of the shapes not chosen.")]
+        [Tooltip("Color para los botones de formaciones no seleccionadas.")]
         [SerializeField] private Color unselectedColor = new Color(0.88f, 0.88f, 0.88f, 1f);
 
         [SerializeField] private Vector2 captainSlotSize = new Vector2(190f, 96f);

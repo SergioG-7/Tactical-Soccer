@@ -10,44 +10,40 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Header("Dificultad")]
+        [Tooltip("Dificultad")]
         public Button easyButton;
         public Button normalButton;
         public Button hardButton;
 
-        [Header("Formación rival")]
+        [Tooltip("Formación rival")]
         public Button rivalRandomButton;
         public Button rival222Button;
         public Button rival321Button;
         public Button rival132Button;
 
-        [Header("Duración")]
+        [Tooltip("Duración")]
         public Button short45Button;
         public Button medium60Button;
         public Button long90Button;
 
-        [Header("Equipación")]
+        [Tooltip("Equipación")]
         public Button kitBlueButton;
         public Button kitGreenButton;
         public Button kitBlackButton;
         public Button kitWhiteButton;
 
-        [Header("Confirmación")]
+        [Tooltip("Confirmación")]
         public Button continueButton;
 
-        [Tooltip("Back to the main menu, cancelling the match being set up. " +
-                 "Optional: without one this screen still works, it just has no " +
-                 "way out except forwards.")]
+        [Tooltip("Botón para volver al menú principal cancelando la configuración del partido.")]
         public Button backButton;
 
-        [Tooltip("Reads back the three choices, so the screen answers what it is " +
-                 "about to start without being pressed again.")]
+        [Tooltip("Texto que muestra el resumen de las opciones seleccionadas para el partido.")]
         public Text summaryText;
 
-        [Tooltip("The team sheet this screen hands over to.")]
+        [Tooltip("Referencia al menú de gestión de alineación y formación.")]
         public FormationUIController formationMenu;
 
-        [Header("Feedback")]
         [SerializeField] private Color selectedColor = new Color(0.20f, 0.65f, 0.95f, 1f);
         [SerializeField] private Color unselectedColor = new Color(0.88f, 0.88f, 0.88f, 1f);
 

@@ -21,87 +21,55 @@ namespace TacticalSoccer.CameraSystem
             BallFlight
         }
 
-        [Header("Vista de juego")]
-        [Tooltip("Pose the camera returns to: high, well behind the play and " +
-                 "tilted forward, so the pitch runs away into the distance " +
-                 "instead of being read off a map. Configured by the scene " +
-                 "generator to match the follow rig, so handing control back is " +
-                 "seamless.")]
+        [Tooltip("Posición base de la cámara en vista general táctica.")]
         public Vector3 overheadPosition = new Vector3(0f, 22f, -18f);
         public Vector3 overheadRotation = new Vector3(55f, 0f, 0f);
 
-        [Header("Duelo (sobre el hombro)")]
-        [Tooltip("How far behind the attacker the camera sits, along the line " +
-                 "between the two players. This is the whole shot: close enough " +
-                 "that the attacker fills a shoulder of the frame, far enough " +
-                 "that the defender they are about to meet is still in it.")]
+        [Tooltip("Distancia detrás del atacante durante un duelo sobre el hombro.")]
         public float clashBackDistance = 5f;
 
-        [Tooltip("How high above the attacker's feet the camera sits.")]
+        [Tooltip("Altura de la cámara sobre los pies del atacante en un duelo.")]
         public float clashHeight = 2.5f;
 
-        [Tooltip("How far up the defender the camera aims. Zero would point the " +
-                 "lens at their feet and put the pair's heads off the top.")]
+        [Tooltip("Altura del punto de mira sobre el defensor para encuadrar las cabezas.")]
         public float clashLookHeight = 1f;
 
-        [Tooltip("Longest gap between the two players the over-the-shoulder " +
-                 "staging is used across. Beyond it the camera slides up the " +
-                 "line and frames the DEFENDER instead: an interception pairs a " +
-                 "passer with someone half a pitch away, and staging that from " +
-                 "behind the passer would show the actual duel as a dot on the " +
-                 "horizon.")]
+        [Tooltip("Distancia máxima entre jugadores para usar el encuadre sobre el hombro.")]
         public float clashMaxStagingDistance = 8f;
 
-        [Tooltip("Lens used while staging a duel. Same as the match view by " +
-                 "default: on a perspective rig the five metres do the zooming, " +
-                 "and narrowing the lens on top of that reads as a lurch.")]
+        [Tooltip("Campo de visión (FOV) utilizado durante la cámara de duelo.")]
         public float clashFieldOfView = 50f;
 
-        [Header("Vuelo del balón")]
-        [Tooltip("How far BEHIND the ball the camera sits while chasing a shot " +
-                 "— behind along the ball's own line of flight, not along a " +
-                 "fixed world axis. A fixed offset put the camera in front of " +
-                 "any shot travelling south, so half the goals in the match were " +
-                 "watched with the ball flying into the lens.")]
+        [Tooltip("Distancia detrás del balón a lo largo de su vector de vuelo.")]
         public float ballFlightBackDistance = 6f;
 
-        [Tooltip("How high above the ball the camera rides.")]
+        [Tooltip("Altura de la cámara por encima del balón en seguimiento de disparo.")]
         public float ballFlightHeight = 4f;
 
-        [Tooltip("Lens used while chasing the ball.")]
+        [Tooltip("Campo de visión (FOV) durante el seguimiento del balón.")]
         public float ballFlightFieldOfView = 50f;
 
-        [Tooltip("Planar speed below which the flight direction is no longer " +
-                 "trusted. Under it the last good direction is held instead: a " +
-                 "ball momentarily stalled against a post or at the top of a lob " +
-                 "has a direction that is pure noise, and following it would whip " +
-                 "the camera around the pitch mid-shot.")]
+        [Tooltip("Velocidad mínima en el plano XZ para calcular la dirección de vuelo del balón.")]
         [SerializeField] private float ballFlightMinTrackedSpeed = 1f;
 
-        [Header("Paneo manual")]
-        [Tooltip("How far the player may drag the view off the automatic follow, " +
-                 "in world units. Generous on X: the follow itself cannot move " +
-                 "sideways at all on a wide window, so this is the only way to " +
-                 "look down the wings.")]
+        [Tooltip("Límites de desplazamiento manual de la vista en el eje X.")]
         public Vector2 panLimitX = new Vector2(-10f, 10f);
+
+        [Tooltip("Límites de desplazamiento manual de la vista en el eje Z.")]
         public Vector2 panLimitZ = new Vector2(-15f, 15f);
 
         public float transitionSpeed = 5f;
 
-        [Tooltip("How quickly the camera latches onto the ball when the chase " +
-                 "starts. Faster than the general transition: the ball is already " +
-                 "moving, and easing in gently loses it off the top of the frame.")]
+        [Tooltip("Velocidad de enganche inicial de la cámara al iniciar el seguimiento del balón.")]
         [SerializeField] private float ballFlightCatchUpSpeed = 12f;
 
-        [Header("Sacudida")]
-        [Tooltip("How fast the camera whips through the noise field while " +
-                 "shaking. High enough to read as an impact rather than as a " +
-                 "wobble, low enough not to alias into a flicker.")]
+        [Tooltip("Frecuencia de sacudida de la cámara durante impactos.")]
         [SerializeField] private float shakeFrequency = 28f;
 
-        [Tooltip("How close the camera must get to the overhead pose before the " +
-                 "ball-follower is handed back control.")]
+        [Tooltip("Distancia umbral para devolver el control al seguimiento táctico tras una transición.")]
         [SerializeField] private float settleDistance = 0.35f;
+
+        [Tooltip("Ángulo umbral para completar la transición de vuelta a la vista general.")]
         [SerializeField] private float settleAngle = 1.5f;
 
         private const float DefaultFieldOfView = 50f;

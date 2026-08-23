@@ -8,23 +8,16 @@ namespace TacticalSoccer.AI
     [RequireComponent(typeof(PlayerBallHandler))]
     public class GoalkeeperAI : MonoBehaviour
     {
-        [Header("Movement")]
         public float speed = 5f;
         public float maxLateralMovement = 3.5f;
 
-        [Header("Clearance")]
-        [Tooltip("Whether this keeper hoofs the ball upfield on its own. ON for " +
-                 "AI sides, whose keeper would otherwise hold the ball forever — " +
-                 "the squad AI never routes keepers and team-mates cannot tackle " +
-                 "their own. OFF for the human's keeper, who has a player to " +
-                 "decide the pass: clearing blind just handed possession straight " +
-                 "back to the opposition every single time.")]
+        [Tooltip("Despeje automático del balón. Activo para la IA y desactivado para el portero del jugador.")]
         public bool autoClearance = true;
 
-        [Tooltip("How long the keeper holds the ball before hoofing it upfield.")]
+        [Tooltip("Tiempo en segundos que el portero retiene el balón antes de despejar.")]
         [SerializeField] private float holdDuration = 0.8f;
 
-        [Tooltip("How far up the pitch the clearance is aimed.")]
+        [Tooltip("Distancia hacia el campo rival a la que se envía el despeje.")]
         [SerializeField] private float clearanceDistance = 14f;
 
         private Transform ball;

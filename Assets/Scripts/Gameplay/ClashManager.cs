@@ -29,70 +29,42 @@ namespace TacticalSoccer.Gameplay
     // Resuelve los duelos: entradas, tiros a puerta e intercepciones.
     public class ClashManager : MonoBehaviour
     {
-        [Header("References")]
         public ClashUIController uiController;
 
-        [Header("Tuning")]
-        [Tooltip("How long the loser of a tackle duel stays frozen. Long enough " +
-                 "that winning the ball actually buys you space to use it.")]
+        [Tooltip("Duración del aturdimiento para el perdedor de una disputa.")]
         [SerializeField] private float clashStunDuration = 2.5f;
 
-        [Tooltip("How long a beaten keeper stays frozen. Long on purpose: the " +
-                 "ball still has to travel, and a keeper who recovers mid-flight " +
-                 "would simply catch the goal they just conceded.")]
+        [Tooltip("Duración del aturdimiento del portero tras ser batido.")]
         [SerializeField] private float beatenKeeperStunDuration = 3f;
 
-        [Tooltip("How long a beaten interceptor stays frozen. This is what makes " +
-                 "a failed interception let the ball through: without it the same " +
-                 "player's trigger would simply collect the pass they had just " +
-                 "been beaten by, on the very next contact tick.")]
+        [Tooltip("Duración del aturdimiento de un jugador tras fallar una intercepción.")]
         [SerializeField] private float failedInterceptStunDuration = 1.5f;
 
-        [Tooltip("Real seconds after a clash ends before another one may start. " +
-                 "Without it the two players, still overlapping, re-clash instantly.")]
+        [Tooltip("Tiempo de enfriamiento en segundos antes de poder iniciar otro duelo.")]
         [SerializeField] private float clashCooldown = 1f;
 
-        [Tooltip("Bonus applied to the side whose action counters the other's. " +
-                 "Kept modest on purpose: at 1.5 an 80-shoot striker reached 120 " +
-                 "against an 85 keeper, which no d20 could ever close, so reading " +
-                 "the opponent decided the duel outright and the roll was decoration.")]
+        [Tooltip("Multiplicador de bonificación al acertar la acción contra el rival.")]
         [SerializeField] private float advantageMultiplier = 1.2f;
 
-        [Tooltip("What an exhausted player's stat is worth in a duel. Sits " +
-                 "between the two rings: being blown costs you more than reading " +
-                 "the opponent wrong, which is what makes pacing the team matter.")]
+        [Tooltip("Multiplicador penalizador aplicado a las estadísticas si el jugador está agotado.")]
         [SerializeField] private float exhaustedPenaltyMultiplier = 0.7f;
 
-        [Tooltip("Flat bonus for holding the element that beats the opponent's. " +
-                 "Flat rather than a multiplier so it is worth the same to a " +
-                 "20-tackle striker as to an 80-tackle defender — an affinity is " +
-                 "a matchup, not a measure of how good you already were.")]
+        [Tooltip("Bonificación plana por ventaja de afinidad elemental.")]
         [SerializeField] private int elementalAdvantageBonus = 15;
 
-        [Tooltip("Distance past the keeper the shot is aimed at, so a won duel " +
-                 "sends the ball through the goal line rather than short of it.")]
+        [Tooltip("Desplazamiento del punto de disparo tras la línea de meta al ganar el duelo.")]
         [SerializeField] private float goalAimOffset = 3f;
 
-        [Tooltip("Share of the normal strike a saved shot is hit with. Every " +
-                 "shot now flies for real, so a save is the same shot aimed AT " +
-                 "the keeper and hit softly enough to be gathered. Too low and " +
-                 "the ball dies short of him and turns into a loose ball in the " +
-                 "six-yard box; too high and it goes through him.")]
+        [Tooltip("Escala de fuerza aplicada al disparo cuando el portero detiene el balón.")]
         [SerializeField] private float savedShotForceScale = 0.65f;
 
-        [Header("Cámara y Juice")]
-        [Tooltip("How long the camera chases the struck ball before returning to " +
-                 "the overhead view. The whole point of striking the ball for " +
-                 "real: long enough to watch a lob drop and a drive arrive.")]
+        [Tooltip("Duración del seguimiento cinematográfico de cámara tras un disparo.")]
         [SerializeField] private float shotCinematicDuration = 1.5f;
 
         [SerializeField] private float clashShakeIntensity = 0.5f;
         [SerializeField] private float clashShakeDuration = 0.2f;
 
-        [Header("Textos flotantes")]
-        [Tooltip("Colour of the d20 each side rolled. Plain white: it is the " +
-                 "number that decided the duel, and tinting it would make it " +
-                 "compete with the modifiers stacked above it.")]
+        [Tooltip("Color del texto del dado d20 lanzado por cada jugador.")]
         [SerializeField] private Color rollTextColor = Color.white;
 
         [SerializeField] private Color advantageTextColor = new Color(0.35f, 1f, 0.45f, 1f);
@@ -102,40 +74,28 @@ namespace TacticalSoccer.Gameplay
         [SerializeField] private Color interceptWonTextColor = new Color(0.30f, 1f, 0.40f, 1f);
         [SerializeField] private Color interceptLostTextColor = new Color(0.70f, 0.70f, 0.70f, 1f);
 
-        [Tooltip("Size multiplier for the critical shout. Big enough that a " +
-                 "natural 20 is unmistakable from the match camera.")]
+        [Tooltip("Multiplicador de tamaño para el texto al sacar un crítico (20 natural).")]
         [SerializeField] private float criticalTextScale = 2.2f;
 
-        [Tooltip("How many times normal size the foul shout is. The other duel " +
-                 "messages are numbers read from the duel camera; this one has " +
-                 "to be legible from the match camera, because it cancels the " +
-                 "decision the player has just made.")]
+        [Tooltip("Multiplicador de tamaño para el texto de aviso de falta.")]
         [SerializeField] private float foulTextScale = 3.5f;
 
-        [Tooltip("How long the foul is held on the frozen duel before the panel " +
-                 "closes and the restart is set up. Real seconds: the duel is " +
-                 "holding timeScale at zero.")]
+        [Tooltip("Tiempo en segundos reales que se muestra el aviso de falta antes de reanudar.")]
         [SerializeField] private float foulDwellSeconds = 1.5f;
 
-        [Header("Riesgo de falta (%)")]
-        [Tooltip("Chance that CHARGING gives away a foul. The highest in the " +
-                 "game on purpose: Power is the move that beats a tackle, and " +
-                 "this is what stops it being the answer to everything.")]
+        [Tooltip("Probabilidad porcentual de cometer falta al usar Carga/Potencia.")]
         [Range(0, 100)]
         [SerializeField] private int powerFoulChance = 30;
 
-        [Tooltip("Chance that a TACKLE gives away a foul. Just under a charge: " +
-                 "it is a challenge for the ball, not for the player.")]
+        [Tooltip("Probabilidad porcentual de cometer falta al realizar una Entrada.")]
         [Range(0, 100)]
         [SerializeField] private int tackleFoulChance = 25;
 
-        [Tooltip("Chance that a DRIBBLE gives away a foul. Near enough clean — " +
-                 "you are going round the man, not through him.")]
+        [Tooltip("Probabilidad porcentual de cometer falta al intentar un Regate.")]
         [Range(0, 100)]
         [SerializeField] private int dribbleFoulChance = 5;
 
-        [Tooltip("Chance that a BLOCK gives away a foul. As clean as dribbling, " +
-                 "which is what makes it the move to pick inside your own box.")]
+        [Tooltip("Probabilidad porcentual de cometer falta al realizar un Bloqueo.")]
         [Range(0, 100)]
         [SerializeField] private int blockFoulChance = 5;
 

@@ -9,13 +9,11 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Header("Textos")]
         public Text headingText;
 
-        [Tooltip("Score and half, so the team talk says which match this is.")]
+        [Tooltip("Texto con el resumen del marcador y la parte actual del partido.")]
         public Text summaryText;
 
-        [Header("Botones")]
         public Button substitutionsButton;
         public Button secondHalfButton;
 

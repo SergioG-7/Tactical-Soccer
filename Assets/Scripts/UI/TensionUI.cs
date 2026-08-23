@@ -7,26 +7,24 @@ namespace TacticalSoccer.UI
     // Barras de tensión de cada equipo, se actualizan cada frame.
     public class TensionUI : MonoBehaviour
     {
-        [Header("Barras")]
+        [Tooltip("Barras")]
         public Image blueFill;
         public Image redFill;
 
-        [Header("Etiquetas")]
+        [Tooltip("Etiquetas")]
         public Text blueLabel;
         public Text redLabel;
 
-        [Header("Colores")]
-        [Tooltip("Fill while the bar is still charging.")]
+        [Tooltip("Color de la barra del equipo azul mientras se está cargando.")]
         [SerializeField] private Color blueChargingColor = new Color(0.25f, 0.55f, 1f, 1f);
 
+        [Tooltip("Color de la barra del equipo rojo mientras se está cargando.")]
         [SerializeField] private Color redChargingColor = new Color(1f, 0.35f, 0.30f, 1f);
 
-        [Tooltip("Fill while the side is in the zone. Deliberately the same for " +
-                 "both teams: burning is a state, not a team colour, and it has " +
-                 "to be unmistakable at a glance from either bar.")]
+        [Tooltip("Color de la barra durante el estado de ardor (común para ambos equipos).")]
         [SerializeField] private Color burningColor = new Color(1f, 0.85f, 0.15f, 1f);
 
-        [Tooltip("How fast the burning bar pulses, in cycles per second.")]
+        [Tooltip("Velocidad de pulsación de la barra en estado de ardor (ciclos por segundo).")]
         [SerializeField] private float burnPulseSpeed = 3f;
 
         // Actualiza el relleno y la etiqueta de ambas barras cada frame.

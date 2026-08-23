@@ -6,7 +6,6 @@ namespace TacticalSoccer.Gameplay
     [RequireComponent(typeof(Collider))]
     public class GoalDetector : MonoBehaviour
     {
-        [Tooltip("Id of the team that scores in this goal: 0 = Blue, 1 = Red.")]
         [SerializeField] private int teamToScore;
 
         // Asigna qué equipo marca al entrar el balón en esta portería.

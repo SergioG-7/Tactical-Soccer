@@ -6,18 +6,16 @@ namespace TacticalSoccer.VFX
     // Aura brillante bajo los pies de un jugador cuyo equipo está en tensión ("en racha").
     public class TensionAura : MonoBehaviour
     {
-        [Tooltip("Assigned by the scene generator, which owns material assets. " +
-                 "Left null the aura builds its own transparent material.")]
+        [Tooltip("Material para el aura (si es nulo, se genera uno transparente por defecto).")]
         [SerializeField] private Material auraMaterial;
 
-        [Tooltip("Diameter of the disc. Wider than the capsule so it reads as a " +
-                 "glow the player is standing in rather than as a hat.")]
+        [Tooltip("Diámetro del disco del aura bajo el jugador.")]
         [SerializeField] private float diameter = 2.2f;
 
-        [Tooltip("How fast the aura pulses, in cycles per second.")]
+        [Tooltip("Velocidad de pulsación del aura (ciclos por segundo).")]
         [SerializeField] private float pulseSpeed = 2.5f;
 
-        [Tooltip("How much the disc swells on each pulse, as a share of its size.")]
+        [Tooltip("Magnitud de escala aplicada al disco en cada pulso.")]
         [SerializeField] private float pulseAmount = 0.12f;
 
         // Ligeramente por encima del suelo para evitar z-fighting con el césped.

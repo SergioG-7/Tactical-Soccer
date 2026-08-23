@@ -6,7 +6,6 @@ namespace TacticalSoccer.Gameplay
     [CreateAssetMenu(fileName = "NewPlayerStats", menuName = "Tactical Soccer/Player Stats")]
     public class PlayerStatsSO : ScriptableObject
     {
-        [Header("Ataque")]
         [Tooltip("Regate: esquivar al defensor conservando el balón.")]
         public int dribble = 50;
 
@@ -16,7 +15,6 @@ namespace TacticalSoccer.Gameplay
         [Tooltip("Tiro: potencia y colocación al rematar a puerta.")]
         public int shoot = 50;
 
-        [Header("Defensa")]
         [Tooltip("Entrada: arrebatar el balón al portador.")]
         public int tackle = 50;
 
@@ -26,7 +24,6 @@ namespace TacticalSoccer.Gameplay
         [Tooltip("Parada: detener un remate bajo palos.")]
         public int goalkeeping = 50;
 
-        [Header("Movimiento")]
         public float moveSpeed = 5f;
     }
 }

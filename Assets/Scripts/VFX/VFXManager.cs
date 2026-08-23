@@ -7,10 +7,7 @@ namespace TacticalSoccer.VFX
     // Efectos visuales de impacto, construidos con primitivas. Corren en tiempo no escalado para verse aunque el partido esté congelado.
     public class VFXManager : MonoBehaviour
     {
-        [Header("Onda de impacto")]
-        [Tooltip("Semi-transparent material for the shockwave. Written as a real " +
-                 "asset by the scene generator; a runtime fallback is built if it " +
-                 "is missing, so a scene generated before this existed still runs.")]
+        [Tooltip("Material semitransparente para la onda de impacto.")]
         [SerializeField] private Material impactMaterial;
 
         [SerializeField] private float impactStartScale = 1f;

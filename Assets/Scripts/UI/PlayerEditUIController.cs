@@ -13,29 +13,25 @@ namespace TacticalSoccer.UI
         [Header("Cabecera")]
         public Text headingText;
 
-        [Tooltip("The number in each stat row, in the same order the rows are " +
-                 "built: regate, fuerza, tiro, entrada, bloqueo, parada, " +
-                 "estamina. Rewritten on every press, which is the whole of the " +
-                 "feedback this panel gives.")]
+        [Tooltip("Textos para los valores de estadísticas (regate, fuerza, tiro, entrada, bloqueo, parada, energía).")]
         public Text[] statValueTexts;
 
-        [Tooltip("Where a refused edit explains itself — demoting the last " +
-                 "goalkeeper, for instance. Empty the rest of the time.")]
+        [Tooltip("Texto para mostrar avisos o restricciones al editar un jugador.")]
         public Text noticeText;
 
-        [Header("Posición")]
+        [Tooltip("Posición")]
         public Button roleGoalkeeperButton;
         public Button roleDefenderButton;
         public Button roleMidfielderButton;
         public Button roleForwardButton;
 
-        [Header("Elemento")]
+        [Tooltip("Elemento")]
         public Button elementFireButton;
         public Button elementForestButton;
         public Button elementWindButton;
         public Button elementMountainButton;
 
-        [Header("Atributos")]
+        [Tooltip("Atributos")]
         public Button dribbleUpButton;
         public Button dribbleDownButton;
         public Button powerUpButton;
@@ -51,17 +47,15 @@ namespace TacticalSoccer.UI
         public Button staminaUpButton;
         public Button staminaDownButton;
 
-        [Header("Salida")]
+        [Tooltip("Salida")]
         public Button saveButton;
         public Button closeButton;
 
-        [Header("Feedback")]
+        [Tooltip("Feedback")]
         [SerializeField] private Color selectedColor = new Color(0.20f, 0.65f, 0.95f, 1f);
         [SerializeField] private Color unselectedColor = new Color(0.88f, 0.88f, 0.88f, 1f);
 
-        [Tooltip("How much one press moves a stat. Coarse on purpose: this is a " +
-                 "tuning screen, not a spreadsheet, and single points would mean " +
-                 "fifty presses to make a difference anybody can feel.")]
+        [Tooltip("Incremento o decremento aplicado a la estadística por cada pulsación.")]
         [SerializeField] private int statStep = 5;
 
         [SerializeField] private float staminaStep = 25f;

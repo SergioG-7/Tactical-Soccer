@@ -8,51 +8,34 @@ namespace TacticalSoccer.AI
     // Controla a todo un equipo, usando el mismo sistema de rutas que dibuja el jugador humano.
     public class EnemyAIController : MonoBehaviour
     {
-        [Header("Team")]
         [SerializeField] private TeamId controlledTeam = TeamId.Red;
 
-        [Header("Thinking")]
-        [Tooltip("Base gap between decisions. Scaled by the chosen difficulty, " +
-                 "which is the whole of what makes an easy opponent easy to run " +
-                 "at: it keeps closing down the space the ball has already left.")]
+        [Tooltip("Tiempo base entre decisiones. Escala con la dificultad elegida.")]
         [SerializeField] private float thinkInterval = 1f;
 
-        [Tooltip("Where this team attacks. Red defends north, so it pushes south. " +
-                 "Sits past the goal line so the carrier runs through the goal trigger " +
-                 "instead of stopping short of it.")]
+        [Tooltip("Punto objetivo de ataque. Situado tras la línea de meta para asegurar que el portador la cruce.")]
         [SerializeField] private Vector3 targetGoalPosition = new Vector3(0f, 0f, -24.5f);
 
-        [Header("Shooting")]
-        [Tooltip("Centre of the goal this team shoots at. Slightly short of the " +
-                 "run-in target: the ball has to be aimed AT the mouth, not past it.")]
+        [Tooltip("Centro geométrico de la portería rival hacia donde se apunta el disparo.")]
         [SerializeField] private Vector3 shotTargetPosition = new Vector3(0f, 0f, -23.5f);
 
-        [Tooltip("Flat distance from the goal at which the carrier shoots instead " +
-                 "of running on. Without this the AI walks into the net forever, " +
-                 "because arriving there is not what scores.")]
+        [Tooltip("Distancia desde la portería a la que el portador decide disparar en vez de seguir corriendo.")]
         [SerializeField] private float shootingRange = 15f;
 
-        [Header("Passing")]
-        [Tooltip("Chance of looking for a pass on any given decision, when one is " +
-                 "available. Well under 1 on purpose: an AI that always passes " +
-                 "when it can never carries the ball, and reads as a machine.")]
+        [Tooltip("Probabilidad de realizar un pase. Se mantiene baja para forzar a la IA a conducir el balón también.")]
         [Range(0f, 1f)]
         [SerializeField] private float passChance = 0.3f;
 
-        [Tooltip("A team-mate is marked if an opponent is within this of them.")]
+        [Tooltip("Radio de distancia para considerar que un compañero está marcado por un rival.")]
         [SerializeField] private float markedRadius = 3.5f;
 
-        [Tooltip("Minimum ground the pass has to gain to be worth making.")]
+        [Tooltip("Distancia mínima de avance necesaria para que la IA considere que vale la pena el pase.")]
         [SerializeField] private float minimumPassAdvance = 3f;
 
-        [Tooltip("Longest pass the AI will attempt. Beyond this the ball simply " +
-                 "does not arrive, because pass force is fixed.")]
+        [Tooltip("Distancia máxima permitida para realizar un pase.")]
         [SerializeField] private float maximumPassDistance = 18f;
 
-        [Header("Presión")]
-        [Tooltip("How far PAST the carrier the presser is sent. Routing exactly " +
-                 "onto them means arriving at where they used to be a second " +
-                 "ago and stopping short of contact, so no duel ever happens.")]
+        [Tooltip("Distancia extra más allá del objetivo al presionar, para asegurar el contacto en movimiento.")]
         [SerializeField] private float pressOvershoot = 1.5f;
 
         private readonly List<PlayerBallHandler> squad = new List<PlayerBallHandler>();

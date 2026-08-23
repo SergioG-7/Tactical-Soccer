@@ -11,15 +11,13 @@ namespace TacticalSoccer.Core
     // Controla el estado global del partido: tiempo, marcador, saques y reinicios de juego.
     public class MatchManager : MonoBehaviour
     {
-        [Header("Clock")]
-        [Tooltip("Length of ONE half, in seconds. The match is two of these with " +
-                 "an interval between them, so a full game is twice this.")]
+        [Tooltip("Duración de cada parte del partido en segundos.")]
         public float matchDuration = 45f;
 
         // Segundos que quedan en la parte actual.
         public float currentTime { get; private set; }
 
-        [Tooltip("Which half is being played. 1 until the interval, 2 after it.")]
+        [Tooltip("Número de la parte en juego (1 para la primera, 2 para la segunda).")]
         public int currentHalf = 1;
 
         public bool isMatchOver = false;
@@ -51,102 +49,65 @@ namespace TacticalSoccer.Core
         // True mientras se celebra un gol antes de reanudar el juego.
         public bool IsCelebratingGoal { get; private set; }
 
-        [Header("Sides")]
-        [Tooltip("The side the person holding the phone plays. Everything else " +
-                 "is driven by the AI, including its own restarts.")]
+        [Tooltip("Equipo asignado al jugador humano.")]
         [SerializeField] private TeamId humanTeam = TeamId.Blue;
 
-        [Header("Configuración de partido")]
-        [Tooltip("Set from the pre-match screen. Read by the duel maths and by " +
-                 "the opposition's own think rate.")]
+        [Tooltip("Dificultad de la IA rival.")]
         public AIDifficulty aiDifficulty = AIDifficulty.Normal;
 
-        [Tooltip("Shape the opposition lines up in. Only used when the shape was " +
-                 "actually chosen — see randomiseRivalFormation.")]
+        [Tooltip("Formación táctica inicial del equipo rival.")]
         public FormationType rivalFormation = FormationType.Balanced_2_2_2;
 
-        [Tooltip("True when the player asked for a surprise. The shape is then " +
-                 "rolled at the opening kickoff rather than at the menu, so it " +
-                 "cannot be read off the pitch while the team sheet is still up.")]
+        [Tooltip("Si es true, la formación rival se elige aleatoriamente al iniciar el partido.")]
         public bool randomiseRivalFormation = true;
 
-        [Header("Capitanes")]
-        [Tooltip("Chosen by the player on the team sheet. Their ROLE decides " +
-                 "which passive the whole side gets, so re-roling the captain " +
-                 "changes the buff.")]
+        [Tooltip("Capitán del equipo azul. Su rol define la pasiva de todo el equipo.")]
         public TeamMember blueCaptain;
 
-        [Tooltip("Picked at random at the opening kickoff if nobody set one.")]
+        [Tooltip("Capitán del equipo rojo.")]
         public TeamMember redCaptain;
 
-        [Tooltip("Flat bonus a captain's line gives the whole team: a defender " +
-                 "captain hardens everyone's defending, a forward captain sharpens " +
-                 "everyone's attacking.")]
+        [Tooltip("Bonificación a estadísticas que otorga el capitán al equipo.")]
         [SerializeField] private int captainStatBonus = 10;
 
-        [Tooltip("What a midfielder captain is worth instead: a share taken off " +
-                 "every team-mate's stamina drain. 0.8 is the -20% the brief asks " +
-                 "for — with no recovery in the match, buying back a fifth of the " +
-                 "running is worth about nine seconds of legs per player.")]
+        [Tooltip("Multiplicador del gasto de energía cuando el capitán es centrocampista (ej. 0.8 = -20%).")]
         [SerializeField] private float captainStaminaDrainMultiplier = 0.8f;
 
-        [Tooltip("Stat points the opposition gains or loses in every duel, at " +
-                 "the hardest and easiest settings respectively.")]
+        [Tooltip("Modificador de atributos aplicado en los duelos según el nivel de dificultad.")]
         [SerializeField] private int difficultyDuelModifier = 5;
 
-        [Header("Cambios de la IA")]
-        [Tooltip("Share of a full tank below which the opposition takes a player " +
-                 "off at the interval. 0.8 is deliberately generous: the bench " +
-                 "only holds three, and a side that waited for genuine exhaustion " +
-                 "never used it at all.")]
+        [Tooltip("Porcentaje de energía restante por debajo del cual la IA realiza cambios en el descanso.")]
         [Range(0f, 1f)]
         [SerializeField] private float tiredSubstitutionFraction = 0.8f;
 
-        [Header("Kickoff")]
-        [Tooltip("How far behind the centre spot the taker stands. The ball rides " +
-                 "on a socket half a unit in front of them, so this puts it on the " +
-                 "centre mark itself.")]
+        [Tooltip("Distancia detrás del punto central a la que se sitúa el jugador que saca de centro.")]
         [SerializeField] private float kickoffTakerOffset = 0.5f;
 
-        [Header("Set Pieces")]
-        [Tooltip("How long the AI takes to line up a restart of its own. Long " +
-                 "enough to read as deliberate rather than as a glitch.")]
+        [Tooltip("Tiempo de espera antes de que la IA ejecute un balón parado.")]
         [SerializeField] private float aiSetPieceDelay = 1.5f;
 
-        [Tooltip("How long the ball is left in the net before the centre spot is " +
-                 "set up again. The goal used to be undone on the same frame it " +
-                 "was scored — the ball was already back on the halfway line " +
-                 "before the announcement had drawn — so the one moment the " +
-                 "whole match is played for was the one nobody got to see.")]
+        [Tooltip("Duración de la pausa para celebrar un gol antes del reinicio.")]
         [SerializeField] private float goalCelebrationDelay = 2.5f;
 
-        [Header("Final de parte")]
-        [Tooltip("How long play carries on after the whistle before the interval " +
-                 "or full-time screen takes over. Without it the pitch freezes on " +
-                 "the same frame the clock hits zero and the last touch of the " +
-                 "half is never seen.")]
+        [Tooltip("Retraso tras el pitido final antes de mostrar la pantalla de resultados.")]
         [SerializeField] private float endOfHalfDelay = 2.5f;
 
-        [Tooltip("How far off the goal line the keeper stands for a goal kick.")]
+        [Tooltip("Distancia desde la línea de meta donde se coloca el portero para el saque de puerta.")]
         [SerializeField] private float goalKickDepth = 3f;
 
-        [Tooltip("How far everybody but the taker is pushed clear of a free kick. " +
-                 "A player capsule is 1 unit wide, so this is a couple of bodies " +
-                 "of room — enough that the taker can play the ball without " +
-                 "shoving somebody first.")]
+        [Tooltip("Radio de exclusión para despejar a otros jugadores durante una falta.")]
         [SerializeField] private float restartClearanceRadius = 2.5f;
 
-        [Tooltip("How far out from the goal line a penalty is taken.")]
+        [Tooltip("Distancia desde la línea de meta a la que se sitúa el punto de penalti.")]
         [SerializeField] private float penaltySpotDepth = 8f;
 
-        [Tooltip("How far up the pitch a goal kick is aimed.")]
+        [Tooltip("Distancia de pase para los saques de puerta.")]
         [SerializeField] private float goalKickDistance = 16f;
 
-        [Tooltip("How far infield a throw-in is aimed.")]
+        [Tooltip("Distancia hacia el interior del campo para los saques de banda.")]
         [SerializeField] private float throwInDistance = 8f;
 
-        [Tooltip("How far up the pitch an AI kickoff is played. Short: a kickoff " +
-                 "is a pass to get the ball moving, not a clearance.")]
+        [Tooltip("Distancia del pase corto en el saque de centro de la IA.")]
         [SerializeField] private float kickoffPassDistance = 7f;
 
         private const float MatchOverTimeScale = 0f;
@@ -170,10 +131,7 @@ namespace TacticalSoccer.Core
         // How far time is slowed the instant a goal goes in.
         private const float GoalSlowMotionScale = 0.3f;
 
-        [Tooltip("Real seconds the goal is held in slow motion before the rest " +
-                 "of the celebration plays out at normal speed. Capped by the " +
-                 "celebration's own length, so a shorter celebration cannot end " +
-                 "while time is still running slow.")]
+        [Tooltip("Duración en segundos reales de la cámara lenta tras marcar un gol.")]
         [SerializeField] private float goalSlowMotionDuration = 1.2f;
 
         // True mientras el balón está parado, esperando cualquier tipo de reinicio.

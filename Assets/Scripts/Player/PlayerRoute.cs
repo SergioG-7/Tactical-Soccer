@@ -8,42 +8,27 @@ namespace TacticalSoccer.Player
     [RequireComponent(typeof(LineRenderer))]
     public class PlayerRoute : MonoBehaviour
     {
-        [Header("Movement")]
         [SerializeField] private float moveSpeed = 5f;
 
-        [Tooltip("Speed multiplier while carrying the ball. Under 1 on purpose: " +
-                 "a carrier who moves as fast as everyone else can never be run " +
-                 "down, so closing a player and forcing a duel is impossible.")]
+        [Tooltip("Multiplicador de velocidad al conducir el balón.")]
         [SerializeField] private float carrierSpeedMultiplier = 0.75f;
 
-        [Tooltip("Speed multiplier once the player is blown. This is what makes " +
-                 "stamina cost something: a run drawn on an exhausted player " +
-                 "still happens, it just happens at walking pace.")]
+        [Tooltip("Multiplicador de velocidad aplicado cuando el jugador está agotado.")]
         [SerializeField] private float exhaustedSpeedMultiplier = 0.5f;
 
         [SerializeField] private float waypointReachedThreshold = 0.05f;
 
-        [Header("Route Drawing")]
         [SerializeField] private float minPointDistance = 0.3f;
 
-        [Tooltip("Width of the drawn route, in world units. A tenth of a unit " +
-                 "was a hairline on a phone: the camera sees some 27 units of " +
-                 "pitch across a screen a few inches wide, so the line has to be " +
-                 "measured against the players it is drawn between — a quarter of " +
-                 "a unit is about half the width of a capsule.")]
+        [Tooltip("Grosor de la línea de ruta dibujada en pantalla.")]
         [SerializeField] private float lineWidth = 0.25f;
 
-        [Tooltip("Longest route that may be drawn, in world units — about the " +
-                 "length of the pitch. Without a cap a single drag could scribble " +
-                 "an unlimited path and buy a player a run that outlasts several " +
-                 "passages of play, which is not a plan, it is a queue.")]
+        [Tooltip("Longitud máxima permitida para una ruta trazada.")]
         [SerializeField] private float maxRouteLength = 50f;
 
-        [Header("Direction Arrow")]
         [SerializeField] private float arrowLength = 0.9f;
         [SerializeField] private float arrowHalfWidth = 0.45f;
 
-        [Header("Stun Feedback")]
         [SerializeField] private Color stunBlinkColor = Color.gray;
         [SerializeField] private float stunBlinkInterval = 0.15f;
 

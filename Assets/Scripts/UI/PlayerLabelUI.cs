@@ -10,19 +10,18 @@ namespace TacticalSoccer.UI
         public Text roleText;
         public Image staminaBar;
 
-        [Header("Colores de rol")]
+        [Tooltip("Colores de rol")]
         [SerializeField] private Color forwardColor = new Color(1f, 0.35f, 0.30f, 1f);
         [SerializeField] private Color midfielderColor = new Color(0.40f, 0.95f, 0.45f, 1f);
         [SerializeField] private Color defenderColor = new Color(0.45f, 0.70f, 1f, 1f);
         [SerializeField] private Color goalkeeperColor = new Color(1f, 0.90f, 0.30f, 1f);
 
-        [Header("Colores de estamina")]
+        [Tooltip("Colores de estamina")]
         [SerializeField] private Color staminaHealthyColor = new Color(0.30f, 0.85f, 0.35f, 1f);
         [SerializeField] private Color staminaTiredColor = new Color(0.95f, 0.80f, 0.20f, 1f);
         [SerializeField] private Color staminaExhaustedColor = new Color(0.90f, 0.25f, 0.20f, 1f);
 
-        [Tooltip("Below this share of the tank the bar turns amber, as a warning " +
-                 "before the player is actually blown.")]
+        [Tooltip("Fracción de energía por debajo de la cual la barra cambia a color ámbar como advertencia.")]
         [SerializeField] private float tiredFraction = 0.5f;
 
         [SerializeField] private TeamMember member;

@@ -9,10 +9,10 @@ namespace TacticalSoccer.UI
     {
         public Text announcerText;
 
-        [Tooltip("How long the message stays at full strength before fading.")]
+        [Tooltip("Tiempo que el mensaje permanece visible antes de empezar a desvanecerse.")]
         [SerializeField] private float holdDuration = 1.5f;
 
-        [Tooltip("How long the fade itself takes.")]
+        [Tooltip("Duración de la animación de desvanecimiento (fade out).")]
         [SerializeField] private float fadeDuration = 0.5f;
 
         public static AnnouncerUIController Instance { get; private set; }

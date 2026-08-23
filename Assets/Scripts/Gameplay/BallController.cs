@@ -12,29 +12,19 @@ namespace TacticalSoccer.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public class BallController : MonoBehaviour
     {
-        [Header("Estela")]
-        [Tooltip("Speed trail. Optional: the ball plays fine without one.")]
+        [Tooltip("Estela visual de velocidad asignada al balón.")]
         [SerializeField] private TrailRenderer trail;
 
-        [Tooltip("Speed above which the ball leaves a trail. High enough that " +
-                 "only real strikes and driven passes streak — a ball trickling " +
-                 "or bouncing to a stop should not.")]
+        [Tooltip("Velocidad mínima del balón para activar el renderizado de la estela.")]
         [SerializeField] private float trailSpeedThreshold = 8f;
 
-        [Tooltip("What fraction of its pace the ball keeps on crossing the goal " +
-                 "line. 0.1 stopped a full-force drive dead on the line, which " +
-                 "read as hitting a wall; 0.35 carries it into the netting " +
-                 "without punching through it.")]
+        [Tooltip("Fracción de velocidad que conserva el balón al cruzar la línea de meta y entrar en la red.")]
         [SerializeField] private float netEntrySpeedScale = 0.35f;
 
-        [Header("Sombra")]
-        [Tooltip("Assigned by the scene generator. Left null the ball builds its " +
-                 "own transparent material at runtime.")]
+        [Tooltip("Material para proyectar la sombra del balón en el césped.")]
         [SerializeField] private Material shadowMaterial;
 
-        [Tooltip("Diameter of the blob on the grass. Roughly the ball's own " +
-                 "footprint plus a little, so it reads as a shadow rather than " +
-                 "as a second object.")]
+        [Tooltip("Diámetro del círculo de sombra proyectado bajo el balón.")]
         [SerializeField] private float shadowSize = 0.6f;
 
         private const float MinKickHeight = 0.3f;

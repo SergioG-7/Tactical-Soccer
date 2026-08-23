@@ -41,9 +41,7 @@ namespace TacticalSoccer.Core
 
         public int tournamentStage;
 
-        [Tooltip("Players edited in the squad board. Absent from this list means " +
-                 "'exactly as the generator made him' — the file only ever holds " +
-                 "what somebody changed by hand.")]
+        [Tooltip("Lista de jugadores modificados manualmente desde el panel de plantilla.")]
         public List<PlayerRecord> squad = new List<PlayerRecord>();
     }
 

@@ -15,18 +15,13 @@ namespace TacticalSoccer.UI
 
         public Button closeButton;
 
-        [Tooltip("One button per entry of LocalizationManager.AvailableLanguages, " +
-                 "in the same order. Shorter is allowed — the extra languages " +
-                 "simply have no button — but the order is what pairs a button " +
-                 "with the language it selects.")]
+        [Tooltip("Botones de selección de idioma ordenados según LocalizationManager.AvailableLanguages.")]
         public Button[] languageButtons;
 
-        [Tooltip("Reads the two levels back as percentages, because a slider " +
-                 "handle on its own gives no way to return to a setting you liked.")]
+        [Tooltip("Texto para mostrar los niveles de audio en formato de porcentaje.")]
         public Text readoutText;
 
-        [Header("Colores")]
-        [Tooltip("Fill of the language button currently in force.")]
+        [Tooltip("Color de resaltado para el botón del idioma seleccionado.")]
         public Color selectedColor = new Color(0.20f, 0.65f, 0.95f, 1f);
 
         public Color unselectedColor = new Color(0.88f, 0.88f, 0.88f, 1f);

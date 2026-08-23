@@ -9,16 +9,13 @@ namespace TacticalSoccer.Core
         public const int BlueTeamId = 0;
         public const int RedTeamId = 1;
 
-        [Tooltip("Scoreboard label. Optional: the score is tracked either way.")]
+        [Tooltip("Etiqueta del marcador en la interfaz.")]
         public Text scoreText;
 
-        [Tooltip("Countdown label. Optional: the clock runs either way.")]
+        [Tooltip("Etiqueta del temporizador del partido.")]
         public Text timerText;
 
-        [Tooltip("Which round of the tournament this is, under the clock. Hidden " +
-                 "outside a tournament — in a quick match there is no round to " +
-                 "name, and an empty label is a gap the player has to learn to " +
-                 "ignore.")]
+        [Tooltip("Etiqueta que indica la ronda actual del torneo (oculta en partidas rápidas).")]
         public Text tournamentText;
 
         private int blueScore;

@@ -19,14 +19,10 @@ namespace TacticalSoccer.Core
     {
         public string code;
 
-        [Tooltip("How this language names ITSELF — 'English', not 'Inglés'. It " +
-                 "is the caption of its own button, and a player looking for " +
-                 "their language is looking for the word they would write.")]
+        [Tooltip("Nombre nativo del idioma mostrado en la interfaz (ej. 'English', 'Español').")]
         public string displayName;
 
-        [Tooltip("OS fonts able to draw this language, best first. Empty means " +
-                 "the built-in UI font is enough — which is true of every " +
-                 "language written in the Latin alphabet and false of Japanese.")]
+        [Tooltip("Fuentes del sistema compatibles con este idioma (necesario para alfabetos no latinos).")]
         public string[] fontFamilies;
 
         public LocalizationEntry[] entries;

@@ -9,14 +9,13 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Tooltip("Headline across the middle of the banner: what kind of duel " +
-                 "this is. The numbers live in the side panels.")]
+        [Tooltip("Título central del panel que indica el tipo de duelo en curso.")]
         public Text clashText;
 
-        [Tooltip("Left zone. Always the Blue player, left-aligned.")]
+        [Tooltip("Panel izquierdo para las estadísticas del jugador azul.")]
         public Text blueStatsText;
 
-        [Tooltip("Right zone. Always the Red player, right-aligned.")]
+        [Tooltip("Panel derecho para las estadísticas del jugador rojo.")]
         public Text redStatsText;
 
         public Button action1Button;

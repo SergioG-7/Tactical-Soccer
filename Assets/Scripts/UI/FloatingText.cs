@@ -9,9 +9,7 @@ namespace TacticalSoccer.UI
         public float duration = 1.2f;
         public float floatSpeed = 2f;
 
-        [Tooltip("Share of the lifetime held at full opacity before the fade " +
-                 "starts. Fading from the very first frame makes a 1.2 s message " +
-                 "read as already half gone by the time the eye finds it.")]
+        [Tooltip("Fracción del tiempo total en que el mensaje mantiene la opacidad completa antes de desvanecerse.")]
         [SerializeField] private float holdFraction = 0.35f;
 
         private TextMesh textMesh;

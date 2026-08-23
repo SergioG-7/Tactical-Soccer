@@ -13,38 +13,33 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Header("Apertura")]
-        [Tooltip("Returns to whatever opened this — in practice the interval.")]
+        [Tooltip("Cierra el panel de plantilla y vuelve a la pantalla anterior.")]
         public Button closeButton;
 
-        [Tooltip("Opens the editor on whichever player the board is currently " +
-                 "showing. Optional: without one the board still swaps players, " +
-                 "it just cannot retune them.")]
+        [Tooltip("Abre el editor de atributos para el jugador seleccionado.")]
         public Button editButton;
 
-        [Header("Textos")]
         public Text headerText;
 
-        [Tooltip("Left-hand readout: who is selected, and everything about them.")]
+        [Tooltip("Panel lateral con los detalles y estadísticas del jugador seleccionado.")]
         public Text statsText;
 
-        [Header("Zonas")]
-        [Tooltip("Mini-pitch the seven starters are laid out on, in their own shape.")]
+        [Tooltip("Área del campo para posicionar a los siete jugadores titulares.")]
         public RectTransform pitchArea;
 
-        [Tooltip("Row the three substitutes sit in.")]
+        [Tooltip("Contenedor para la fila de los tres jugadores suplentes.")]
         public RectTransform benchArea;
 
-        [Header("Equipo")]
+        [Tooltip("Equipo")]
         [SerializeField] private TeamId team = TeamId.Blue;
 
-        [Header("Colores")]
+        [Tooltip("Colores")]
         [SerializeField] private Color starterColor = new Color(0.86f, 0.88f, 0.92f, 1f);
         [SerializeField] private Color benchColor = new Color(0.62f, 0.65f, 0.70f, 1f);
         [SerializeField] private Color selectedColor = new Color(0.20f, 0.65f, 0.95f, 1f);
         [SerializeField] private Color exhaustedColor = new Color(0.92f, 0.45f, 0.35f, 1f);
 
-        [Header("Medidas")]
+        [Tooltip("Medidas")]
         [SerializeField] private Vector2 slotSize = new Vector2(150f, 76f);
         [SerializeField] private int slotFontSize = 24;
 

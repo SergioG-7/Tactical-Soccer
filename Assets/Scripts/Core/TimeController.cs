@@ -5,7 +5,6 @@ namespace TacticalSoccer.Core
     // Ralentiza el tiempo mientras el jugador dibuja una ruta, y lo restaura al confirmarla.
     public class TimeController : MonoBehaviour
     {
-        [Header("Slow-Motion Settings")]
         [SerializeField] private float slowMotionTimeScale = 0.1f;
         [SerializeField] private float normalTimeScale = 1f;
         [SerializeField] private float fixedDeltaTimeAtNormalScale = 0.02f;

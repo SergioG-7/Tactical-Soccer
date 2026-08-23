@@ -10,26 +10,22 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Tooltip("The small gear icon that opens this on a single click.")]
+        [Tooltip("Botón de acceso para abrir el menú de ajustes.")]
         public Button openTrigger;
 
-        [Header("Acciones")]
         public Button maxTensionButton;
         public Button healStaminaButton;
         public Button endHalfButton;
 
-        [Tooltip("Opens the same audio options panel the title screen uses, so " +
-                 "the mix can be adjusted mid-match instead of only before one.")]
+        [Tooltip("Abre el panel de configuración de audio durante el partido.")]
         public Button audioOptionsButton;
 
-        [Tooltip("Throws away every saved player edit. The only way back to the " +
-                 "squad as generated, now that edits survive closing the game.")]
+        [Tooltip("Restablece todas las modificaciones de la plantilla a sus valores iniciales.")]
         public Button resetSquadButton;
 
         public Button closeButton;
 
-        [Tooltip("Reads back what each action did, so a press that was refused " +
-                 "does not look the same as one that worked.")]
+        [Tooltip("Texto para mostrar información y estado tras ejecutar una acción.")]
         public Text feedbackText;
 
         private const float FrozenTimeScale = 0f;

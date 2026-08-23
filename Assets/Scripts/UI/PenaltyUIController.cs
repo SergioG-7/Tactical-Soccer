@@ -14,34 +14,26 @@ namespace TacticalSoccer.UI
         public Button leftButton;
         public Button rightButton;
 
-        [Tooltip("Beat between the player's choice being lit and the opposition's " +
-                 "guess being revealed. This is the entire suspense of the " +
-                 "mechanic, so it is not free to shorten.")]
+        [Tooltip("Pausa de suspense tras la elección del jugador antes de mostrar la decisión rival.")]
         [SerializeField] private float suspenseSeconds = 1.5f;
 
-        [Tooltip("How long the outcome is left on screen before play resumes. " +
-                 "Long enough to read which way both of them went.")]
+        [Tooltip("Tiempo que permanece visible el resultado antes de continuar.")]
         [SerializeField] private float resultDwellSeconds = 1.5f;
 
-        [Header("Colores")]
-        [Tooltip("Fill of the side the player picked, so the tap is acknowledged " +
-                 "before anything else happens.")]
+        [Tooltip("Color del lado seleccionado por el jugador.")]
         [SerializeField] private Color chosenSideColor = new Color(1f, 0.85f, 0.25f, 1f);
 
-        [Tooltip("Fill of the side the player did not pick.")]
+        [Tooltip("Color del lado no seleccionado por el jugador.")]
         [SerializeField] private Color unchosenSideColor = new Color(0.45f, 0.45f, 0.48f, 1f);
 
-        [Tooltip("Fill of both sides before a choice is made.")]
+        [Tooltip("Color inicial de los lados antes de realizar una elección.")]
         [SerializeField] private Color idleSideColor = new Color(0.88f, 0.88f, 0.88f, 1f);
 
-        [Header("Vuelo del balón")]
-        [Tooltip("How far towards the post the ball is struck, as a share of the " +
-                 "goal's half width. Under 1 so it finishes inside the frame " +
-                 "rather than clipping the post.")]
+        [Tooltip("Desviación del tiro hacia el poste como fracción del ancho de la portería.")]
         [Range(0.1f, 1f)]
         [SerializeField] private float shotWidthShare = 0.7f;
 
-        [Tooltip("Peak height of the struck ball's arc.")]
+        [Tooltip("Altura máxima alcanzada por el arco del disparo.")]
         [SerializeField] private float shotArcHeight = 1.6f;
 
         [SerializeField] private Color suspenseColor = new Color(0.85f, 0.85f, 0.85f, 1f);

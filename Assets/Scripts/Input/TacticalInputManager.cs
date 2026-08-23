@@ -8,30 +8,24 @@ namespace TacticalSoccer.Input
     // Detecta el input táctil/ratón y lo convierte en órdenes: dibujar rutas, pasar, chutar o colocar jugadores en el saque.
     public class TacticalInputManager : MonoBehaviour
     {
-        [Header("References")]
         [SerializeField] private Camera mainCamera;
 
-        [Header("Raycast Layers")]
         [SerializeField] private LayerMask playerLayerMask;
         [SerializeField] private LayerMask groundLayerMask;
 
-        [Tooltip("Kept off the ground mask on purpose: the goal box is 2.5 units " +
-                 "tall, so drawn route points would snap to its roof.")]
+        [Tooltip("Capa de la portería (separada del suelo para evitar que las rutas se ajusten al larguero).")]
         [SerializeField] private LayerMask goalLayerMask;
 
-        [Header("Gesture")]
         [SerializeField] private float tapThreshold = 50f;
         [SerializeField] private float tapMaxDuration = 0.3f;
         [SerializeField] private float maxRayDistance = 100f;
 
-        [Header("Marcador de selección")]
-        [Tooltip("Colour of the ring under the player being commanded.")]
+        [Tooltip("Color del anillo de selección bajo el jugador activo.")]
         [SerializeField] private Color selectionRingColor = new Color(0f, 1f, 0f, 0.5f);
 
         [SerializeField] private float selectionRingDiameter = 1.5f;
 
-        [Tooltip("Height of the disc off the turf. Just enough to clear the " +
-                 "pitch plane without z-fighting it.")]
+        [Tooltip("Elevación del disco sobre el césped para evitar problemas de solapamiento visual (z-fighting).")]
         [SerializeField] private float selectionRingGroundY = 0.05f;
 
         private const TeamId HumanTeam = TeamId.Blue;

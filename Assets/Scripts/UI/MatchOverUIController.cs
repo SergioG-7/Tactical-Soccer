@@ -11,15 +11,12 @@ namespace TacticalSoccer.UI
         public GameObject uiPanel;
         public Text resultText;
 
-        [Tooltip("The comparison table. One text block, monospaced by padding " +
-                 "rather than by font: three rows do not justify a grid of nine " +
-                 "separate labels to keep in step.")]
+        [Tooltip("Tabla comparativa con las estadísticas del partido.")]
         public Text statsText;
 
         public Button restartButton;
 
-        [Tooltip("Back to the title screen, for changing the match settings. " +
-                 "Optional: a scene generated before this existed still restarts.")]
+        [Tooltip("Botón para volver a la pantalla de título y cambiar la configuración.")]
         public Button menuButton;
 
         // Oculta el panel al arrancar.

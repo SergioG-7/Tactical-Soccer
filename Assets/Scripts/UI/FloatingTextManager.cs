@@ -6,29 +6,19 @@ namespace TacticalSoccer.UI
     // Crea los textos flotantes de combate (roll, ventaja, agotado, etc.) sobre los jugadores.
     public class FloatingTextManager : MonoBehaviour
     {
-        [Header("Colocación")]
-        [Tooltip("Height above the player the first message appears at. Well " +
-                 "clear of the role/stamina label, which sits at 2.5 and is " +
-                 "about a unit tall.")]
+        [Tooltip("Altura sobre el jugador a la que aparece el primer mensaje flotante.")]
         [SerializeField] private float baseHeight = 4.5f;
 
-        [Tooltip("Vertical gap between stacked messages. Three can land on one " +
-                 "player in the same duel — the roll, VENTAJA and AGOTADO — and " +
-                 "the height offset is the only thing keeping them apart.")]
+        [Tooltip("Separación vertical entre mensajes apilados simultáneos.")]
         [SerializeField] private float stackSpacing = 1f;
 
-        [Tooltip("Sideways scatter, so two messages spawned on the same tick at " +
-                 "the same height do not sit exactly on top of each other.")]
+        [Tooltip("Variación horizontal aleatoria para evitar la superposición exacta de textos.")]
         [SerializeField] private float horizontalJitter = 0.5f;
 
-        [Header("Tipografía")]
-        [Tooltip("Assigned by the scene generator. Left null the manager falls " +
-                 "back to the built-in runtime font.")]
+        [Tooltip("Fuente tipográfica para el texto (si es nula, usa la predeterminada).")]
         [SerializeField] private Font font;
 
-        [Tooltip("Rendered glyph resolution. High with a small character size " +
-                 "is what keeps a world-space TextMesh from going blurry the " +
-                 "moment the duel camera gets close.")]
+        [Tooltip("Resolución del renderizado de glifos para evitar textos borrosos.")]
         [SerializeField] private int fontResolution = 100;
 
         [SerializeField] private float characterSize = 0.08f;

@@ -5,35 +5,20 @@ namespace TacticalSoccer.CameraSystem
     // Sigue a un objetivo (normalmente el balón) por el campo, manteniendo altura fija y sin salirse de los límites del terreno.
     public class CameraController : MonoBehaviour
     {
-        [Header("Follow")]
         [SerializeField] private Transform target;
         [SerializeField] private Vector3 offset = new Vector3(0f, 22f, -18f);
         [SerializeField] private float smoothTime = 0.3f;
 
-        [Header("Pitch Bounds (world X / Z)")]
         [SerializeField] private Vector2 minBounds = new Vector2(-5f, -10f);
         [SerializeField] private Vector2 maxBounds = new Vector2(5f, 10f);
 
-        [Header("Anticipación")]
-        [Tooltip("How far up the pitch the camera leans in the direction the " +
-                 "side in possession is attacking. The rig trails the ball by a " +
-                 "fixed distance, so without this the carrier runs at a defence " +
-                 "the player cannot see yet — the useful information is always " +
-                 "just off the top of the screen.")]
+        [Tooltip("Distancia de anticipación de la cámara hacia la dirección de ataque del equipo en posesión.")]
         [SerializeField] private float lookAheadDistance = 1.8f;
 
-        [Tooltip("Hard ceiling on the lean, whatever the distance above asks " +
-                 "for. The lean exists to show a little more of where the play " +
-                 "is going, not to move the frame off the player: at 5 the " +
-                 "carrier was pushed to the edge of the screen while running, " +
-                 "which is the opposite of useful. Clamped rather than only " +
-                 "reduced, because SmoothDamp overshoots on a sharp turnover.")]
+        [Tooltip("Límite máximo de anticipación para evitar que el portador quede fuera de encuadre.")]
         [SerializeField] private float maxLookAhead = 2.2f;
 
-        [Tooltip("How long the lean takes to swing across when possession " +
-                 "changes. Slow on purpose: a turnover flips the direction " +
-                 "outright, and snapping it would throw the view across the " +
-                 "pitch on every tackle.")]
+        [Tooltip("Tiempo de suavizado para reorientar la cámara tras un cambio de posesión.")]
         [SerializeField] private float lookAheadSmoothTime = 0.9f;
 
         private Vector3 followVelocity;

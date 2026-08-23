@@ -5,74 +5,47 @@ namespace TacticalSoccer.Audio
     // Gestiona todo el sonido del partido: silbatos, balón, público, interfaz y ardor.
     public class AudioManager : MonoBehaviour
     {
-        [Header("Silbatos")]
-        [Tooltip("Short blast. Opens every restart from the centre and punctuates " +
-                 "a goal.")]
+        [Tooltip("Silbato corto para saques de centro y goles.")]
         [SerializeField] private AudioClip whistleShort;
 
-        [Tooltip("Long blast. Ends the first half.")]
+        [Tooltip("Silbato largo para indicar el final del primer tiempo.")]
         [SerializeField] private AudioClip whistleLong;
 
-        [Tooltip("The referee's final whistle. Separate from the long blast " +
-                 "because full time is the one whistle in a match that is meant " +
-                 "to sound different from every other.")]
+        [Tooltip("Silbato de final de partido.")]
         [SerializeField] private AudioClip whistleFullTime;
 
-        [Header("Balón")]
-        [Tooltip("Struck ball. Fires from the ball itself, so it covers passes, " +
-                 "shots, clearances and set pieces from one place.")]
+        [Tooltip("Efecto de golpeo de balón (pases, tiros y despejes).")]
         [SerializeField] private AudioClip kickBall;
 
-        [Tooltip("The ball hitting the net.")]
+        [Tooltip("Efecto del balón impactando en la red.")]
         [SerializeField] private AudioClip netGoal;
 
-        [Header("Interfaz")]
-        [Tooltip("Every menu/options/developer-menu button click. Never fires " +
-                 "for anything that happens WHILE the match is being played — " +
-                 "the duel actions and the penalty direction buttons deliberately " +
-                 "don't carry this.")]
+        [Tooltip("Sonido de interacción para botones de menús y opciones.")]
         [SerializeField] private AudioClip clickSound;
 
-        [Header("Duelos y faltas")]
-        [Tooltip("Contact in a duel. Plays with the match frozen at timeScale 0 — " +
-                 "audio is not governed by it, which is what makes the freeze " +
-                 "land as a hit rather than as a pause.")]
+        [Tooltip("Sonido de impacto físico al disputar un duelo.")]
         [SerializeField] private AudioClip clashImpact;
 
-        [Tooltip("The whistle for a foul, blown as the duel is voided.")]
+        [Tooltip("Silbato arbitral al señalar una falta.")]
         [SerializeField] private AudioClip foulWhistle;
 
-        [Header("Ardor")]
-        [Tooltip("Looped for as long as ANY side is in the zone, rather than " +
-                 "fired once when it lights: the sting is 5.6 s and the zone " +
-                 "lasts 10, so a one-shot left the second half of it silent.")]
+        [Tooltip("Pista en bucle activada durante las zonas de máxima tensión.")]
         [SerializeField] private AudioClip tensionMax;
 
-        [Header("Público")]
-        [Tooltip("Ambient crowd. Runs only while a half is actually being played " +
-                 "— never under the title screen, the interval or the result.")]
+        [Tooltip("Pista de ambiente del estadio durante el partido.")]
         [SerializeField] private AudioClip stadiumLoop;
 
-        [Tooltip("The roar for a goal.")]
+        [Tooltip("Reacción del público al marcar un gol.")]
         [SerializeField] private AudioClip crowdCheer;
 
-        [Header("Mezcla")]
-        [Tooltip("Live level of the crowd bed. Seeded in Awake from the save " +
-                 "file — whose own default matches the value here — so editing " +
-                 "it in the Inspector only changes what a player with no save " +
-                 "hears. Well under the effects on purpose: the bed runs " +
-                 "continuously, so at anything like full volume it stops being " +
-                 "atmosphere and starts being the thing you hear.")]
+        [Tooltip("Volumen base del ambiente del público.")]
         [Range(0f, 1f)]
         [SerializeField] private float musicVolume = 0.35f;
 
         [Range(0f, 1f)]
         [SerializeField] private float sfxVolume = 1f;
 
-        [Tooltip("Live level of the whistles specifically — kickoff/restart, half-" +
-                 "time, full-time. Split from the classic effects volume so the " +
-                 "referee's whistle can be tuned on its own, independently of " +
-                 "tension stings and ball hits.")]
+        [Tooltip("Control de volumen independiente para los silbatos arbitrales.")]
         [Range(0f, 1f)]
         [SerializeField] private float whistleVolume = 1f;
 

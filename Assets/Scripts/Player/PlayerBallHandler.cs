@@ -8,36 +8,25 @@ namespace TacticalSoccer.Player
     {
         [SerializeField] private Transform ballSocket;
 
-        [Tooltip("Impulse applied to a pass. Tuned so a pass actually reaches a " +
-                 "team-mate across the middle third rather than dying short.")]
+        [Tooltip("Fuerza de impulso aplicada a los pases.")]
         [SerializeField] private float passForce = 12f;
 
-        [Header("Tiro Directo")]
         [SerializeField] private float powerShotForce = 25f;
         [SerializeField] private float powerShotLift = 0.1f;
 
-        [Header("Vaselina")]
-        [Tooltip("Softer and higher than a drive: it has to drop back down " +
-                 "under the crossbar rather than sail over it.")]
+        [Tooltip("Ajustes de fuerza y elevación para tiros de vaselina.")]
         [SerializeField] private float lobShotForce = 15f;
         [SerializeField] private float lobShotLift = 0.45f;
 
-        [Header("Alcance de Duelo")]
-        [Tooltip("Flat distance to the target beyond which a shot is a hopeful " +
-                 "long-range hit rather than a one-on-one, so it skips the duel " +
-                 "and simply flies.")]
+        [Tooltip("Distancia máxima a portería para resolver un disparo mediante duelo con el portero.")]
         [SerializeField] private float maxDuelShotDistance = 15f;
 
-        [Header("Intercepción")]
-        [Tooltip("Speed above which a loose ball counts as a pass in flight " +
-                 "rather than something rolling around to be picked up. Below " +
-                 "it, stepping on the ball is simply collecting it.")]
+        [Tooltip("Velocidad mínima del balón para considerarlo un pase interceptable en lugar de balón suelto.")]
         [SerializeField] private float interceptSpeedThreshold = 5f;
 
         [SerializeField] private float pickupCooldown = 0.2f;
 
-        [Tooltip("Extra time the last kicker alone must wait before collecting " +
-                 "the ball again, so a rebound is a real rebound.")]
+        [Tooltip("Tiempo de espera adicional antes de que el último tirador pueda volver a tocar el balón tras un rebote.")]
         [SerializeField] private float selfReboundImmunity = 1f;
 
         // Usado solo si no hay portero rival contra el que disputar el duelo.

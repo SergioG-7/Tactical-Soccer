@@ -8,9 +8,7 @@ namespace TacticalSoccer.UI
     [RequireComponent(typeof(Text))]
     public class LocalizedText : MonoBehaviour
     {
-        [Tooltip("Key into the language files. The Spanish file is the reference: " +
-                 "every key exists there, and a key missing from a translation " +
-                 "falls back to showing the key itself.")]
+        [Tooltip("Clave de localización en los archivos de idioma.")]
         public string key;
 
         private Text target;

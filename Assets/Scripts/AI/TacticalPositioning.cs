@@ -9,50 +9,34 @@ namespace TacticalSoccer.AI
     [RequireComponent(typeof(PlayerRoute))]
     public class TacticalPositioning : MonoBehaviour
     {
-        [Header("Formation drift")]
-        [Tooltip("How far a MIDFIELDER shifts towards the ball, as a fraction of " +
-                 "the ball's own distance up the pitch. Well under 1: the team " +
-                 "leans with the play, it does not chase it in a pack.")]
+        [Tooltip("Grado de desplazamiento del centrocampista hacia la posición del balón.")]
         [SerializeField] private float ballInfluence = 0.3f;
 
-        [Header("Roles")]
-        [Tooltip("Ball influence for a FORWARD. Higher than a midfielder's: a " +
-                 "striker follows the attack rather than holding a station.")]
+        [Tooltip("Influencia del balón en la posición del delantero (mayor que en el medio para apoyar el ataque).")]
         [SerializeField] private float forwardBallInfluence = 0.45f;
 
-        [Tooltip("How far up the pitch a FORWARD stands beyond their formation " +
-                 "slot, towards the goal they attack. This is what makes the " +
-                 "front line an outlet instead of another row of the block.")]
+        [Tooltip("Distancia que adelanta el delantero respecto a su posición base para dar salida al equipo.")]
         [SerializeField] private float forwardPush = 6f;
 
-        [Tooltip("Ball influence for a DEFENDER. Low on purpose: the back line " +
-                 "holds its shape while the rest of the team moves.")]
+        [Tooltip("Influencia del balón en los defensas. Baja para mantener la línea defensiva.")]
         [SerializeField] private float defenderBallInfluence = 0.15f;
 
-        [Tooltip("Hard cap on how far past the halfway line a DEFENDER may " +
-                 "drift, in units. The influence above already keeps them deep; " +
-                 "this is the guarantee, so no combination of ball position and " +
-                 "wander can send a centre-back into the opposition half.")]
+        [Tooltip("Límite máximo que un defensa puede cruzar hacia campo rival.")]
         [SerializeField] private float defenderMaxAdvance = 2f;
 
-        [Tooltip("Maximum wander from the formation slot, in units.")]
+        [Tooltip("Desviación máxima permitida respecto a la posición base de la formación.")]
         [SerializeField] private float driftRange = 1.5f;
 
-        [Tooltip("How quickly the wander evolves. Slow, or players jitter.")]
+        [Tooltip("Velocidad a la que se calcula el desplazamiento para evitar vibraciones en la animación.")]
         [SerializeField] private float driftSpeed = 0.5f;
 
-        [Tooltip("Walking pace when drifting. Deliberately below the run speed: " +
-                 "this is jogging into space, not making a run.")]
+        [Tooltip("Velocidad de movimiento al recolocarse en la formación.")]
         [SerializeField] private float repositionSpeed = 2f;
 
-        [Header("Loose ball")]
-        [Tooltip("How far this player will go for a loose ball. Beyond it, " +
-                 "chasing would pull them out of shape for a ball they were " +
-                 "never going to reach.")]
+        [Tooltip("Radio de detección para acudir a disputar un balón suelto.")]
         [SerializeField] private float chaseRadius = 12f;
 
-        [Tooltip("Pace when going for a loose ball. Faster than drifting — this " +
-                 "is an actual attempt to get there.")]
+        [Tooltip("Velocidad del jugador al esprintar hacia un balón suelto.")]
         [SerializeField] private float chaseSpeed = 3f;
 
         private TeamMember member;

@@ -5,45 +5,28 @@ namespace TacticalSoccer.Gameplay
     // Gestiona la barra de tensión de cada equipo y la zona de ardor que se activa al llenarla.
     public class TensionManager : MonoBehaviour
     {
-        [Header("Carga")]
-        [Tooltip("Full bar. The numbers below are all shares of this, so the " +
-                 "scale can be re-tuned without touching what anything is worth.")]
+        [Tooltip("Valor máximo de la barra de tensión.")]
         [SerializeField] private float maxTension = 100f;
 
-        [Tooltip("Gained by the winner of a duel. Four clean wins fill the bar.")]
+        [Tooltip("Tensión obtenida al ganar un duelo.")]
         [SerializeField] private float duelWonTension = 25f;
 
-        [Tooltip("Gained by the loser of a duel. Small, but not nothing: a side " +
-                 "being overrun still has to have a way back into the match.")]
+        [Tooltip("Tensión obtenida al perder un duelo.")]
         [SerializeField] private float duelLostTension = 5f;
 
-        [Tooltip("Gained for cutting out a pass. Worth more than a duel win: an " +
-                 "interception is read rather than rolled for, and it is the one " +
-                 "defensive act the game has that is purely the player's doing.")]
+        [Tooltip("Tensión obtenida al cortar un pase rival.")]
         [SerializeField] private float interceptTension = 30f;
 
-        [Tooltip("Gained for a pass that finds its man. Small by design — a " +
-                 "quarter of a duel — because passing is the safe thing to do " +
-                 "and it happens far more often. It is here so that keeping the " +
-                 "ball builds momentum at all, rather than momentum belonging " +
-                 "only to whoever wins collisions.")]
+        [Tooltip("Tensión obtenida al completar un pase con éxito.")]
         [SerializeField] private float passCompletedTension = 8f;
 
-        [Header("Zona de Ardor")]
-        [Tooltip("How long the burn lasts once the bar fills, in seconds of " +
-                 "match time. Scaled time on purpose: a duel freezes the match, " +
-                 "and burning through a frozen screen would be pure theft.")]
+        [Tooltip("Duración en segundos del estado de ardor al llenar la barra.")]
         [SerializeField] private float burnDuration = 10f;
 
-        [Tooltip("Flat bonus added to every duel stat while burning. Roughly a " +
-                 "captain's passive and a bit — enough to turn a duel a side " +
-                 "would narrowly lose, not enough to win one it has no business " +
-                 "winning.")]
+        [Tooltip("Bonificación a todas las estadísticas de duelo durante el estado de ardor.")]
         [SerializeField] private int burnDuelBonus = 20;
 
-        [Tooltip("Speed multiplier while burning. The visible half of the " +
-                 "mechanic: the duel bonus is a number nobody sees, and this is " +
-                 "what makes a burning side read as a side that has clicked.")]
+        [Tooltip("Multiplicador de velocidad de movimiento durante el estado de ardor.")]
         [SerializeField] private float burnSpeedMultiplier = 1.5f;
 
         private float blueTension;
