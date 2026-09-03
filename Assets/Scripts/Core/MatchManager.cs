@@ -124,11 +124,11 @@ namespace TacticalSoccer.Core
         // True si el partido puede seguir corriendo (no ha terminado).
         public static bool IsPlayable => Instance == null || !Instance.isMatchOver;
 
-        // The kick the camera takes on a goal: a soft 0.3 held for a long 0.5 s.
+        // Sacudida de cámara al marcar gol: intensidad 0.3 durante 0.5 s.
         private const float GoalShakeIntensity = 0.3f;
         private const float GoalShakeTime = 0.5f;
 
-        // How far time is slowed the instant a goal goes in.
+        // Escala de cámara lenta al marcar gol.
         private const float GoalSlowMotionScale = 0.3f;
 
         [Tooltip("Duración en segundos reales de la cámara lenta tras marcar un gol.")]
@@ -222,8 +222,7 @@ namespace TacticalSoccer.Core
             rivalKitColor = rivalColor;
         }
 
-        [Tooltip("The strip the human side plays in. Chosen on the configuration " +
-                 "screen and applied at the opening whistle.")]
+        [Tooltip("Equipación del equipo humano, elegida en la pantalla de configuración.")]
         [SerializeField] private TeamKit humanKit = TeamKit.Azul;
 
         // Color de la equipación rival.
@@ -256,11 +255,7 @@ namespace TacticalSoccer.Core
         private Coroutine kickoffRoutine;
         private Coroutine aiSetPieceRoutine;
 
-        [Tooltip("How far the side NOT taking a restart must stand off the ball. " +
-                 "Roughly the ten yards of the real laws, scaled to this pitch: " +
-                 "far enough that the taker gets a touch away before anybody " +
-                 "reaches them, close enough that the defence is not handed a " +
-                 "free pass every time.")]
+        [Tooltip("Distancia mínima del equipo que no reinicia respecto al balón (equivalente a las diez yardas reales).")]
         [SerializeField] private float restartExclusionRadius = 4f;
 
         // Estadísticas del partido por equipo, para el marcador final.
@@ -1002,17 +997,8 @@ namespace TacticalSoccer.Core
                 return;
             }
 
-            // The offender is standing exactly where the ball has just been put,
-            // because the foul mark IS where he was. Two capsules in the same
-            // place jam against each other: the taker cannot walk the ball out,
-            // and the opposition's AI keeps sending men at a ball that is
-            // physically blocked, which reads as the whole match freezing.
-            //
-            // Measured from the MARK, not from the ball's live position. The ball
-            // was handed to the taker a line ago, but it does not physically move
-            // onto his socket until LateUpdate — so reading its transform here
-            // gives wherever it was BEFORE the foul, and the players get pushed
-            // away from the wrong point.
+            // El infractor queda justo en la marca de la falta y bloquea al sacador.
+            // Se usa la marca y no la posición de la bola (aún no actualizada hasta LateUpdate).
             SeparateFromRestart(ClampToRestartArea(spot), taker);
 
             isWaitingForFreeKick = true;
@@ -1168,7 +1154,7 @@ namespace TacticalSoccer.Core
                     takerRoute.CancelRoute();
                 }
 
-                // A stride behind the ball, facing the goal.
+                // Un paso detrás del balón, mirando a portería.
                 penaltyTaker.transform.position = new Vector3(
                     PenaltySpot.x,
                     penaltyTaker.transform.position.y,
@@ -1367,7 +1353,7 @@ namespace TacticalSoccer.Core
 
             Debug.Log($"CÓRNER para {attackingTeam}: saca {taker.name} desde ({cornerX:F1}, {cornerZ:F1}).");
 
-            // Swung into the six-yard area in front of the goal being attacked.
+            // Centrado hacia el área pequeña de la portería atacada.
             ScheduleAiRestart(attackingTeam, taker,
                 new Vector3(0f, 0f, Mathf.Sign(cornerZ) * (PitchBounds.GoalLineZ - 4f)));
         }
@@ -1491,9 +1477,7 @@ namespace TacticalSoccer.Core
             AI.SetPiecePositioning.OfferForRestart(taker, ballSpot, RestartSupportClearance);
         }
 
-        [Tooltip("How far the nearest supporting player is kept from the restart " +
-                 "mark. Close enough to be an easy pass, far enough not to stand " +
-                 "on the taker or trip a duel the instant play resumes.")]
+        [Tooltip("Distancia del apoyo más cercano a la marca de reinicio.")]
         [SerializeField] private float restartSupportClearance = 4f;
 
         private static float RestartSupportClearance =>
@@ -1560,8 +1544,7 @@ namespace TacticalSoccer.Core
             return AI.SetPiecePositioning.FindRestartReceiver(taker, restartPassMinDistance);
         }
 
-        [Tooltip("Shortest pass the AI will play from a restart. Anything under " +
-                 "this is a pass that gains nothing and hands the ball back.")]
+        [Tooltip("Pase más corto que la IA jugará en un reinicio.")]
         [SerializeField] private float restartPassMinDistance = 6f;
 
         // Reinicia el partido desde cero: reloj, plantillas, estadísticas y tensión.

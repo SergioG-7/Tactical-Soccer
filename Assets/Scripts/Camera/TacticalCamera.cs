@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 using TacticalSoccer.Gameplay;
 
-// Namespace is deliberately NOT TacticalSoccer.Camera: that would shadow
-// UnityEngine.Camera for every type declared inside it.
+// El namespace evita TacticalSoccer.Camera a propósito: taparía UnityEngine.Camera.
 namespace TacticalSoccer.CameraSystem
 {
     // Controla la cámara durante momentos especiales: duelos, vuelo del balón tras un disparo y sacudidas de impacto.
@@ -99,23 +98,16 @@ namespace TacticalSoccer.CameraSystem
         // Cuánto ha desplazado el jugador la vista respecto al seguimiento automático. Solo se resetea en el saque de centro.
         private Vector3 panOffset = Vector3.zero;
 
-        // How far out the rig sits, as a multiple of its designed offset.
+        // Cuánto se aleja el rig, como múltiplo de su offset de diseño.
         private float zoomScale = 1f;
 
-        [Header("Zoom")]
-        [Tooltip("Closest the pinch may bring the rig, as a share of its " +
-                 "designed offset. Not lower: the rig is angled, so pulling it " +
-                 "much nearer puts the camera among the players and starts " +
-                 "clipping through them.")]
+        [Tooltip("Zoom mínimo. Más cerca mete la cámara entre los jugadores por el ángulo del rig.")]
         [SerializeField] private float minZoomScale = 0.65f;
 
-        [Tooltip("Furthest out. Beyond this the pitch stops filling the frame " +
-                 "and the surrounding grass and the empty sky take over.")]
+        [Tooltip("Zoom máximo antes de que el césped y el cielo ocupen el encuadre.")]
         [SerializeField] private float maxZoomScale = 1.6f;
 
-        [Tooltip("Scale change per pixel of pinch. Tuned so a comfortable " +
-                 "gesture across a phone screen covers most of the range " +
-                 "without a flick jumping the whole way.")]
+        [Tooltip("Cambio de escala por píxel de pellizco, ajustado para móvil.")]
         [SerializeField] private float zoomSensitivity = 0.0015f;
 
         private float shakeIntensity;

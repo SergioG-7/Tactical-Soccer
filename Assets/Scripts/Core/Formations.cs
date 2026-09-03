@@ -44,7 +44,7 @@ namespace TacticalSoccer.Core
         private const float DefenderLineZ = 16f;
         private const float MidfieldLineZ = 9f;
 
-        // Just outside the centre circle, whose painted radius is 3.75 units.
+        // Justo fuera del círculo central (radio pintado de 3.75 unidades).
         private const float ForwardLineZ = 4.5f;
 
         private static readonly FormationSlot[] Balanced =

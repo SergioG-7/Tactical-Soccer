@@ -53,8 +53,7 @@ namespace TacticalSoccer.Audio
         private AudioSource sfxSource;
         private AudioSource tensionSource;
 
-        // How long a taste of the crowd lasts on the options screen. The clip
-        // itself is ten seconds of stadium, which would bury a menu.
+        // Duración del avance del ambiente de público en la pantalla de opciones.
         private const float CrowdPreviewSeconds = 2f;
 
         private Coroutine crowdPreviewRoutine;

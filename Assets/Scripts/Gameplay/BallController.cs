@@ -29,7 +29,7 @@ namespace TacticalSoccer.Gameplay
 
         private const float MinKickHeight = 0.3f;
 
-        // Just clear of the pitch plane at y=0, so the two never z-fight.
+        // Ligeramente por encima del plano del césped (y=0) para evitar z-fighting.
         private const float ShadowGroundY = 0.01f;
 
         private static readonly Vector3 KickoffPosition = new Vector3(0f, 0.5f, 0f);
@@ -335,24 +335,17 @@ namespace TacticalSoccer.Gameplay
             {
                 StopDead();
 
-                // Exactly one restart, always. The two flags are already
-                // mutually exclusive — the goal-line test wins the corners and
-                // the touchline gets what is left — and the if/else is what
-                // keeps them that way if either condition is ever loosened.
+                // Un único reinicio siempre: si/sino asegura exclusividad entre banda y línea de gol.
                 if (overTouchline)
                 {
                     Core.MatchManager.Instance.StartThrowIn(Opponent(lastTeam), exitPoint);
                 }
                 else if (overGoalLine)
                 {
-                    // Whose goal line it went over. Blue defends negative Z, Red
-                    // defends positive Z, so the sign of the exit point names the
-                    // defending side outright.
+                    // Azul defiende Z negativa, Rojo defiende Z positiva.
                     TeamId defendingSide = exitPoint.z > 0f ? TeamId.Red : TeamId.Blue;
 
-                    // A defender putting it behind his own line concedes a
-                    // corner; an attacker putting it behind theirs gives the
-                    // defenders a goal kick.
+                    // Si la manda fuera un defensor es córner; si un atacante, saque de puerta.
                     bool putBehindByDefenders = lastTeam == defendingSide;
 
                     if (putBehindByDefenders)

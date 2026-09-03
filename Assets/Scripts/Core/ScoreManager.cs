@@ -21,8 +21,7 @@ namespace TacticalSoccer.Core
         private int blueScore;
         private int redScore;
 
-        // Only repainted when the displayed second actually changes, so the text
-        // mesh is not rebuilt on every single frame.
+        // Solo se repinta cuando cambia el segundo mostrado, para no reconstruir la malla cada frame.
         private int lastPaintedSecond = -1;
 
         public static ScoreManager Instance { get; private set; }

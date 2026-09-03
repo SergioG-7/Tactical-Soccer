@@ -270,8 +270,7 @@ namespace TacticalSoccer.UI
             }
         }
 
-        [Tooltip("How long the player's own pick is lit before the kick, so the " +
-                 "tap is acknowledged before the screen clears for the action.")]
+        [Tooltip("Cuánto se ilumina la elección del jugador antes del disparo.")]
         [SerializeField] private float choiceAcknowledgeSeconds = 0.6f;
 
         // Resuelve el penalti paso a paso: elección, vuelo del balón y resultado.

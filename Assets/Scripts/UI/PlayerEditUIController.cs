@@ -10,7 +10,7 @@ namespace TacticalSoccer.UI
     {
         public GameObject uiPanel;
 
-        [Header("Cabecera")]
+        [Tooltip("Texto de la cabecera del editor de jugador.")]
         public Text headingText;
 
         [Tooltip("Textos para los valores de estadísticas (regate, fuerza, tiro, entrada, bloqueo, parada, energía).")]
@@ -73,7 +73,7 @@ namespace TacticalSoccer.UI
         private TeamMember subject;
         private GameObject returnPanel;
 
-        // The staged edit. Everything here is a copy until SAVE.
+        // Edición en curso. Todo aquí es una copia hasta guardar.
         private PlayerRole role;
         private Element element;
         private int dribble;

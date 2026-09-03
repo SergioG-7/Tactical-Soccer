@@ -6,9 +6,7 @@ namespace TacticalSoccer.Core
     // Define los límites del terreno de juego: líneas de banda, portería, área y zonas de peligro.
     public static class PitchBounds
     {
-        // The painted line, not the edge of the turf: the pitch plane is
-        // 30 x 50 but the boundary is drawn a 5% texture margin inside it,
-        // which is 1.52 units.
+        // La línea pintada, no el borde del césped: margen de 5% (1.52 u) hacia dentro del plano 30x50.
         public const float SideLineX = 13.5f;
         public const float GoalLineZ = 23.5f;
 
@@ -40,13 +38,11 @@ namespace TacticalSoccer.Core
             return depth >= GoalLineZ - PenaltyAreaDepth && depth <= BehindGoalZ;
         }
 
-        // A metre of run-off outside the line. Players may overrun the
-        // boundary — they just cannot leave the world.
+        // Un metro de margen fuera de la línea: los jugadores pueden salirse pero no del mundo.
         public const float PlayerLimitX = 14.5f;
         public const float PlayerLimitZ = 24.5f;
 
-        // Where a keeper is allowed to stand when placed by hand: across the
-        // goal mouth and within a stride of their own line.
+        // Dónde puede colocarse el portero a mano: a lo ancho de la boca de gol, cerca de su línea.
         private const float KeeperLineZ = 21.5f;
         private const float KeeperDepth = 2f;
 

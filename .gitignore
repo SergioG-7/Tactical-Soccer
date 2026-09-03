@@ -75,3 +75,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 /[Aa]ssets/[Ss]ettings/*
 /[Dd]ata
+
+# Cache de compilación Android (CMake/Ninja/Gradle) generado localmente
+/.utmp/
