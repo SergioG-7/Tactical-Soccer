@@ -78,3 +78,7 @@ crashlytics-build.properties
 
 # Cache de compilación Android (CMake/Ninja/Gradle) generado localmente
 /.utmp/
+
+# Configuración local de Claude Code
+/.claude/
+/.mcp.json
